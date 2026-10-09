@@ -3,21 +3,26 @@
 
 Erzeugt ein zufälliges, perfektes Labyrinth (genau ein Weg zwischen je zwei
 Feldern) per Recursive Backtracking und löst es anschließend animiert mit A*.
+Im Spielmodus läufst du selbst mit den Pfeiltasten durch.
 
 Aufruf:
     python3 labyrinth.py                 # Standardgröße, animiert
     python3 labyrinth.py -b 30 -h 12     # eigene Breite/Höhe (in Zellen)
     python3 labyrinth.py --seed 42       # reproduzierbares Labyrinth
     python3 labyrinth.py --schnell       # ohne Animation
+    python3 labyrinth.py --spielen       # selbst spielen (Pfeiltasten/WASD)
 """
 
 import argparse
 import heapq
+import os
 import random
+import select
 import sys
 import time
 
 WAND, FREI, BESUCHT, WEG, START, ZIEL = "#", " ", ".", "*", "S", "Z"
+SPIELER, SPUR = "@", "+"
 
 FARBEN = {
     WAND: "\033[48;5;236m  \033[0m",
@@ -26,6 +31,15 @@ FARBEN = {
     WEG: "\033[48;5;214m  \033[0m",
     START: "\033[48;5;34m  \033[0m",
     ZIEL: "\033[48;5;160m  \033[0m",
+    SPIELER: "\033[48;5;33m  \033[0m",
+    SPUR: "\033[48;5;24m  \033[0m",
+}
+
+RICHTUNGEN = {
+    "\x1b[A": (-1, 0), "w": (-1, 0),
+    "\x1b[B": (1, 0), "s": (1, 0),
+    "\x1b[D": (0, -1), "a": (0, -1),
+    "\x1b[C": (0, 1), "d": (0, 1),
 }
 
 
@@ -83,12 +97,83 @@ def a_stern(gitter, start, ziel, beim_besuch=None):
     return []
 
 
-def zeichne(gitter, farbig, kopf=""):
+def zeichne(gitter, farbig, kopf="", cursor_oben=None):
     zeilen = ["".join(FARBEN[z] if farbig else z for z in reihe) for reihe in gitter]
-    if farbig:
+    if farbig if cursor_oben is None else cursor_oben:
         sys.stdout.write("\033[H")  # Cursor nach oben links, kein Flackern
+        kopf += "\033[K"  # Rest der Kopfzeile löschen
     sys.stdout.write(kopf + "\n" + "\n".join(zeilen) + "\n")
     sys.stdout.flush()
+
+
+def lies_taste(fd):
+    """Liest eine Taste; Pfeiltasten kommen als Escape-Sequenz (ESC [ A..D)."""
+    taste = os.read(fd, 1)
+    if taste == b"\x1b":
+        while len(taste) < 3 and select.select([fd], [], [], 0.05)[0]:
+            taste += os.read(fd, 1)
+    taste = taste.decode(errors="ignore")
+    return taste if taste.startswith("\x1b") else taste.lower()  # Sequenzen nicht verändern
+
+
+def spielen(gitter, start, ziel, seed, farbig):
+    """Interaktiver Modus: Spieler läuft mit Pfeiltasten/WASD zum Ziel."""
+    import termios
+    import tty
+
+    fd = sys.stdin.fileno()
+    optimal = len(a_stern(gitter, start, ziel)) - 1
+    pos, zuege, spur = start, 0, {start}
+    zeige_loesung = loesung_genutzt = False
+    t0 = None
+    alte_einstellungen = termios.tcgetattr(fd)
+    try:
+        tty.setcbreak(fd)  # Tasten sofort lesen, ohne Echo; Strg+C funktioniert weiter
+        sys.stdout.write("\033[?25l\033[2J")  # Cursor verstecken, Bildschirm leeren
+        while True:
+            anzeige = [reihe[:] for reihe in gitter]
+            for r, c in spur:
+                if anzeige[r][c] == FREI:
+                    anzeige[r][c] = SPUR
+            if zeige_loesung:
+                for r, c in a_stern(gitter, pos, ziel)[1:-1]:
+                    anzeige[r][c] = WEG
+            anzeige[pos[0]][pos[1]] = SPIELER
+            kopf = (f"Seed {seed} · Züge: {zuege} · Pfeile/WASD: laufen · "
+                    f"L: Lösung {'aus' if zeige_loesung else 'an'} · Q: Ende")
+            zeichne(anzeige, farbig, kopf, cursor_oben=True)
+            if pos == ziel:
+                break
+
+            taste = lies_taste(fd)
+            if taste == "q":
+                print("Aufgegeben – bis zum nächsten Mal!")
+                return
+            if taste == "l":
+                zeige_loesung = not zeige_loesung
+                loesung_genutzt = True
+            elif taste in RICHTUNGEN:
+                dr, dc = RICHTUNGEN[taste]
+                neu = (pos[0] + dr, pos[1] + dc)
+                if gitter[neu[0]][neu[1]] != WAND:
+                    t0 = t0 or time.perf_counter()
+                    pos, zuege = neu, zuege + 1
+                    spur.add(pos)
+    finally:
+        termios.tcsetattr(fd, termios.TCSADRAIN, alte_einstellungen)
+        sys.stdout.write("\033[?25h")  # Cursor wieder anzeigen
+        sys.stdout.flush()
+
+    dauer = time.perf_counter() - t0
+    if loesung_genutzt:
+        urteil = "mit Spickzettel 😉"
+    elif zuege == optimal:
+        urteil = "perfekt – kürzester Weg! 🏆"
+    elif zuege <= optimal * 1.5:
+        urteil = "stark! 💪"
+    else:
+        urteil = "geschafft – ein paar Umwege waren dabei 🧭"
+    print(f"Ziel erreicht in {zuege} Zügen (optimal: {optimal}) und {dauer:.1f} s – {urteil}")
 
 
 def main():
@@ -99,9 +184,14 @@ def main():
     p.add_argument("--seed", type=int, help="Zufallsseed für reproduzierbare Labyrinthe")
     p.add_argument("--schnell", action="store_true", help="Keine Animation")
     p.add_argument("--ohne-farbe", action="store_true", help="Reine ASCII-Ausgabe")
+    p.add_argument("--spielen", action="store_true", help="Selbst spielen mit Pfeiltasten/WASD")
     args = p.parse_args()
     if args.breite < 2 or args.hoehe < 2:
         p.error("Breite und Höhe müssen mindestens 2 sein")
+    if args.spielen and not (sys.stdin.isatty() and sys.stdout.isatty()):
+        p.error("--spielen braucht ein interaktives Terminal")
+    if args.spielen and os.name == "nt":
+        p.error("--spielen wird unter Windows nicht unterstützt (nutze WSL)")
 
     seed = args.seed if args.seed is not None else random.randrange(10**6)
     farbig = not args.ohne_farbe and sys.stdout.isatty()
@@ -110,6 +200,10 @@ def main():
     gitter = erzeuge_labyrinth(args.breite, args.hoehe, random.Random(seed))
     start, ziel = (1, 1), (2 * args.hoehe - 1, 2 * args.breite - 1)
     gitter[start[0]][start[1]], gitter[ziel[0]][ziel[1]] = START, ZIEL
+
+    if args.spielen:
+        spielen(gitter, start, ziel, seed, farbig)
+        return
 
     besucht = 0
 

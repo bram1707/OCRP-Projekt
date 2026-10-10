@@ -10,11 +10,18 @@ export const KNOPF_HAUPT =
   'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-800 px-5 py-2 text-lg font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-slate-500 disabled:bg-slate-500';
 export const KNOPF_NEBEN =
   'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-slate-700 bg-white px-5 py-2 text-lg font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-600';
+/** Gewählter Schalter: eigene vollständige Klassen, weil Tailwind bei zwei Hintergründen nicht nach der Reihenfolge im Attribut entscheidet. */
+export const KNOPF_GEWAEHLT =
+  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-50 px-5 py-2 text-lg font-semibold text-blue-950 hover:bg-blue-100';
 export const VERWEIS = 'font-semibold text-blue-800 underline underline-offset-4 hover:text-blue-950';
 
-export function Rahmen({ children, simulation = false }: { children: ReactNode; simulation?: boolean }) {
+export function Rahmen({ children, simulation = false, ansage = null }: { children: ReactNode; simulation?: boolean; ansage?: string | null }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Bleibt beim Seitenwechsel bestehen, damit Bildschirmleser „… bestätigt.“ auch nach dem Sprung zum nächsten Label ansagen. */}
+      <div role="status" aria-live="polite" className="sr-only">
+        {ansage}
+      </div>
       <header className="border-b-2 border-slate-300 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
           <a href={zurStartseite()} className="text-xl font-bold text-slate-900 no-underline">
@@ -82,7 +89,7 @@ export function Meldung({
   gesperrt?: boolean;
 }) {
   return (
-    <div role="status" aria-live="polite" className="min-h-0">
+    <div className="min-h-0" data-meldung="">
       {meldung && (
         <p className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">
           <span>{meldung.text}</span>

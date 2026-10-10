@@ -3,7 +3,7 @@
 
 import type { Ref } from 'react';
 import type { AnlageMitLabels, Hinderungsgrund, LabelAnsicht, Zusammenfassung as ZusammenfassungDaten } from '../api.ts';
-import { Balken, Fehler, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type MeldungDaten } from '../rahmen.tsx';
+import { Balken, Fehler, KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type MeldungDaten } from '../rahmen.tsx';
 import { zurStartseite } from '../route.ts';
 import { istPruefbar, sperreAnzeige } from '../status.ts';
 import { Kachel } from './Kachel.tsx';
@@ -102,7 +102,34 @@ export function Uebersicht({
       <div className="mt-4">
         <Meldung meldung={meldung} onRueckgaengig={(id) => ereignis({ art: 'rueckgaengig', labelId: id })} gesperrt={speichert} />
         {fehler && <Fehler text={fehler} />}
+        {freigabeFehler && <Fehler text={freigabeFehler.text} gruende={freigabeFehler.gruende} />}
       </div>
+
+      {/* Zusammenfassung bzw. „bleibt gesperrt“ stehen über den Kacheln, damit Max nach dem letzten Label sofort sieht, wie es weitergeht. */}
+      {!hatPruefbare && anlage.gesperrt && zusammenfassung && (
+        zusammenfassung.offenePunkte.length === 0 ? (
+          <Zusammenfassung
+            daten={zusammenfassung}
+            rueckfrage={rueckfrage}
+            speichert={speichert}
+            abbrechenRef={abbrechenRef}
+            freigebenRef={freigebenRef}
+            onFreigeben={() => ereignis({ art: 'freigeben' })}
+            onBestaetigen={() => ereignis({ art: 'freigabeBestaetigen' })}
+            onAbbrechen={() => ereignis({ art: 'freigabeAbbrechen' })}
+          />
+        ) : (
+          <section className="mt-6 rounded-xl border-2 border-amber-700 bg-amber-50 p-5 text-amber-950" data-bleibt-gesperrt="">
+            <h2 className="text-2xl font-bold">Sie haben alle Labels geprüft, die Sie jetzt prüfen können.</h2>
+            <p className="mt-2">Die Anlage bleibt gesperrt, weil:</p>
+            <ul className="mt-1 list-disc pl-6">
+              {zusammenfassung.offenePunkte.map((p, i) => (
+                <li key={`${p.labelId ?? ''}-${i}`}>{p.text}</li>
+              ))}
+            </ul>
+          </section>
+        )
+      )}
 
       {hatPruefbare && (
         <button type="button" className={`${KNOPF_HAUPT} mt-2`} onClick={() => ereignis({ art: 'starten' })}>
@@ -110,12 +137,13 @@ export function Uebersicht({
         </button>
       )}
 
+      {labels.length > 0 && <h2 className="sr-only">Labels</h2>}
       {labels.length > 0 && (
         <div className="mt-6 flex flex-wrap items-center gap-3" role="group" aria-label="Welche Labels anzeigen">
           <span className="font-semibold">Anzeigen:</span>
           <button
             type="button"
-            className={`${KNOPF_NEBEN} ${nurAuffaellige ? 'border-blue-800 bg-blue-50' : ''}`}
+            className={nurAuffaellige ? KNOPF_GEWAEHLT : KNOPF_NEBEN}
             aria-pressed={nurAuffaellige}
             onClick={() => ereignis({ art: 'filter', nurAuffaellige: true })}
           >
@@ -123,7 +151,7 @@ export function Uebersicht({
           </button>
           <button
             type="button"
-            className={`${KNOPF_NEBEN} ${!nurAuffaellige ? 'border-blue-800 bg-blue-50' : ''}`}
+            className={!nurAuffaellige ? KNOPF_GEWAEHLT : KNOPF_NEBEN}
             aria-pressed={!nurAuffaellige}
             onClick={() => ereignis({ art: 'filter', nurAuffaellige: false })}
           >
@@ -143,31 +171,6 @@ export function Uebersicht({
         nurAuffaellige && <p className="mt-4">Keine auffälligen Labels mehr offen.</p>
       )}
 
-      {!hatPruefbare && anlage.gesperrt && zusammenfassung && (
-        zusammenfassung.offenePunkte.length === 0 ? (
-          <Zusammenfassung
-            daten={zusammenfassung}
-            rueckfrage={rueckfrage}
-            speichert={speichert}
-            fehler={freigabeFehler}
-            abbrechenRef={abbrechenRef}
-            freigebenRef={freigebenRef}
-            onFreigeben={() => ereignis({ art: 'freigeben' })}
-            onBestaetigen={() => ereignis({ art: 'freigabeBestaetigen' })}
-            onAbbrechen={() => ereignis({ art: 'freigabeAbbrechen' })}
-          />
-        ) : (
-          <section className="mt-6 rounded-xl border-2 border-amber-700 bg-amber-50 p-5 text-amber-950" data-bleibt-gesperrt="">
-            <h2 className="text-2xl font-bold">Sie haben alle Labels geprüft, die Sie jetzt prüfen können.</h2>
-            <p className="mt-2">Die Anlage bleibt gesperrt, weil:</p>
-            <ul className="mt-1 list-disc pl-6">
-              {zusammenfassung.offenePunkte.map((p, i) => (
-                <li key={`${p.labelId ?? ''}-${i}`}>{p.text}</li>
-              ))}
-            </ul>
-          </section>
-        )
-      )}
     </>
   );
 }

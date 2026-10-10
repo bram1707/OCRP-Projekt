@@ -14,9 +14,10 @@ function schnittstelle(): Plugin {
     name: 'pruefsystem-schnittstelle',
     apply: 'serve',
     async configureServer(server) {
-      const { bereiteSystemVor } = await import('./src/server/system.ts');
+      const { bereiteSystemVor, HINWEIS_DATENBANK_ERSETZT } = await import('./src/server/system.ts');
       const { erstelleHandler } = await import('./src/server/app.ts');
       const system = await bereiteSystemVor(wurzel);
+      if (system.datenbankErsetzt) server.config.logger.warn(HINWEIS_DATENBANK_ERSETZT);
       const handler = erstelleHandler({ db: system.db, bilderOrdner: system.bilderOrdner, modell: system.modell });
       // Direkt eingehängt, also vor den eigenen Middlewares von Vite und ohne Pfad-Präfix.
       server.middlewares.use((req, res, next) => void handler(req, res, () => next()));
@@ -35,6 +36,8 @@ export default defineConfig({
     port: 5173,
     strictPort: true,
     cors: false,
+    // Wie die gebaute Fassung: nicht in fremde Seiten einbetten lassen, denn die Oberfläche schreibt als Max.
+    headers: { 'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'" },
     fs: {
       strict: true,
       allow: [ui, fileURLToPath(new URL('./node_modules', import.meta.url))],

@@ -39,7 +39,7 @@ function App() {
 
   const route = leseRoute(hash);
   return (
-    <Rahmen simulation={route.seite === 'simulation'}>
+    <Rahmen simulation={route.seite === 'simulation'} ansage={meldung?.text ?? null}>
       {route.seite === 'start' && <Startseite />}
       {route.seite === 'anlage' && <AnlageSeite key={route.anlageId} anlageId={route.anlageId} nav={nav} />}
       {route.seite === 'label' && <LabelSeite anlageId={route.anlageId} labelId={route.labelId} nav={nav} />}

@@ -223,6 +223,13 @@ describe('Entwicklungsserver (npm run dev)', () => {
     rmSync(ordner, { recursive: true, force: true });
   });
 
+  test('lässt sich wie die gebaute Fassung nicht in fremde Seiten einbetten', async () => {
+    const res = await fetch(`${url}/`);
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get('x-frame-options'), 'DENY');
+    assert.match(res.headers.get('content-security-policy') ?? '', /frame-ancestors 'none'/);
+  });
+
   test('liefert die Schnittstelle als derselbe Handler: Rolle, Fotos', async () => {
     assert.equal((await fetch(`${url}/api/anlagen`)).status, 200);
     assert.equal((await fetch(`${url}/bilder/STA4-01.svg`)).status, 200);

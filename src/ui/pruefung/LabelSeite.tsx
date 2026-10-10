@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Fehlergrund } from '../../db/status.ts';
-import { ladeAnlage, ladeLabel, type AnlageMitLabels, type LabelAnsicht } from '../api.ts';
+import { ladeAnlage, ladeLabel, ServerFehler, type AnlageMitLabels, type LabelAnsicht } from '../api.ts';
 import { Fehler, Laden } from '../rahmen.tsx';
 import { zumLabel, zurAnlage } from '../route.ts';
 import { bestaetige, meldeFehler, nimmZurueck } from './aktionen.ts';
@@ -18,6 +18,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
   const [zustand, setZustand] = useState<Ablauf>('laedt');
   const [warumOffen, setWarumOffen] = useState(false);
   const [fotoGross, setFotoGross] = useState(false);
+  const [fotoFehlt, setFotoFehlt] = useState(false);
   // Der Ablauf steht zusätzlich in einer Ref, damit zwei Klicks im selben Augenblick ihn nicht doppelt durchlaufen.
   const zustandRef = useRef<Ablauf>('laedt');
   const ueberschrift = useRef<HTMLHeadingElement>(null);
@@ -36,14 +37,20 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     const nummer = ++anfrage.current;
     zustandRef.current = 'laedt';
     setZustand('laedt');
+    setFotoFehlt(false);
     const [anlage, label] = await Promise.all([ladeAnlage(anlageId), ladeLabel(labelId)]);
     if (nummer !== anfrage.current) return;
     if (label.anlageId !== anlageId) throw new Error(`Label ${label.id} gehört nicht zu dieser Anlage.`);
     setDaten({ anlage, label });
     // Ohne Foto gibt es nichts abzuwarten; ist das Foto schon im Speicher, kommt kein neues „load“.
+    // Ein kaputtes Foto ist ebenfalls „complete“, hat aber keine Breite: dann bleiben die Knöpfe gesperrt.
     requestAnimationFrame(() => {
       if (nummer !== anfrage.current) return;
-      if (label.bildUrl === null || bild.current?.complete) schritt('angezeigt');
+      if (label.bildUrl === null) schritt('angezeigt');
+      else if (bild.current?.complete) {
+        if (bild.current.naturalWidth > 0) schritt('angezeigt');
+        else setFotoFehlt(true);
+      }
     });
   }, [anlageId, labelId, schritt]);
 
@@ -77,14 +84,24 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     return () => document.removeEventListener('keydown', taste);
   }, [zustand, schritt]);
 
+  /**
+   * Nach einem Fehler beim Speichern: Meldung zeigen und, wenn der Server geantwortet hat, den aktuellen Stand
+   * neu laden (etwa wenn das Label inzwischen anderswo entschieden wurde). Der Fokus geht auf die Überschrift.
+   */
+  async function zeigeFehler(e: unknown): Promise<void> {
+    schritt('fehlgeschlagen');
+    setFehler(e instanceof Error ? e.message : 'Unbekannter Fehler.');
+    if (e instanceof ServerFehler && e.status !== 0) await laden().catch((f: Error) => setLadefehler(f.message));
+    ueberschrift.current?.focus();
+  }
+
   /** Speichert eine Entscheidung und öffnet danach das nächste offene Label oder die Übersicht. */
   async function entscheide(arbeit: () => Promise<unknown>, meldungText: string, rueckgaengig?: string): Promise<void> {
     setFehler(null);
     try {
       await arbeit();
     } catch (e) {
-      schritt('fehlgeschlagen');
-      setFehler(e instanceof Error ? e.message : 'Unbekannter Fehler.');
+      await zeigeFehler(e);
       return;
     }
     schritt('gespeichert');
@@ -103,8 +120,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     try {
       await nimmZurueck(id);
     } catch (e) {
-      schritt('fehlgeschlagen');
-      setFehler(e instanceof Error ? e.message : 'Unbekannter Fehler.');
+      await zeigeFehler(e);
       return;
     }
     schritt('gespeichert');
@@ -123,6 +139,9 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     switch (e.art) {
       case 'bildGeladen':
         schritt('angezeigt');
+        return;
+      case 'bildFehlt':
+        setFotoFehlt(true);
         return;
       case 'warum':
         setWarumOffen((w) => !w);
@@ -161,7 +180,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
   if (!daten) return <Laden />;
   return (
     <Einzelansicht
-      daten={{ anlage: daten.anlage.anlage, label: daten.label, zustand, warumOffen, fotoGross, fehler, meldung: nav.meldung }}
+      daten={{ anlage: daten.anlage.anlage, label: daten.label, zustand, warumOffen, fotoGross, fotoFehlt, fehler, meldung: nav.meldung }}
       ereignis={ereignis}
       ueberschriftRef={ueberschrift}
       gruendeRef={gruende}

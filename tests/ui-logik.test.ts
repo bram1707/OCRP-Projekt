@@ -58,7 +58,8 @@ describe('AK-17, AK-12 Zählzeile und Fortschritt', () => {
     const summe = [...zeile.split(':')[1]!.matchAll(/(\d+) /g)].reduce((s, m) => s + Number(m[1]), 0);
     assert.equal(summe, swr5.anlage.sollAnzahl);
   });
-  test('Nachgebessertes zählt als offen: „14 von 15“ kommt nur vom Server', () => {
+  // Ob Nachgebessertes als offen zählt, prüft ui-ansichten mit echten Serverdaten („der Fortschritt zählt Nachgebessertes als offen“).
+  test('der Fortschrittstext entsteht nur aus den Zahlen des Servers', () => {
     const a = { ...sta4.anlage, bestaetigt: 14, sollAnzahl: 15 };
     assert.equal(fortschritt(a).text, '14 von 15 bestätigt');
   });

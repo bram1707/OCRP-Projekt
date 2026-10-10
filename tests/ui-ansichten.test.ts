@@ -16,6 +16,8 @@ const f = {} as {
   sta4NachSta407: AnlageMitLabels;
   sta4Fertig: AnlageMitLabels;
   sta4Zusammenfassung: Zusammenfassung;
+  sta4NachRuecknahme: AnlageMitLabels;
+  freigabeAbgelehnt: { fehler: string; details: { labelId: string | null; text: string }[] };
   swr5: AnlageMitLabels;
   swr5Fertig: AnlageMitLabels;
   swr5Zusammenfassung: Zusammenfassung;
@@ -52,6 +54,13 @@ before(async () => {
     }
     f.sta4Fertig = await json(s, '/api/anlagen/STA4/labels');
     f.sta4Zusammenfassung = await json(s, '/api/anlagen/STA4/zusammenfassung');
+    // Eine Freigabe, die der Server ablehnt: STA4-03 wurde inzwischen zurückgenommen (etwa in einem zweiten Fenster).
+    await json(s, '/api/labels/STA4-03/zuruecknehmen', 'POST');
+    const abgelehnt = await fetch(`${s.url}/api/anlagen/STA4/freigeben`, { method: 'POST', headers: { 'X-Rolle': 'max' } });
+    assert.equal(abgelehnt.status, 409);
+    f.freigabeAbgelehnt = await abgelehnt.json();
+    f.sta4NachRuecknahme = await json(s, '/api/anlagen/STA4/labels');
+    await json(s, '/api/labels/STA4-03/bestaetigen', 'POST');
     // Schweißroboter 5: alles bestätigen, was Max prüfen kann.
     for (const id of ['SWR5-01', 'SWR5-03']) await json(s, `/api/labels/${id}/bestaetigen`, 'POST');
     f.swr5Fertig = await json(s, '/api/anlagen/SWR5/labels');
@@ -135,15 +144,28 @@ describe('AK-02 Zusammenfassung und Freigabe', () => {
     for (const p of f.swr5Zusammenfassung.offenePunkte) assert.ok(t.includes(p.text), p.text);
     assert.doesNotMatch(html, /Anlage freigeben|Zusammenfassung: alle Labels/);
   });
-  test('Rückfrage: „Abbrechen“ steht vor „Ja, freigeben“; abgelehnte Freigabe zeigt die Gründe des Servers', () => {
+  test('Rückfrage: beschriftete Gruppe, „Abbrechen“ steht vor „Ja, freigeben“', () => {
     const html = uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung, rueckfrage: true });
-    assert.match(html, /role="alertdialog"/);
+    assert.match(html, /<div role="group" aria-labelledby="rueckfrage-titel" aria-describedby="rueckfrage-text" data-rueckfrage=""/);
+    assert.match(text(html), /Stanzanlage 4 jetzt freigeben\?/);
     assert.deepEqual(knoepfe(html).filter((k) => /Abbrechen|freigeben/.test(k)), ['Abbrechen', 'Ja, freigeben']);
-    const abgelehnt = uebersicht(f.sta4Fertig, {
-      zusammenfassung: f.sta4Zusammenfassung,
-      freigabeFehler: { text: 'Stanzanlage 4 kann noch nicht freigegeben werden.', gruende: [{ labelId: 'STA4-02', text: 'Label STA4-02 ist „Fehlerhaft“.' }] },
-    });
-    assert.match(text(abgelehnt), /kann noch nicht freigegeben werden\. Label STA4-02 ist „Fehlerhaft“\./);
+  });
+  test('abgelehnte Freigabe: Meldung und Gründe des Servers stehen auch nach dem Neuladen da', () => {
+    // Nach der Ablehnung lädt die Seite neu; die Zusammenfassung ist dann weg, weil STA4-03 wieder offen ist.
+    const { fehler, details } = f.freigabeAbgelehnt;
+    assert.ok(details.some((d) => d.labelId === 'STA4-03'));
+    const html = uebersicht(f.sta4NachRuecknahme, { freigabeFehler: { text: fehler, gruende: details } });
+    const t = text(html);
+    assert.match(t, /Stanzanlage 4 kann noch nicht freigegeben werden\./);
+    for (const d of details) assert.ok(t.includes(d.text), d.text);
+    assert.doesNotMatch(t, /Zusammenfassung: alle Labels/);
+    assert.ok(html.indexOf('kann noch nicht freigegeben') < html.indexOf('data-kachel='), 'über den Kacheln');
+  });
+  test('Zusammenfassung und „bleibt gesperrt“ stehen über den Kacheln', () => {
+    const fertig = uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung });
+    assert.ok(fertig.indexOf('Zusammenfassung: alle Labels bestätigt') < fertig.indexOf('data-kachel='));
+    const swr5 = uebersicht(f.swr5Fertig, { zusammenfassung: f.swr5Zusammenfassung });
+    assert.ok(swr5.indexOf('data-bleibt-gesperrt') > 0 && swr5.indexOf('data-bleibt-gesperrt') < swr5.indexOf('data-kachel='));
   });
   test('freigegebene Anlage: „Freigegeben“ mit Datum, keine Zusammenfassung, kein Knopf', () => {
     const t = text(uebersicht(f.foe2));
@@ -187,6 +209,14 @@ describe('AK-10, AK-11 einzeln entscheiden', () => {
       }
     }
     assert.doesNotMatch(einzel(f.sta4, 'STA4-09'), /disabled=""[^>]*>Ja, bestätigen/);
+  });
+  test('lädt das Foto nicht: Hinweis, und beide Entscheidungsknöpfe bleiben gesperrt', () => {
+    const html = einzel(f.sta4, 'STA4-09', { fotoFehlt: true });
+    assert.match(text(html), /Das Foto konnte nicht geladen werden\. Ohne Foto können Sie nicht entscheiden\./);
+    for (const wort of ['Ja, bestätigen', 'Nein, Fehler melden']) {
+      assert.match(html, new RegExp(`<button[^>]*disabled=""[^>]*>${wort}</button>`), wort);
+    }
+    assert.doesNotMatch(text(einzel(f.sta4, 'STA4-09')), /Foto konnte nicht geladen werden/);
   });
   test('während gespeichert wird, sind auch die Kachel-Knöpfe gesperrt', () => {
     const html = uebersicht(f.sta4, { speichert: true });
@@ -238,6 +268,31 @@ describe('AK-14 jeder Status mit Wort und Farbe', () => {
       const { wort, klasse } = STATUS_ANZEIGE[l.status];
       assert.match(html, new RegExp(`<span class="[^"]*${klasse}[^"]*"[^>]*>${wort}</span>`), l.id);
     }
+  });
+  test('kein Element trägt zwei Hintergrund-, Rahmen- oder Schriftfarben (sonst entscheidet Tailwind, nicht der Code)', () => {
+    const seiten = {
+      sta4: uebersicht(f.sta4, { nurAuffaellige: true }),
+      alle: uebersicht(f.sta4),
+      fertig: uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung, rueckfrage: true }),
+      sta408: einzel(f.sta4, 'STA4-08', { zustand: 'gruende', warumOffen: true }),
+      sta409: einzel(f.sta4, 'STA4-09', { warumOffen: true }),
+      swr503: einzel(f.swr5, 'SWR5-03'),
+    };
+    for (const [name, html] of Object.entries(seiten)) {
+      for (const [, klassen] of html.matchAll(/class="([^"]*)"/g)) {
+        const liste = klassen!.split(/\s+/);
+        for (const art of ['bg', 'border', 'text']) {
+          const farben = liste.filter((k) => new RegExp(`^${art}-(white|black|[a-z]+-\\d{2,3})$`).test(k));
+          assert.ok(farben.length <= 1, `${name}: ${farben.join(' ')} in „${klassen}“`);
+        }
+      }
+    }
+  });
+  test('der gewählte Filter und das schlecht lesbare Textfeld sind auch farbig markiert', () => {
+    const html = uebersicht(f.sta4, { nurAuffaellige: true });
+    assert.match(html, /class="[^"]*\bbg-blue-50\b[^"]*" aria-pressed="true"/);
+    assert.match(html, /class="[^"]*\bbg-white\b[^"]*" aria-pressed="false"/);
+    assert.match(einzel(f.sta4, 'STA4-08'), /class="[^"]*\bbg-red-50\b[^"]*"[^>]*data-schlecht-lesbar=""/);
   });
 });
 
@@ -389,6 +444,19 @@ describe('AK-21 einfache Bedienung', () => {
       assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./);
     }
     assert.match(text(rendere(M.rahmen!.Rahmen, { children: 'x' })), /Label-Prüfung · Max \(Qualitätsmanagement\)/);
+  });
+  test('Überschriften ohne Sprung: auf die Anlage folgt „Labels“, dann die Kacheln', () => {
+    const ebenen = [...uebersicht(f.sta4).matchAll(/<h(\d)\b[^>]*>([\s\S]*?)<\/h\1>/g)].map((m) => [Number(m[1]), text(m[2]!)] as const);
+    assert.deepEqual(ebenen.slice(0, 3), [[1, 'Stanzanlage 4'], [2, 'Labels'], [3, 'Label STA4-08']]);
+    for (let i = 1; i < ebenen.length; i++) assert.ok(ebenen[i]![0] <= ebenen[i - 1]![0] + 1, JSON.stringify(ebenen[i]));
+  });
+  test('Meldungen werden in einem Bereich angesagt, der beim Seitenwechsel bestehen bleibt', () => {
+    const html = rendere(M.rahmen!.Rahmen, { ansage: 'STA4-03 bestätigt.', children: 'Inhalt' });
+    assert.match(html, /<div role="status" aria-live="polite" class="sr-only">STA4-03 bestätigt\.<\/div>/);
+    // Die sichtbare Meldung auf der Seite ist kein zweiter Ansagebereich.
+    const seite = einzel(f.sta4, 'STA4-09', { meldung: { text: 'STA4-08 bestätigt.', rueckgaengig: 'STA4-08' } });
+    assert.match(text(seite), /STA4-08 bestätigt\. Rückgängig/);
+    assert.doesNotMatch(seite, /aria-live/);
   });
   test('Fortschritt in Übersicht und Einzelansicht', () => {
     const s = seiten();

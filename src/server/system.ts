@@ -11,6 +11,10 @@ import type { ServerOptionen } from './app.ts';
 
 export const WURZEL = resolve(import.meta.dirname, '..', '..');
 
+/** Startmeldung, wenn eine Datenbank aus einer älteren Version neu angelegt wurde (Server und Entwicklungsserver). */
+export const HINWEIS_DATENBANK_ERSETZT =
+  'Die Datenbank stammte aus einer älteren Version und wurde mit den Testdaten neu angelegt (nur fiktive Daten).';
+
 export interface System {
   konfiguration: KiKonfiguration;
   modell: SprachModell;

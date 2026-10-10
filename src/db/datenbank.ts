@@ -47,13 +47,18 @@ export function oeffneDatenbank(pfad = ':memory:'): DatabaseSync {
 /**
  * Öffnet die Datenbank. Eine Datei mit älterem Schema (etwa aus Stufe 1) wird geleert und
  * neu angelegt; sie enthält nur fiktive Testdaten. `ersetzt` sagt, ob das passiert ist.
+ * Eine Datei aus einer neueren Version bleibt unangetastet; dann bricht der Start ab.
  */
 export function oeffneDatenbankMitStand(pfad = ':memory:'): { db: DatabaseSync; ersetzt: boolean } {
   const db = new DatabaseSync(pfad);
   db.exec('PRAGMA foreign_keys = ON;');
   const { user_version: stand } = db.prepare('PRAGMA user_version').get() as { user_version: number };
   const { n: tabellen } = db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name IN ('anlagen', 'labels', 'entscheidungen')").get() as { n: number };
-  const ersetzt = tabellen > 0 && stand !== SCHEMA_STAND;
+  if (tabellen > 0 && stand > SCHEMA_STAND) {
+    db.close();
+    throw new Error(`Die Datenbank ${pfad} stammt aus einer neueren Version des Prüfsystems (Stand ${stand}) und bleibt unverändert. Bitte die neuere Version starten oder DB_PFAD auf eine andere Datei setzen.`);
+  }
+  const ersetzt = tabellen > 0 && stand < SCHEMA_STAND;
   db.exec('BEGIN IMMEDIATE');
   try {
     if (ersetzt) db.exec('DROP TABLE IF EXISTS entscheidungen; DROP TABLE IF EXISTS labels; DROP TABLE IF EXISTS anlagen;');

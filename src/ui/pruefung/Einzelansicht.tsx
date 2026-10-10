@@ -18,6 +18,7 @@ export type EinzelEreignis =
   | { art: 'warum' }
   | { art: 'foto' }
   | { art: 'bildGeladen' }
+  | { art: 'bildFehlt' }
   | { art: 'zuruecknehmen' }
   | { art: 'rueckgaengig'; labelId: string };
 
@@ -27,6 +28,8 @@ export interface EinzelansichtDaten {
   zustand: Ablauf;
   warumOffen: boolean;
   fotoGross: boolean;
+  /** Das Foto ließ sich nicht laden; dann bleiben die Entscheidungsknöpfe gesperrt. */
+  fotoFehlt?: boolean;
   fehler: string | null;
   meldung: MeldungDaten | null;
 }
@@ -44,7 +47,7 @@ export function Einzelansicht({
   gruendeRef?: Ref<HTMLHeadingElement>;
   bildRef?: Ref<HTMLImageElement>;
 }) {
-  const { anlage, label, zustand, warumOffen, fotoGross, fehler, meldung } = daten;
+  const { anlage, label, zustand, warumOffen, fotoGross, fotoFehlt = false, fehler, meldung } = daten;
   const f = fortschritt(anlage);
   const bild = sichereBildUrl(label.bildUrl);
   const pruefbar = istPruefbar(label.status);
@@ -87,7 +90,7 @@ export function Einzelansicht({
               alt={`Foto von Label ${label.id}`}
               className="w-full rounded-lg border-2 border-slate-400 bg-white object-contain"
               onLoad={() => ereignis({ art: 'bildGeladen' })}
-              onError={() => ereignis({ art: 'bildGeladen' })}
+              onError={() => ereignis({ art: 'bildFehlt' })}
             />
           ) : (
             <div className="flex aspect-[48/34] w-full items-center justify-center rounded-lg border-2 border-slate-400 bg-slate-100">
@@ -104,7 +107,7 @@ export function Einzelansicht({
         <div>
           <h2 className="text-xl font-bold">Vom Foto abgelesener Text (automatisch, kann Fehler enthalten)</h2>
           <div
-            className={`mt-2 rounded-lg border-2 bg-white p-3 ${textSchlecht ? 'border-red-700 bg-red-50' : 'border-slate-400'}`}
+            className={`mt-2 rounded-lg border-2 p-3 ${textSchlecht ? 'border-red-700 bg-red-50' : 'border-slate-400 bg-white'}`}
             data-schlecht-lesbar={textSchlecht ? '' : undefined}
           >
             {textSchlecht && <p className="mb-2 font-bold text-red-900">Text schlecht lesbar</p>}
@@ -161,7 +164,7 @@ export function Einzelansicht({
         <h2 id="entscheidung-titel" className="text-2xl font-bold">
           Ihre Entscheidung
         </h2>
-        {pruefbar && <Entscheidung zustand={zustand} ereignis={ereignis} gruendeRef={gruendeRef} />}
+        {pruefbar && <Entscheidung zustand={zustand} fotoFehlt={fotoFehlt} ereignis={ereignis} gruendeRef={gruendeRef} />}
         {label.status === 'bestaetigt' && (
           <div className="mt-2">
             <p>Sie haben dieses Label bestätigt.</p>
@@ -193,14 +196,16 @@ export function Einzelansicht({
 
 function Entscheidung({
   zustand,
+  fotoFehlt,
   ereignis,
   gruendeRef,
 }: {
   zustand: Ablauf;
+  fotoFehlt: boolean;
   ereignis: (e: EinzelEreignis) => void;
   gruendeRef?: Ref<HTMLHeadingElement>;
 }) {
-  const bereit = zustand === 'bereit';
+  const bereit = zustand === 'bereit' && !fotoFehlt;
   if (zustand === 'gruende') {
     return (
       <div className="mt-2" role="group" aria-labelledby="gruende-titel">
@@ -238,7 +243,13 @@ function Entscheidung({
         </button>
       </div>
       {zustand === 'speichert' && <p className="mt-2">Wird gespeichert …</p>}
-      {zustand === 'laedt' && <p className="mt-2">Foto wird geladen …</p>}
+      {fotoFehlt ? (
+        <div className="mt-3">
+          <Fehler text="Das Foto konnte nicht geladen werden. Ohne Foto können Sie nicht entscheiden. Bitte laden Sie die Seite neu." />
+        </div>
+      ) : (
+        zustand === 'laedt' && <p className="mt-2">Foto wird geladen …</p>
+      )}
       <p className="mt-3 text-slate-700">
         Die erkannten Sprachen sind nur ein Vorschlag. Ist das Label richtig und nur der Vorschlag falsch, bestätigen Sie trotzdem.
       </p>

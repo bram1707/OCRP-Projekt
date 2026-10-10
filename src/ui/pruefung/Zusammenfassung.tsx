@@ -1,15 +1,15 @@
 // Zusammenfassung vor der Freigabe (AK-02). Sie erscheint nur, wenn der Server keine offenen
 // Punkte meldet; ob freigegeben werden darf, entscheidet beim Klick trotzdem der Server.
+// Lehnt er ab, zeigt die Übersicht seine Meldung und Gründe oben (Uebersicht.tsx).
 
 import type { Ref } from 'react';
-import type { Hinderungsgrund, Zusammenfassung as ZusammenfassungDaten } from '../api.ts';
-import { Fehler, KNOPF_HAUPT, KNOPF_NEBEN } from '../rahmen.tsx';
+import type { Zusammenfassung as ZusammenfassungDaten } from '../api.ts';
+import { KNOPF_HAUPT, KNOPF_NEBEN } from '../rahmen.tsx';
 
 export function Zusammenfassung({
   daten,
   rueckfrage,
   speichert,
-  fehler,
   abbrechenRef,
   freigebenRef,
   onFreigeben,
@@ -19,7 +19,6 @@ export function Zusammenfassung({
   daten: ZusammenfassungDaten;
   rueckfrage: boolean;
   speichert: boolean;
-  fehler: { text: string; gruende: readonly Hinderungsgrund[] } | null;
   abbrechenRef?: Ref<HTMLButtonElement>;
   freigebenRef?: Ref<HTMLButtonElement>;
   onFreigeben: () => void;
@@ -46,17 +45,12 @@ export function Zusammenfassung({
         <dt className="font-semibold">Offene Punkte</dt>
         <dd>{daten.offenePunkte.length === 0 ? 'Keine offenen Punkte' : daten.offenePunkte.map((p) => p.text).join(' ')}</dd>
       </dl>
-      {fehler && (
-        <div className="mt-4">
-          <Fehler text={fehler.text} gruende={fehler.gruende} />
-        </div>
-      )}
       {!rueckfrage ? (
         <button ref={freigebenRef} type="button" className={`${KNOPF_HAUPT} mt-5`} disabled={speichert} onClick={onFreigeben}>
           Anlage freigeben
         </button>
       ) : (
-        <div role="alertdialog" aria-labelledby="rueckfrage-titel" aria-describedby="rueckfrage-text" className="mt-5 rounded-lg border-2 border-blue-800 bg-blue-50 p-4">
+        <div role="group" aria-labelledby="rueckfrage-titel" aria-describedby="rueckfrage-text" data-rueckfrage="" className="mt-5 rounded-lg border-2 border-blue-800 bg-blue-50 p-4">
           <h3 id="rueckfrage-titel" className="text-xl font-bold">
             {daten.name} jetzt freigeben?
           </h3>

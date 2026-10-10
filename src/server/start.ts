@@ -3,12 +3,10 @@
 
 import type { AddressInfo } from 'node:net';
 import { erstelleServer } from './app.ts';
-import { bereiteSystemVor, serverOptionen } from './system.ts';
+import { bereiteSystemVor, HINWEIS_DATENBANK_ERSETZT, serverOptionen } from './system.ts';
 
 const system = await bereiteSystemVor();
-if (system.datenbankErsetzt) {
-  console.log('Die Datenbank stammte aus einer älteren Version und wurde mit den Testdaten neu angelegt (nur fiktive Daten).');
-}
+if (system.datenbankErsetzt) console.log(HINWEIS_DATENBANK_ERSETZT);
 
 const server = erstelleServer(serverOptionen(system));
 server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {

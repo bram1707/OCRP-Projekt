@@ -52,9 +52,11 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
     setZusammenfassung(zf);
   }, [anlageId]);
 
-  /** Nach einer Entscheidung auf der Kachel bleibt der Fokus bei dieser Kachel. */
+  /** Nach einer Entscheidung auf der Kachel bleibt der Fokus bei dieser Kachel (ist sie ausgeblendet: auf der Überschrift). */
   const fokusAufKachel = (labelId: string) =>
-    requestAnimationFrame(() => document.querySelector<HTMLElement>(`[data-kachel="${CSS.escape(labelId)}"] a`)?.focus());
+    requestAnimationFrame(() =>
+      (document.querySelector<HTMLElement>(`[data-kachel="${CSS.escape(labelId)}"] a`) ?? ueberschrift.current)?.focus(),
+    );
 
   useEffect(() => {
     setDaten(null);
@@ -95,12 +97,13 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
     return () => document.removeEventListener('keydown', taste);
   }, [rueckfrage]);
 
-  /** Genau ein schreibender Aufruf zur Zeit; weitere Klicks werden verworfen. */
-  async function schreibe(arbeit: () => Promise<void>): Promise<void> {
+  /** Genau ein schreibender Aufruf zur Zeit; weitere Klicks werden verworfen. `danach` läuft auch nach einem Fehler. */
+  async function schreibe(arbeit: () => Promise<void>, danach?: () => void): Promise<void> {
     if (speichertRef.current) return;
     speichertRef.current = true;
     setSpeichert(true);
     setFehler(null);
+    setFreigabeFehler(null);
     try {
       await arbeit();
     } catch (e) {
@@ -109,6 +112,7 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
     } finally {
       speichertRef.current = false;
       setSpeichert(false);
+      danach?.();
     }
   }
 
@@ -123,20 +127,27 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
         return;
       }
       case 'bestaetigen':
-        void schreibe(async () => {
-          await bestaetige(e.labelId);
-          nav.setMeldung({ text: `${e.labelId} bestätigt.`, rueckgaengig: e.labelId });
-          await laden();
-          fokusAufKachel(e.labelId);
-        });
+        setRueckfrage(false);
+        void schreibe(
+          async () => {
+            await bestaetige(e.labelId);
+            nav.setMeldung({ text: `${e.labelId} bestätigt.`, rueckgaengig: e.labelId });
+            await laden();
+          },
+          () => fokusAufKachel(e.labelId),
+        );
         return;
       case 'rueckgaengig':
-        void schreibe(async () => {
-          await nimmZurueck(e.labelId);
-          nav.setMeldung({ text: `Bestätigung von ${e.labelId} zurückgenommen.` });
-          await laden();
-          fokusAufKachel(e.labelId);
-        });
+        // Eine offene Rückfrage zur Freigabe gilt danach nicht mehr.
+        setRueckfrage(false);
+        void schreibe(
+          async () => {
+            await nimmZurueck(e.labelId);
+            nav.setMeldung({ text: `Bestätigung von ${e.labelId} zurückgenommen.` });
+            await laden();
+          },
+          () => fokusAufKachel(e.labelId),
+        );
         return;
       case 'freigeben':
         setFreigabeFehler(null);

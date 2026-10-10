@@ -109,6 +109,20 @@ describe('F4 Foto nachreichen (SWR5-05)', () => {
     }
   });
 
+  test('ist der nachgereichte Text schlecht lesbar, wird das Label „Unsicher“, nie „Offen“ (AK-16)', async () => {
+    const db = await neueDatenbank();
+    db.prepare("UPDATE labels SET nacherfassung_ocr_konfidenz = 0.5 WHERE id = 'SWR5-05'").run();
+    const s = await starteServer(db);
+    try {
+      assert.equal((await anfrage(s, '/api/labels/SWR5-05/nacherfassen', max)).status, 200);
+      const { daten } = await anfrage(s, '/api/labels/SWR5-05');
+      assert.equal(daten.status, 'unsicher');
+      assert.ok(daten.gruende.some((g: { code: string }) => g.code === 'unsicher_ocr'), JSON.stringify(daten.gruende));
+    } finally {
+      await s.schliessen();
+    }
+  });
+
   test('vorher erscheint nichts aus der Nacherfassung in einer Antwort', async () => {
     await mitServer(async (s) => {
       for (const pfad of ['/api/anlagen', '/api/anlagen/SWR5/labels', '/api/labels/SWR5-05', '/api/anlagen/SWR5/zusammenfassung']) {
@@ -274,6 +288,20 @@ describe('Datenbank-Stand', () => {
     const zweit = oeffneDatenbankMitStand(pfad);
     assert.equal(zweit.ersetzt, false);
     zweit.db.close();
+  });
+
+  test('eine Datenbank aus einer neueren Version bleibt unverändert; das Öffnen bricht mit Hinweis ab', () => {
+    const pfad = join(ordner, 'neuer.sqlite');
+    const { db } = oeffneDatenbankMitStand(pfad);
+    db.exec(`INSERT INTO anlagen VALUES ('NEU1', 'Anlage aus einer neueren Version', 1, NULL, NULL);
+      PRAGMA user_version = ${SCHEMA_STAND + 1};`);
+    db.close();
+
+    assert.throws(() => oeffneDatenbankMitStand(pfad), /neueren Version des Prüfsystems .* bleibt unverändert/);
+    const danach = new DatabaseSync(pfad);
+    assert.equal((danach.prepare('PRAGMA user_version').get() as any).user_version, SCHEMA_STAND + 1);
+    assert.equal((danach.prepare("SELECT COUNT(*) AS n FROM anlagen WHERE id = 'NEU1'").get() as any).n, 1);
+    danach.close();
   });
 });
 

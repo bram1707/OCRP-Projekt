@@ -7,8 +7,13 @@ import { mockModell, type SprachModell } from './mock.ts';
 export const SCHWELLE_SPRACHE = 0.9;
 export const SCHWELLE_OCR = 0.8;
 
+/** Die eine Regel für „Sprache nicht sicher erkannt“: unter 90 % oder keine Sprache erkannt (AK-16). */
+export function istSpracheUnsicher(sprachKonfidenz: number, sprachen: readonly string[]): boolean {
+  return sprachKonfidenz < SCHWELLE_SPRACHE || sprachen.includes('unbekannt');
+}
+
 export function istUnsicher(ocrKonfidenz: number, sprachKonfidenz: number, sprachen: readonly string[]): boolean {
-  return ocrKonfidenz < SCHWELLE_OCR || sprachKonfidenz < SCHWELLE_SPRACHE || sprachen.includes('unbekannt');
+  return ocrKonfidenz < SCHWELLE_OCR || istSpracheUnsicher(sprachKonfidenz, sprachen);
 }
 
 export async function detectLanguage(

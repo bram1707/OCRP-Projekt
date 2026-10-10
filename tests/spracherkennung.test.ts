@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { pruefeAntwort } from '../src/ai/antwortSchema.ts';
 import { findeBelege } from '../src/ai/belege.ts';
-import { detectLanguage, istUnsicher } from '../src/ai/detectLanguage.ts';
+import { bewerteAnlage } from '../src/ai/auffaelligkeit.ts';
+import { detectLanguage, istSpracheUnsicher, istUnsicher } from '../src/ai/detectLanguage.ts';
 import { mockAntwort, sicherheitAusBelegen, type SprachModell } from '../src/ai/mock.ts';
 import { SPRACHEN } from '../src/ai/sprachen.ts';
 import { oeffneDatenbank } from '../src/db/datenbank.ts';
@@ -188,5 +189,22 @@ describe('AK-33 keine Soll-Sprache', () => {
       const spalten = db.prepare(`PRAGMA table_info(${tabelle})`).all() as { name: string }[];
       assert.ok(!spalten.some((s) => /soll_sprache|zielsprache|gefordert/.test(s.name)), tabelle);
     }
+  });
+});
+
+describe('R7, P4: eine Regel für „Sprache nicht sicher erkannt“', () => {
+  test('unter 90 % oder „unbekannt“ ist unsicher, auch wenn „unbekannt“ eine hohe Sicherheit trägt', () => {
+    assert.equal(istSpracheUnsicher(0.89, ['de']), true);
+    assert.equal(istSpracheUnsicher(0.9, ['de']), false);
+    assert.equal(istSpracheUnsicher(0.95, ['unbekannt']), true);
+  });
+  test('Status und Auffälligkeit nutzen dieselbe Regel', () => {
+    const label = {
+      id: 'U-1', hatFoto: true, ocrText: 'ACHTUNG! Nicht berühren. UWAGA! Nie dotykać.', ocrKonfidenz: 0.95,
+      sprachen: ['unbekannt'], konfidenzJeSprache: {}, sprachKonfidenz: 0.95, nachgebessert: false,
+    };
+    assert.equal(istUnsicher(label.ocrKonfidenz, label.sprachKonfidenz, label.sprachen), true);
+    const codes = bewerteAnlage([label]).get('U-1')!.gruende.map((g) => g.code);
+    assert.ok(codes.includes('unsicher_sprache'), codes.join());
   });
 });

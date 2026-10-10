@@ -2,6 +2,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 import type { Prioritaet } from '../ai/antwortSchema.ts';
+import type { Ergebnis } from './protokoll.ts';
 import type { Fehlergrund, Status } from './status.ts';
 
 export interface Anlage {
@@ -36,7 +37,7 @@ export interface Entscheidung {
   labelId: string | null;
   wer: string;
   wann: string;
-  ergebnis: 'bestaetigt' | 'fehler' | 'nachgebessert' | 'freigegeben';
+  ergebnis: Ergebnis;
   grund: string | null;
 }
 

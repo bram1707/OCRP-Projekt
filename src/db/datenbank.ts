@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { detectLanguage } from '../ai/detectLanguage.ts';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
+import { protokolliere } from './protokoll.ts';
 import { SCHEMA } from './schema.ts';
 import { anfangsstatus, istFehlergrund, type Fehlergrund, type Status } from './status.ts';
 
@@ -100,9 +101,6 @@ export async function spieleTestdatenEin(
     INSERT INTO labels (id, anlage_id, bild_pfad, ocr_text, ocr_konfidenz, sprachen, konfidenz_je_sprache,
       sprach_konfidenz, prioritaet, begruendung, status, letzter_fehlergrund, korrektur_ocr_text, korrektur_ocr_konfidenz)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-  const neueEntscheidung = db.prepare(
-    'INSERT INTO entscheidungen (anlage_id, label_id, wer, wann, ergebnis, grund) VALUES (?, ?, ?, ?, ?, ?)',
-  );
 
   db.exec('BEGIN IMMEDIATE');
   try {
@@ -121,17 +119,20 @@ export async function spieleTestdatenEin(
         l.nachKorrektur?.ocrText ?? null, l.nachKorrektur?.ocrKonfidenz ?? null,
       );
       // Ausgangszustände bekommen dieselben Protokolleinträge wie echte Entscheidungen (AK-22).
+      const eintrag = { anlageId: l.anlageId, labelId: l.id, wer: 'max', grund: null };
       if (zustand?.status === 'bestaetigt') {
-        neueEntscheidung.run(l.anlageId, l.id, 'max', zustand.am, 'bestaetigt', null);
+        protokolliere(db, { ...eintrag, wann: zustand.am, ergebnis: 'bestaetigt' });
       } else if (zustand) {
-        neueEntscheidung.run(l.anlageId, l.id, 'max', zustand.am, 'fehler', zustand.fehlergrund ?? null);
+        protokolliere(db, { ...eintrag, wann: zustand.am, ergebnis: 'fehler', grund: zustand.fehlergrund ?? null });
         if (zustand.status === 'nachgebessert') {
-          neueEntscheidung.run(l.anlageId, l.id, 'simulation', plusMinuten(zustand.am, 30), 'nachgebessert', null);
+          protokolliere(db, { ...eintrag, wer: 'simulation', wann: plusMinuten(zustand.am, 30), ergebnis: 'nachgebessert' });
         }
       }
     });
     for (const a of daten.anlagen) {
-      if (a.freigabe) neueEntscheidung.run(a.id, null, a.freigabe.von, a.freigabe.am, 'freigegeben', null);
+      if (a.freigabe) {
+        protokolliere(db, { anlageId: a.id, labelId: null, wer: a.freigabe.von, wann: a.freigabe.am, ergebnis: 'freigegeben', grund: null });
+      }
     }
     db.exec('COMMIT');
   } catch (fehler) {

@@ -6,6 +6,7 @@ import type { DatabaseSync } from 'node:sqlite';
 import { detectLanguage } from '../ai/detectLanguage.ts';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
 import { holeAnlage, holeLabel, holeLabels, type Anlage, type Label } from './abfragen.ts';
+import { protokolliere } from './protokoll.ts';
 import { istFehlergrund, PRUEFBAR, pruefeFreigabe, STATUS_TEXT } from './status.ts';
 
 /** Fachlicher Fehler mit passendem HTTP-Status und einer Meldung in einfacher Sprache. */
@@ -32,20 +33,6 @@ function inTransaktion<T>(db: DatabaseSync, arbeit: () => T): T {
   }
 }
 
-function protokolliere(
-  db: DatabaseSync,
-  anlageId: string,
-  labelId: string | null,
-  wer: string,
-  jetzt: Date,
-  ergebnis: 'bestaetigt' | 'fehler' | 'nachgebessert' | 'freigegeben',
-  grund: string | null,
-): void {
-  db.prepare('INSERT INTO entscheidungen (anlage_id, label_id, wer, wann, ergebnis, grund) VALUES (?, ?, ?, ?, ?, ?)').run(
-    anlageId, labelId, wer, jetzt.toISOString(), ergebnis, grund,
-  );
-}
-
 function ladePruefbaresLabel(db: DatabaseSync, labelId: string): Label {
   const label = holeLabel(db, labelId);
   if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
@@ -59,7 +46,7 @@ export function bestaetigeLabel(db: DatabaseSync, labelId: string, wer: string, 
   return inTransaktion(db, () => {
     const label = ladePruefbaresLabel(db, labelId);
     db.prepare("UPDATE labels SET status = 'bestaetigt' WHERE id = ?").run(label.id);
-    protokolliere(db, label.anlageId, label.id, wer, jetzt, 'bestaetigt', null);
+    protokolliere(db, { anlageId: label.anlageId, labelId: label.id, wer, wann: jetzt.toISOString(), ergebnis: 'bestaetigt', grund: null });
     return holeLabel(db, label.id)!;
   });
 }
@@ -73,7 +60,7 @@ export function meldeFehler(db: DatabaseSync, labelId: string, grund: unknown, w
     db.prepare("UPDATE labels SET status = 'fehlerhaft', letzter_fehlergrund = ? WHERE id = ?").run(grund, label.id);
     // Sicherheitsnetz: Ein gemeldetes Label hebt eine gespeicherte Freigabe immer auf.
     db.prepare('UPDATE anlagen SET freigegeben_am = NULL, freigegeben_von = NULL WHERE id = ?').run(label.anlageId);
-    protokolliere(db, label.anlageId, label.id, wer, jetzt, 'fehler', grund);
+    protokolliere(db, { anlageId: label.anlageId, labelId: label.id, wer, wann: jetzt.toISOString(), ergebnis: 'fehler', grund });
     return holeLabel(db, label.id)!;
   });
 }
@@ -112,7 +99,9 @@ export async function bessereNach(
       );
     }
     db.prepare("UPDATE labels SET status = 'nachgebessert' WHERE id = ?").run(label.id);
-    protokolliere(db, label.anlageId, label.id, 'simulation', jetzt, 'nachgebessert', null);
+    protokolliere(db, {
+      anlageId: label.anlageId, labelId: label.id, wer: 'simulation', wann: jetzt.toISOString(), ergebnis: 'nachgebessert', grund: null,
+    });
     return holeLabel(db, label.id)!;
   });
 }
@@ -128,7 +117,7 @@ export function gebeAnlageFrei(db: DatabaseSync, anlageId: string, wer: string, 
       throw new Fachfehler(409, `${anlage.name} kann noch nicht freigegeben werden.`, pruefung.hinderungsgruende);
     }
     db.prepare('UPDATE anlagen SET freigegeben_am = ?, freigegeben_von = ? WHERE id = ?').run(jetzt.toISOString(), wer, anlage.id);
-    protokolliere(db, anlage.id, null, wer, jetzt, 'freigegeben', null);
+    protokolliere(db, { anlageId: anlage.id, labelId: null, wer, wann: jetzt.toISOString(), ergebnis: 'freigegeben', grund: null });
     return holeAnlage(db, anlage.id)!;
   });
 }

@@ -3,7 +3,7 @@
 
 import { bewerteAnlage, type Auffaelligkeit, type Grund } from '../ai/auffaelligkeit.ts';
 import { findeBelege, type Beleg } from '../ai/belege.ts';
-import { SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detectLanguage.ts';
+import { istSpracheUnsicher, SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detectLanguage.ts';
 import { sprachName } from '../ai/sprachen.ts';
 import type { Anlage, Label } from '../db/abfragen.ts';
 import {
@@ -56,7 +56,7 @@ export function bewerteLabels(labels: readonly Label[]): Map<string, Auffaelligk
 function hinweis(l: Label): string | null {
   if (l.bildPfad === null) return 'Label nicht erfasst.';
   const teile: string[] = [];
-  if (l.sprachKonfidenz < SCHWELLE_SPRACHE || l.sprachen.includes('unbekannt')) teile.push('Sprache nicht sicher erkannt.');
+  if (istSpracheUnsicher(l.sprachKonfidenz, l.sprachen)) teile.push('Sprache nicht sicher erkannt.');
   if (l.ocrKonfidenz < SCHWELLE_OCR) teile.push('Text schlecht lesbar.');
   return teile.length > 0 ? teile.join(' ') : null;
 }

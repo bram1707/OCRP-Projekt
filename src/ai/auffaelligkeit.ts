@@ -2,7 +2,7 @@
 // Zweisprachigkeit allein ist nie auffällig. Eine Abweichung von der Mehrheit
 // der Anlage ist ein Hinweis für Max, kein Fehler.
 
-import { istUnsicher, SCHWELLE_OCR, SCHWELLE_SPRACHE } from './detectLanguage.ts';
+import { istSpracheUnsicher, istUnsicher, SCHWELLE_OCR, SCHWELLE_SPRACHE } from './detectLanguage.ts';
 import { sprachName } from './sprachen.ts';
 
 export type GrundCode =
@@ -93,7 +93,7 @@ export function bewerteAnlage(labels: readonly BewertbaresLabel[]): Map<string, 
       if (l.ocrKonfidenz < SCHWELLE_OCR) {
         gruende.push({ code: 'unsicher_ocr', text: `Text schlecht lesbar (Texterkennung ${prozent(l.ocrKonfidenz)}).` });
       }
-      if (l.sprachKonfidenz < SCHWELLE_SPRACHE || l.sprachen.includes('unbekannt')) {
+      if (istSpracheUnsicher(l.sprachKonfidenz, l.sprachen)) {
         const schwach = Object.entries(l.konfidenzJeSprache)
           .filter(([, k]) => k < SCHWELLE_SPRACHE)
           .map(([code, k]) => `${sprachName(code)} ${prozent(k)}`);

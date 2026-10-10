@@ -100,7 +100,11 @@ export function labelsFuerMax(labels: readonly Label[]): LabelAnsicht[] {
   return ansichtenSortiert(labels, IN_MAX_LISTE);
 }
 
-/** Labels, die Max gerade nicht prüfen kann: in Nachbesserung (Fehlerhaft) oder nicht erfasst (Fehlt). */
+/**
+ * Labels, die Max gerade nicht prüfen kann: in Nachbesserung (Fehlerhaft) oder ohne Foto (Fehlt).
+ * Labels, die laut Anlagenliste fehlen und gar keinen Datensatz haben, stehen nur in
+ * `zaehlung.fehlt` und in den offenen Punkten der Zusammenfassung.
+ */
 export function labelsAusserhalbDerPruefung(labels: readonly Label[]): LabelAnsicht[] {
   return ansichtenSortiert(labels, ['fehlerhaft', 'fehlt']);
 }

@@ -172,10 +172,34 @@ describe('Korrekturrunde 1', () => {
     assert.equal((await anfrage(server, '/api/labels/SWR5-02')).daten.status, 'fehlerhaft');
   });
 
-  const mitHost = (host: string) =>
+  test('R4: lesende Aufrufe und andere Methoden ändern nichts', async () => {
+    const db = await neueDatenbank();
+    const eigener = await starteServer(db);
+    const abzug = () => JSON.stringify(['anlagen', 'labels', 'entscheidungen'].map((t) => db.prepare(`SELECT * FROM ${t}`).all()));
+    try {
+      const vorher = abzug();
+      const ids = (await anfrage(eigener, '/api/anlagen')).daten.map((a: any) => a.id);
+      for (const id of ids) {
+        await anfrage(eigener, `/api/anlagen/${id}/labels`, { rolle: 'max' });
+        await anfrage(eigener, `/api/anlagen/${id}/zusammenfassung`, { rolle: 'max' });
+      }
+      await anfrage(eigener, '/api/labels/SWR5-01', { rolle: 'max' });
+      for (const methode of ['PUT', 'PATCH', 'DELETE']) {
+        const res = await fetch(`${eigener.url}/api/labels/SWR5-01/bestaetigen`, { method: methode, headers: { 'X-Rolle': 'max' } });
+        assert.notEqual(res.status, 200, methode);
+      }
+      assert.equal(abzug(), vorher);
+    } finally {
+      await eigener.schliessen();
+    }
+  });
+
+  const mitHost = (host: string, pfad = '/api/anlagen', methode = 'GET', rolle?: string) =>
     new Promise<number>((fertig, fehler) => {
       const url = new URL(server.url);
-      const req = request({ host: url.hostname, port: url.port, path: '/api/anlagen', headers: { Host: host } }, (res) => {
+      const headers: Record<string, string> = { Host: host };
+      if (rolle) headers['X-Rolle'] = rolle;
+      const req = request({ host: url.hostname, port: url.port, path: pfad, method: methode, headers }, (res) => {
         res.resume();
         fertig(res.statusCode ?? 0);
       });
@@ -189,6 +213,12 @@ describe('Korrekturrunde 1', () => {
     assert.equal(await mitHost('127.0.0.1.evil.example'), 421);
     assert.equal(await mitHost('localhost:5173'), 200);
     assert.equal(await mitHost('127.0.0.1'), 200);
+  });
+
+  test('R5: die Host-Prüfung gilt auch für Bilder und schreibende Aufrufe', async () => {
+    assert.equal(await mitHost('evil.example', '/bilder/STA4-01.svg'), 421);
+    assert.equal(await mitHost('evil.example', '/api/labels/SWR5-01/bestaetigen', 'POST', 'max'), 421);
+    assert.equal((await anfrage(server, '/api/labels/SWR5-01')).daten.status, 'offen');
   });
 });
 

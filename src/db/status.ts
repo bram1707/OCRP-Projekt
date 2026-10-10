@@ -28,6 +28,9 @@ export const FEHLERGRUND_TEXT: Record<Fehlergrund, string> = {
 /** Aus diesen Status kann Max ein Label bestätigen oder einen Fehler melden. */
 export const PRUEFBAR: readonly Status[] = ['offen', 'unsicher', 'nachgebessert'];
 
+/** Max' Liste: was er prüfen kann, dann Erledigtes. Fehlerhaft und Fehlt stehen nicht darin (AK-13). */
+export const IN_MAX_LISTE: readonly Status[] = [...PRUEFBAR, 'bestaetigt'];
+
 export function istStatus(wert: unknown): wert is Status {
   return typeof wert === 'string' && (STATUS as readonly string[]).includes(wert);
 }

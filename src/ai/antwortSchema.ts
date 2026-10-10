@@ -95,8 +95,9 @@ export function pruefeAntwort(roh: unknown): PruefErgebnis {
   }
 
   const jeSprache = { ...(konfidenzJeSprache as Record<string, number>) };
-  // Vorsichtig bleiben: Die Gesamtsicherheit ist nie höher als die schwächste Sprache.
-  const gesamt = Math.min(konfidenz, ...Object.values(jeSprache));
+  // Vorsichtig bleiben: Die Gesamtsicherheit ist nie höher als die schwächste Sprache,
+  // und eine unbekannte Sprache hat nie eine Sicherheit.
+  const gesamt = unbekannt ? 0 : Math.min(konfidenz, ...Object.values(jeSprache));
 
   return {
     gueltig: true,

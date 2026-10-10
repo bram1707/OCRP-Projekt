@@ -1,6 +1,7 @@
 // Server-Endpunkte: Rollen, Einzelaktionen, Freigabe, keine Erwartungswerte in den Antworten.
 
 import assert from 'node:assert/strict';
+import { request } from 'node:http';
 import { after, before, describe, test } from 'node:test';
 import { anfrage, erwartungen, neueDatenbank, starteServer, type TestServer } from './hilfen.ts';
 
@@ -134,6 +135,60 @@ describe('schreibende Endpunkte', () => {
     assert.equal(frei.status, 200);
     assert.equal(frei.daten.gesperrt, false);
     assert.equal(frei.daten.freigegebenVon, 'max');
+  });
+});
+
+describe('Korrekturrunde 1', () => {
+  test('R1: Fehlerhaft und Fehlt stehen getrennt, nicht in Max\' Liste', async () => {
+    const { daten } = await anfrage(server, '/api/anlagen/SWR5/labels');
+    assert.deepEqual(daten.labels.map((l: any) => l.id), ['SWR5-03', 'SWR5-01', 'SWR5-04']);
+    assert.deepEqual(daten.ausserhalbDerPruefung.map((l: any) => `${l.id}:${l.status}`), ['SWR5-02:fehlerhaft', 'SWR5-05:fehlt']);
+  });
+
+  test('R2: Zählzeile zählt nur, was Max prüfen kann', async () => {
+    const { anlage } = (await anfrage(server, '/api/anlagen/SWR5/labels')).daten;
+    assert.deepEqual(
+      { auffaellig: anlage.auffaellig, unauffaellig: anlage.unauffaellig, bestaetigt: anlage.bestaetigt },
+      { auffaellig: 1, unauffaellig: 1, bestaetigt: 1 },
+    );
+    assert.equal(anlage.zaehlung.fehlerhaft, 1, 'in Nachbesserung');
+    assert.equal(anlage.zaehlung.fehlt, 1, 'nicht erfasst');
+  });
+
+  test('R4: jeder schreibende Aufruf verlangt die Rolle max', async () => {
+    const schreibend = [
+      ['/api/labels/SWR5-01/bestaetigen', undefined],
+      ['/api/labels/SWR5-01/fehler', JSON.stringify({ grund: 'beschaedigt' })],
+      ['/api/labels/SWR5-02/nachbessern', undefined],
+      ['/api/anlagen/SWR5/freigeben', undefined],
+    ] as const;
+    for (const [pfad, koerper] of schreibend) {
+      for (const rolle of [undefined, 'marie', 'admin', 'MAX', 'max,marie']) {
+        const { status } = await anfrage(server, pfad, { methode: 'POST', rolle, koerper });
+        assert.equal(status, 403, `${pfad} als ${String(rolle)}`);
+      }
+    }
+    assert.equal((await anfrage(server, '/api/labels/SWR5-01')).daten.status, 'offen');
+    assert.equal((await anfrage(server, '/api/labels/SWR5-02')).daten.status, 'fehlerhaft');
+  });
+
+  const mitHost = (host: string) =>
+    new Promise<number>((fertig, fehler) => {
+      const url = new URL(server.url);
+      const req = request({ host: url.hostname, port: url.port, path: '/api/anlagen', headers: { Host: host } }, (res) => {
+        res.resume();
+        fertig(res.statusCode ?? 0);
+      });
+      req.on('error', fehler);
+      req.end();
+    });
+
+  test('R5: fremder Host-Kopf wird abgewiesen (DNS-Rebinding)', async () => {
+    assert.equal(await mitHost('evil.example'), 421);
+    assert.equal(await mitHost('evil.example:3000'), 421);
+    assert.equal(await mitHost('127.0.0.1.evil.example'), 421);
+    assert.equal(await mitHost('localhost:5173'), 200);
+    assert.equal(await mitHost('127.0.0.1'), 200);
   });
 });
 

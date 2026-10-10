@@ -175,6 +175,13 @@ describe('AK-10, AK-11, AK-12, AK-22 Prüfen, Melden, Nachbessern', () => {
 });
 
 describe('AK-13, AK-32 Reihenfolge in Max\' Liste', () => {
+  test('R1: fehlerhafte und fehlende Labels stehen nicht in Max\' Liste', async () => {
+    const db = await neueDatenbank();
+    const ids = labelsFuerMax(holeLabels(db, 'SWR5')).map((l) => l.id);
+    assert.deepEqual(ids, ['SWR5-03', 'SWR5-01', 'SWR5-04']);
+    meldeFehler(db, 'STA4-02', 'beschaedigt', 'max');
+    assert.ok(!labelsFuerMax(holeLabels(db, 'STA4')).some((l) => l.id === 'STA4-02'));
+  });
   test('Nachgebessert vor Unsicher vor Offen, Erledigtes am Ende', async () => {
     const db = await neueDatenbank();
     const rang: Record<Status, number> = { nachgebessert: 0, unsicher: 1, offen: 2, bestaetigt: 3, fehlerhaft: 4, fehlt: 5 };

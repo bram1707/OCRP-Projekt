@@ -96,6 +96,15 @@ describe('AK-30 Antwortschema', () => {
 });
 
 describe('AK-31 ungültige Antwort wird nie geraten', () => {
+  test('R6: „unbekannt“ wird immer mit Sicherheit 0 gespeichert', async () => {
+    const roh = { sprachen: ['unbekannt'], konfidenz: 0.95, konfidenzJeSprache: {}, prioritaet: 'normal', begruendung: 'Nicht erkannt.' };
+    const geprueft = pruefeAntwort(roh);
+    assert.ok(geprueft.gueltig);
+    assert.equal(geprueft.antwort.konfidenz, 0);
+    const ergebnis = await detectLanguage('ACHTUNG! Nicht berühren.', 0.95, antwortet(roh));
+    assert.equal(ergebnis.konfidenz, 0);
+    assert.equal(ergebnis.prioritaet, 'genau_pruefen');
+  });
   for (const [name, modell] of [
     ['kaputtes JSON', antwortet('kein json')],
     ['falsches Schema', antwortet({ sprache: 'de', konfidenz: 0.99 })],

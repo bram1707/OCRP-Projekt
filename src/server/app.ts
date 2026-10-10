@@ -9,7 +9,9 @@ import { mockModell, type SprachModell } from '../ai/mock.ts';
 import { holeAnlage, holeAnlagen, holeLabel, holeLabels } from '../db/abfragen.ts';
 import { bessereNach, bestaetigeLabel, Fachfehler, gebeAnlageFrei, meldeFehler } from '../db/aktionen.ts';
 import { BILD_DATEI } from '../db/datenbank.ts';
-import { anlageAnsicht, bewerteLabels, labelAnsicht, labelsFuerMax, zusammenfassung } from './ansichten.ts';
+import {
+  anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
+} from './ansichten.ts';
 
 export interface ServerOptionen {
   db: DatabaseSync;
@@ -22,15 +24,27 @@ export type Rolle = 'max' | 'marie';
 
 const MAX_KOERPER = 10 * 1024;
 
+/** Der Server läuft nur lokal. Andere Host-Namen deuten auf DNS-Rebinding hin und werden abgewiesen. */
+const ERLAUBTE_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+function istErlaubterHost(kopf: string | undefined): boolean {
+  if (!kopf) return false;
+  try {
+    return ERLAUBTE_HOSTS.has(new URL(`http://${kopf}`).hostname);
+  } catch {
+    return false;
+  }
+}
+
 interface Anfrage {
   rolle: Rolle | null;
   koerper: () => Promise<Record<string, unknown>>;
 }
 
 interface Route {
+  /** Jede Route, die nicht GET ist, schreibt und verlangt die Rolle „max“. */
   methode: 'GET' | 'POST';
   muster: RegExp;
-  schreibend: boolean;
   aktion: (anfrage: Anfrage, teile: string[]) => Promise<unknown> | unknown;
 }
 
@@ -100,44 +114,48 @@ function routen(optionen: ServerOptionen): Route[] {
 
   return [
     {
-      methode: 'GET', muster: /^\/api\/anlagen$/, schreibend: false,
+      methode: 'GET', muster: /^\/api\/anlagen$/,
       aktion: () => holeAnlagen(db).map((a) => anlageAnsicht(a, holeLabels(db, a.id))),
     },
     {
-      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/labels$/, schreibend: false,
+      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/labels$/,
       aktion: (_a, [id]) => {
         const anlage = anlageOder404(id!);
         const labels = holeLabels(db, anlage.id);
-        return { anlage: anlageAnsicht(anlage, labels), labels: labelsFuerMax(labels) };
+        return {
+          anlage: anlageAnsicht(anlage, labels),
+          labels: labelsFuerMax(labels),
+          ausserhalbDerPruefung: labelsAusserhalbDerPruefung(labels),
+        };
       },
     },
     {
-      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/zusammenfassung$/, schreibend: false,
+      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/zusammenfassung$/,
       aktion: (_a, [id]) => {
         const anlage = anlageOder404(id!);
         return zusammenfassung(anlage, holeLabels(db, anlage.id));
       },
     },
     {
-      methode: 'POST', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/freigeben$/, schreibend: true,
+      methode: 'POST', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/freigeben$/,
       aktion: (_a, [id]) => {
         const anlage = gebeAnlageFrei(db, id!, 'max');
         return anlageAnsicht(anlage, holeLabels(db, anlage.id));
       },
     },
     {
-      methode: 'GET', muster: /^\/api\/labels\/([A-Z0-9-]+)$/, schreibend: false,
+      methode: 'GET', muster: /^\/api\/labels\/([A-Z0-9-]+)$/,
       aktion: (_a, [id]) => labelAntwort(id!),
     },
     {
-      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/bestaetigen$/, schreibend: true,
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/bestaetigen$/,
       aktion: (_a, [id]) => {
         bestaetigeLabel(db, id!, 'max');
         return labelAntwort(id!);
       },
     },
     {
-      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/fehler$/, schreibend: true,
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/fehler$/,
       aktion: async (anfrage, [id]) => {
         const { grund } = await anfrage.koerper();
         meldeFehler(db, id!, grund, 'max');
@@ -145,7 +163,7 @@ function routen(optionen: ServerOptionen): Route[] {
       },
     },
     {
-      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/nachbessern$/, schreibend: true,
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/nachbessern$/,
       aktion: async (_a, [id]) => {
         await bessereNach(db, id!, new Date(), modell);
         return labelAntwort(id!);
@@ -176,6 +194,7 @@ export function erstelleServer(optionen: ServerOptionen): Server {
 
   return createServer(async (req, res) => {
     try {
+      if (!istErlaubterHost(req.headers.host)) throw new Fachfehler(421, 'Unbekannte Serveradresse.');
       const pfad = new URL(req.url ?? '/', 'http://localhost').pathname;
 
       if (req.method === 'GET' && pfad.startsWith('/bilder/')) {
@@ -193,7 +212,7 @@ export function erstelleServer(optionen: ServerOptionen): Server {
       if (!route || !teile) throw new Fachfehler(404, 'Diese Adresse gibt es nicht.');
 
       const rolle = leseRolle(req);
-      if (route.schreibend && rolle !== 'max') {
+      if (route.methode !== 'GET' && rolle !== 'max') {
         throw new Fachfehler(403, 'Nur Max (Qualitätsmanagement) darf Labels prüfen und Anlagen freigeben.');
       }
 

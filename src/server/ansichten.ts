@@ -7,7 +7,7 @@ import { SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detectLanguage.ts';
 import { sprachName } from '../ai/sprachen.ts';
 import type { Anlage, Label } from '../db/abfragen.ts';
 import {
-  FEHLERGRUND_TEXT, istGesperrt, pruefeFreigabe, sortiereFuerMax, STATUS, STATUS_TEXT,
+  FEHLERGRUND_TEXT, IN_MAX_LISTE, istGesperrt, PRUEFBAR, pruefeFreigabe, sortiereFuerMax, STATUS, STATUS_TEXT,
   type Hinderungsgrund, type Status,
 } from '../db/status.ts';
 
@@ -39,7 +39,7 @@ export interface AnlageAnsicht {
   sollAnzahl: number;
   erfasst: number;
   zaehlung: Record<Status, number>;
-  /** nicht bestätigte Labels mit Foto, aufgeteilt nach auffällig/unauffällig (AK-17) */
+  /** Labels, die Max jetzt prüfen kann (Offen, Unsicher, Nachgebessert), aufgeteilt nach auffällig/unauffällig (AK-17) */
   auffaellig: number;
   unauffaellig: number;
   bestaetigt: number;
@@ -90,10 +90,19 @@ export function labelAnsicht(l: Label, a: Auffaelligkeit | undefined): LabelAnsi
   };
 }
 
-/** Labels einer Anlage in Max' Reihenfolge (AK-13, AK-19, AK-32). */
-export function labelsFuerMax(labels: readonly Label[]): LabelAnsicht[] {
+function ansichtenSortiert(labels: readonly Label[], status: readonly Status[]): LabelAnsicht[] {
   const bewertung = bewerteLabels(labels);
-  return sortiereFuerMax(labels.map((l) => labelAnsicht(l, bewertung.get(l.id))));
+  return sortiereFuerMax(labels.filter((l) => status.includes(l.status)).map((l) => labelAnsicht(l, bewertung.get(l.id))));
+}
+
+/** Max' Liste in Relevanz-Reihenfolge (AK-13, AK-19, AK-32), ohne fehlerhafte und fehlende Labels. */
+export function labelsFuerMax(labels: readonly Label[]): LabelAnsicht[] {
+  return ansichtenSortiert(labels, IN_MAX_LISTE);
+}
+
+/** Labels, die Max gerade nicht prüfen kann: in Nachbesserung (Fehlerhaft) oder nicht erfasst (Fehlt). */
+export function labelsAusserhalbDerPruefung(labels: readonly Label[]): LabelAnsicht[] {
+  return ansichtenSortiert(labels, ['fehlerhaft', 'fehlt']);
 }
 
 export function anlageAnsicht(anlage: Anlage, labels: readonly Label[]): AnlageAnsicht {
@@ -103,8 +112,9 @@ export function anlageAnsicht(anlage: Anlage, labels: readonly Label[]): AnlageA
   // Labels, die laut Anlagenliste fehlen und gar keinen Datensatz haben, zählen ebenfalls als „Fehlt“.
   zaehlung.fehlt += Math.max(0, anlage.sollAnzahl - labels.length);
 
-  const offeneMitFoto = labels.filter((l) => l.status !== 'bestaetigt' && l.bildPfad !== null);
-  const auffaellig = offeneMitFoto.filter((l) => bewertung.get(l.id)?.auffaellig).length;
+  // Die Zählzeile beschreibt, was Max jetzt prüfen kann; Fehlerhaft und Fehlt stehen in `zaehlung`.
+  const zuPruefen = labels.filter((l) => PRUEFBAR.includes(l.status));
+  const auffaellig = zuPruefen.filter((l) => bewertung.get(l.id)?.auffaellig).length;
   return {
     id: anlage.id,
     name: anlage.name,
@@ -112,7 +122,7 @@ export function anlageAnsicht(anlage: Anlage, labels: readonly Label[]): AnlageA
     erfasst: labels.filter((l) => l.bildPfad !== null).length,
     zaehlung,
     auffaellig,
-    unauffaellig: offeneMitFoto.length - auffaellig,
+    unauffaellig: zuPruefen.length - auffaellig,
     bestaetigt: zaehlung.bestaetigt,
     gesperrt: istGesperrt(anlage.freigegebenAm, anlage.sollAnzahl, labels),
     freigabeMoeglich: pruefeFreigabe(anlage.sollAnzahl, labels).moeglich,

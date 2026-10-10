@@ -1,0 +1,118 @@
+// Gemeinsame Bausteine: Seitenrahmen mit Hinweis „Testversion“, Statusmarke, Fortschrittsbalken,
+// Meldungen und Fehler. Alle Texte vom Server werden von React als Text eingesetzt, nie als HTML.
+
+import type { ReactNode } from 'react';
+import type { Hinderungsgrund } from './api.ts';
+import { zurSimulation, zurStartseite } from './route.ts';
+import type { StatusAnzeige } from './status.ts';
+
+export const KNOPF_HAUPT =
+  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-800 px-5 py-2 text-lg font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-slate-500 disabled:bg-slate-500';
+export const KNOPF_NEBEN =
+  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-slate-700 bg-white px-5 py-2 text-lg font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-600';
+export const VERWEIS = 'font-semibold text-blue-800 underline underline-offset-4 hover:text-blue-950';
+
+export function Rahmen({ children, simulation = false }: { children: ReactNode; simulation?: boolean }) {
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      <header className="border-b-2 border-slate-300 bg-white">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
+          <a href={zurStartseite()} className="text-xl font-bold text-slate-900 no-underline">
+            {simulation ? 'Simulation: Instandhaltung (nur im Prototyp)' : 'Label-Prüfung · Max (Qualitätsmanagement)'}
+          </a>
+        </div>
+        <p className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-center text-amber-950">
+          Testversion: Texterkennung und Spracherkennung sind simuliert.
+        </p>
+      </header>
+      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
+      <footer className="mx-auto max-w-6xl border-t border-slate-300 px-4 py-6 text-slate-700">
+        {simulation ? (
+          <a href={zurStartseite()} className={VERWEIS}>
+            Zurück zur Label-Prüfung
+          </a>
+        ) : (
+          <a href={zurSimulation()} className="text-slate-700 underline underline-offset-4">
+            Simulation: Instandhaltung (nur im Prototyp)
+          </a>
+        )}
+      </footer>
+    </div>
+  );
+}
+
+/** Status als Wort mit eigener Farbe (AK-14). */
+export function Marke({ anzeige }: { anzeige: StatusAnzeige }) {
+  return (
+    <span className={`inline-block rounded-md border-2 px-2 py-0.5 font-semibold ${anzeige.klasse}`} data-marke="">
+      {anzeige.wort}
+    </span>
+  );
+}
+
+export function Balken({ prozent, beschriftung }: { prozent: number; beschriftung: string }) {
+  const wert = Math.max(0, Math.min(100, prozent));
+  return (
+    <div
+      className="h-4 w-full overflow-hidden rounded-full border border-slate-500 bg-white"
+      role="progressbar"
+      aria-label={beschriftung}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={wert}
+    >
+      <div className="h-full bg-green-700" style={{ width: `${wert}%` }} />
+    </div>
+  );
+}
+
+export interface MeldungDaten {
+  text: string;
+  /** Kennung eines eben bestätigten Labels; dann gibt es „Rückgängig“ */
+  rueckgaengig?: string;
+}
+
+export function Meldung({
+  meldung,
+  onRueckgaengig,
+  gesperrt = false,
+}: {
+  meldung: MeldungDaten | null;
+  onRueckgaengig?: (labelId: string) => void;
+  gesperrt?: boolean;
+}) {
+  return (
+    <div role="status" aria-live="polite" className="min-h-0">
+      {meldung && (
+        <p className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">
+          <span>{meldung.text}</span>
+          {meldung.rueckgaengig && onRueckgaengig && (
+            <button type="button" className={KNOPF_NEBEN} disabled={gesperrt} onClick={() => onRueckgaengig(meldung.rueckgaengig!)}>
+              Rückgängig
+            </button>
+          )}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Meldung des Servers, bei abgelehnter Freigabe mit seinen Gründen. */
+export function Fehler({ text, gruende = [] }: { text: string; gruende?: readonly Hinderungsgrund[] }) {
+  return (
+    <div role="alert" className="mb-4 rounded-lg border-2 border-red-700 bg-red-50 px-4 py-3 text-red-950">
+      <p className="font-semibold">{text}</p>
+      {gruende.length > 0 && (
+        <ul className="mt-2 list-disc pl-6">
+          {gruende.map((g, i) => (
+            <li key={`${g.labelId ?? ''}-${i}`}>{g.text}</li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+export function Laden({ text = 'Wird geladen …' }: { text?: string }) {
+  return <p className="py-8 text-slate-700">{text}</p>;
+}

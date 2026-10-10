@@ -95,10 +95,12 @@ describe('AK-34 Schlüssel nur aus der Umgebung, Mock ist Standard', () => {
 });
 
 describe('AK-60 keine weiteren Abhängigkeiten', () => {
-  test('package.json: keine dependencies, nur typescript und @types/node', () => {
+  test('package.json: keine dependencies, nur der Stack aus AK-60 mit Typangaben (Stufe 2, F1)', () => {
     const p = JSON.parse(readFileSync(join(WURZEL, 'package.json'), 'utf8'));
     assert.equal(p.dependencies, undefined);
-    assert.deepEqual(Object.keys(p.devDependencies).sort(), ['@types/node', 'typescript']);
+    assert.deepEqual(Object.keys(p.devDependencies).sort(), [
+      '@tailwindcss/vite', '@types/node', '@types/react', '@types/react-dom', 'react', 'react-dom', 'tailwindcss', 'typescript', 'vite',
+    ]);
   });
 });
 

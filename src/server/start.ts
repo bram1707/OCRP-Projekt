@@ -1,29 +1,18 @@
-// Startet den Server: npm run server
+// Startet den Server: npm run server (npm start baut vorher die Oberfläche)
 // Beim ersten Start wird die Datenbank mit den fiktiven Testdaten gefüllt.
 
-import { existsSync, mkdirSync } from 'node:fs';
 import type { AddressInfo } from 'node:net';
-import { dirname, join, resolve } from 'node:path';
-import { leseKonfiguration, waehleModell } from '../ai/konfiguration.ts';
-import { istLeer, ladeTestdaten, oeffneDatenbank, spieleTestdatenEin } from '../db/datenbank.ts';
 import { erstelleServer } from './app.ts';
+import { bereiteSystemVor, serverOptionen } from './system.ts';
 
-const wurzel = resolve(import.meta.dirname, '..', '..');
-const envDatei = join(wurzel, '.env');
-if (existsSync(envDatei)) process.loadEnvFile(envDatei);
+const system = await bereiteSystemVor();
+if (system.datenbankErsetzt) {
+  console.log('Die Datenbank stammte aus einer älteren Version und wurde mit den Testdaten neu angelegt (nur fiktive Daten).');
+}
 
-const konfiguration = leseKonfiguration();
-const modell = waehleModell(konfiguration);
-
-const testdaten = join(wurzel, 'testdaten');
-const dbPfad = process.env.DB_PFAD ?? join(wurzel, 'daten', 'pruefsystem.sqlite');
-mkdirSync(dirname(dbPfad), { recursive: true });
-const db = oeffneDatenbank(dbPfad);
-if (istLeer(db)) await spieleTestdatenEin(db, ladeTestdaten(testdaten), modell);
-
-const server = erstelleServer({ db, bilderOrdner: join(testdaten, 'bilder'), modell });
+const server = erstelleServer(serverOptionen(system));
 server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {
   // Den tatsächlich belegten Port nennen (bei PORT=0 wählt das System einen freien).
   const { port } = server.address() as AddressInfo;
-  console.log(`Prüfsystem läuft auf http://127.0.0.1:${port} (Spracherkennung: ${konfiguration.modus}, nur fiktive Daten)`);
+  console.log(`Prüfsystem läuft auf http://127.0.0.1:${port} (Spracherkennung: ${system.konfiguration.modus}, nur fiktive Daten)`);
 });

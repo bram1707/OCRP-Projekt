@@ -39,8 +39,12 @@ export interface BewertbaresLabel {
 /** Weniger als so viele Buchstaben gelten als „sehr kurz“. */
 const MIN_BUCHSTABEN = 12;
 
-function prozent(wert: number): string {
-  return `${Math.round(wert * 100)} %`;
+/**
+ * Prozent abgerundet, damit 0,896 nicht als „90 %“ erscheint und so sicher wirkt.
+ * Das Runden auf vier Stellen davor fängt Gleitkomma-Reste ab (0,29 · 100 = 28,999…).
+ */
+export function prozent(wert: number): string {
+  return `${Math.floor(Math.round(wert * 10_000) / 100)} %`;
 }
 
 export function kombination(sprachen: readonly string[]): string {

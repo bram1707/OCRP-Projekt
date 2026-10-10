@@ -28,7 +28,10 @@ export interface Label {
   letzterFehlergrund: Fehlergrund | null;
   /** kam mindestens einmal aus der Nachbesserung zurück */
   nachgebessert: boolean;
-  korrektur: { ocrText: string; ocrKonfidenz: number } | null;
+  /** was die simulierte Nachbesserung liefert; erscheint nie in einer Antwort der Schnittstelle */
+  korrektur: { bildPfad: string | null; ocrText: string; ocrKonfidenz: number } | null;
+  /** was die Simulation „Foto nachreichen“ liefert; erscheint nie in einer Antwort der Schnittstelle */
+  nacherfassung: { bildPfad: string; ocrText: string; ocrKonfidenz: number } | null;
 }
 
 export interface Entscheidung {
@@ -71,7 +74,19 @@ function zuLabel(z: Zeile): Label {
     korrektur:
       z.korrektur_ocr_text == null
         ? null
-        : { ocrText: z.korrektur_ocr_text as string, ocrKonfidenz: z.korrektur_ocr_konfidenz as number },
+        : {
+            bildPfad: (z.korrektur_bild_pfad as string | null) ?? null,
+            ocrText: z.korrektur_ocr_text as string,
+            ocrKonfidenz: z.korrektur_ocr_konfidenz as number,
+          },
+    nacherfassung:
+      z.nacherfassung_bild_pfad == null
+        ? null
+        : {
+            bildPfad: z.nacherfassung_bild_pfad as string,
+            ocrText: z.nacherfassung_ocr_text as string,
+            ocrKonfidenz: z.nacherfassung_ocr_konfidenz as number,
+          },
   };
 }
 
@@ -96,6 +111,11 @@ export function holeLabels(db: DatabaseSync, anlageId: string): Label[] {
 export function holeLabel(db: DatabaseSync, id: string): Label | undefined {
   const z = db.prepare(`SELECT ${LABEL_SPALTEN} FROM labels l WHERE l.id = ?`).get(id) as Zeile | undefined;
   return z && zuLabel(z);
+}
+
+/** Ob gerade ein Label auf dieses Foto verweist. Nur solche Fotos liefert der Server aus. */
+export function istBildInVerwendung(db: DatabaseSync, datei: string): boolean {
+  return db.prepare('SELECT 1 FROM labels WHERE bild_pfad = ? LIMIT 1').get(datei) !== undefined;
 }
 
 export function holeEntscheidungen(db: DatabaseSync, labelId: string): Entscheidung[] {

@@ -1,9 +1,11 @@
 // AK-61, AK-62: fiktive Testdaten, vollständige Abdeckung, Erwartungswerte getrennt.
 
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { describe, test } from 'node:test';
+import { after, describe, test } from 'node:test';
+import { ladeTestdaten } from '../src/db/datenbank.ts';
 import { BILDER, erwartungen, TESTDATEN, testdaten, WURZEL } from './hilfen.ts';
 
 const daten = testdaten();
@@ -63,6 +65,16 @@ describe('AK-61 nur fiktive Daten, Erwartungswerte nur für Tests', () => {
     }
   });
 
+  test('auch die Fotos der Simulation sind Platzhalter-SVGs ohne Skript', () => {
+    const fotos = daten.labels.flatMap((l) => [l.nachKorrektur?.bild, l.nacherfassung?.bild]).filter((b) => b !== undefined);
+    assert.deepEqual(fotos.sort(), ['STA4-08-neu.svg', 'SWR5-05.svg']);
+    for (const bild of fotos) {
+      const svg = readFileSync(join(BILDER, bild), 'utf8');
+      assert.ok(svg.startsWith('<svg') && svg.includes('Platzhalterfoto'), bild);
+      assert.doesNotMatch(svg, /<script|on\w+=/i, bild);
+    }
+  });
+
   test('Labeldaten enthalten keine Erwartungswerte', () => {
     const roh = readFileSync(join(TESTDATEN, 'labels.json'), 'utf8') + readFileSync(join(TESTDATEN, 'anlagen.json'), 'utf8');
     for (const wort of ['erwart', 'lesbar', 'auffaellig', 'tatsaechlich', 'notiz']) {
@@ -78,5 +90,39 @@ describe('AK-61 nur fiktive Daten, Erwartungswerte nur für Tests', () => {
     for (const datei of [...dateien(join(WURZEL, 'src')), join(TESTDATEN, 'erzeuge-bilder.ts')]) {
       assert.ok(!readFileSync(datei, 'utf8').includes('erwartung.json'), datei);
     }
+  });
+});
+
+describe('Daten für die Simulation werden beim Laden geprüft', () => {
+  const ordner: string[] = [];
+  after(() => {
+    for (const o of ordner) rmSync(o, { recursive: true, force: true });
+  });
+  /** Kopie der Testdaten mit geänderter labels.json; gibt den Ladeaufruf zurück. */
+  const mitLabels = (aendern: (labels: any[]) => void) => {
+    const ziel = mkdtempSync(join(tmpdir(), 'testdaten-'));
+    ordner.push(ziel);
+    cpSync(TESTDATEN, ziel, { recursive: true });
+    const labels = JSON.parse(readFileSync(join(ziel, 'labels.json'), 'utf8'));
+    aendern(labels);
+    writeFileSync(join(ziel, 'labels.json'), JSON.stringify(labels));
+    return () => ladeTestdaten(ziel);
+  };
+  const label = (labels: any[], id: string) => labels.find((l) => l.id === id);
+
+  test('Nachreichen nur bei Labels ohne Foto', () => {
+    assert.throws(mitLabels((l) => { label(l, 'STA4-01').nacherfassung = { bild: 'SWR5-05.svg', ocrText: 'x', ocrKonfidenz: 0.9 }; }), /nur bei Labels ohne Foto/);
+  });
+  test('Fotos der Simulation müssen existieren und dem Namensmuster folgen', () => {
+    assert.throws(mitLabels((l) => { label(l, 'SWR5-05').nacherfassung.bild = 'fehlt.svg'; }));
+    assert.throws(mitLabels((l) => { label(l, 'SWR5-05').nacherfassung.bild = '../erwartung.json'; }));
+    assert.throws(mitLabels((l) => { label(l, 'STA4-08').nachKorrektur.bild = '../labels.json'; }));
+  });
+  test('Sicherheit zwischen 0 und 1, Text als Zeichenkette', () => {
+    assert.throws(mitLabels((l) => { label(l, 'SWR5-05').nacherfassung.ocrKonfidenz = 1.5; }));
+    assert.throws(mitLabels((l) => { label(l, 'STA4-08').nachKorrektur.ocrText = 42; }));
+  });
+  test('unveränderte Kopie lädt ohne Fehler', () => {
+    assert.doesNotThrow(mitLabels(() => {}));
   });
 });

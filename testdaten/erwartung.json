@@ -1,5 +1,6 @@
 {
   "_hinweis": "Erwartungswerte NUR für Tests. Der Server liest diese Datei nie, und sie erscheint nie in der Ansicht (AK-61).",
+  "_hinweis_nachSimulation": "nachSimulation: Sprachen und Status nach der simulierten Nachbesserung bzw. dem nachgereichten Foto.",
   "STA4-01": {
     "sprachen": [
       "de",
@@ -86,7 +87,15 @@
       "text_unleserlich"
     ],
     "status": "unsicher",
-    "notiz": "Unleserlich: Foto verschwommen, OCR liefert nur Zeichensalat."
+    "notiz": "Unleserlich: Foto verschwommen, OCR liefert nur Zeichensalat.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "pl"
+      ],
+      "lesbar": true,
+      "status": "nachgebessert"
+    }
   },
   "STA4-09": {
     "sprachen": [
@@ -180,7 +189,15 @@
     "unsicher": false,
     "auffaellig": [],
     "status": "fehlerhaft",
-    "notiz": "Von Max als beschädigt gemeldet, wartet auf Nachbesserung."
+    "notiz": "Von Max als beschädigt gemeldet, wartet auf Nachbesserung.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "ru"
+      ],
+      "lesbar": true,
+      "status": "nachgebessert"
+    }
   },
   "SWR5-03": {
     "sprachen": [
@@ -211,6 +228,14 @@
     "unsicher": false,
     "auffaellig": [],
     "status": "fehlt",
-    "notiz": "Ohne Foto: laut Anlagenliste vorhanden, aber nicht fotografiert."
+    "notiz": "Ohne Foto: laut Anlagenliste vorhanden, aber nicht fotografiert.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "ru"
+      ],
+      "lesbar": true,
+      "status": "offen"
+    }
   }
 }

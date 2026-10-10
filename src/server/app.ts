@@ -6,18 +6,27 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
-import { holeAnlage, holeAnlagen, holeLabel, holeLabels } from '../db/abfragen.ts';
-import { bessereNach, bestaetigeLabel, Fachfehler, gebeAnlageFrei, meldeFehler } from '../db/aktionen.ts';
+import { holeAnlage, holeAnlagen, holeLabel, holeLabels, istBildInVerwendung } from '../db/abfragen.ts';
+import {
+  bessereNach, bestaetigeLabel, erfasseNach, Fachfehler, gebeAnlageFrei, meldeFehler, nimmBestaetigungZurueck,
+} from '../db/aktionen.ts';
 import { BILD_DATEI } from '../db/datenbank.ts';
 import {
   anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
 } from './ansichten.ts';
+import { CSP_SVG, ladeOberflaeche } from './statisch.ts';
 
 export interface ServerOptionen {
   db: DatabaseSync;
   bilderOrdner: string;
   modell?: SprachModell;
+  /** Ordner der gebauten Oberfläche (dist/). Ohne ihn liefert der Server nur die Schnittstelle und die Fotos. */
+  oberflaecheOrdner?: string;
 }
+
+/** Wird aufgerufen, wenn der Handler nicht zuständig ist (Entwicklungsserver von Vite). */
+export type Weiter = () => void;
+export type Handler = (req: IncomingMessage, res: ServerResponse, weiter?: Weiter) => Promise<void>;
 
 /** Simulierte Rollen, es gibt keine Anmeldung. */
 export type Rolle = 'max' | 'marie';
@@ -163,17 +172,33 @@ function routen(optionen: ServerOptionen): Route[] {
       },
     },
     {
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/zuruecknehmen$/,
+      aktion: (_a, [id]) => {
+        nimmBestaetigungZurueck(db, id!, 'max');
+        return labelAntwort(id!);
+      },
+    },
+    // Simulation der Instandhaltung (nur im Prototyp). Die Daten kommen nur aus den Testdaten des Servers.
+    {
       methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/nachbessern$/,
       aktion: async (_a, [id]) => {
         await bessereNach(db, id!, new Date(), modell);
         return labelAntwort(id!);
       },
     },
+    {
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/nacherfassen$/,
+      aktion: async (_a, [id]) => {
+        await erfasseNach(db, id!, new Date(), modell);
+        return labelAntwort(id!);
+      },
+    },
   ];
 }
 
-async function sendeBild(res: ServerResponse, bilderOrdner: string, datei: string): Promise<void> {
-  if (!BILD_DATEI.test(datei)) throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
+/** Liefert nur Fotos, auf die gerade ein Label verweist; Fotos der Simulation bleiben bis dahin unsichtbar. */
+async function sendeBild(res: ServerResponse, db: DatabaseSync, bilderOrdner: string, datei: string): Promise<void> {
+  if (!BILD_DATEI.test(datei) || !istBildInVerwendung(db, datei)) throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
   let inhalt: Buffer;
   try {
     inhalt = await readFile(join(bilderOrdner, datei));
@@ -183,22 +208,29 @@ async function sendeBild(res: ServerResponse, bilderOrdner: string, datei: strin
   res.writeHead(200, {
     'Content-Type': 'image/svg+xml',
     'X-Content-Type-Options': 'nosniff',
-    // SVGs dürfen keine Skripte ausführen.
-    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+    'Content-Security-Policy': CSP_SVG,
   });
   res.end(inhalt);
 }
 
-export function erstelleServer(optionen: ServerOptionen): Server {
+/**
+ * Bearbeitet die Schnittstelle (/api/…), die Fotos (/bilder/…) und, falls gebaut, die Oberfläche.
+ * Mit `weiter` (Entwicklungsserver) reicht er alles andere weiter, ohne es anzusehen.
+ */
+export function erstelleHandler(optionen: ServerOptionen): Handler {
   const tabelle = routen(optionen);
+  const oberflaeche = optionen.oberflaecheOrdner ? ladeOberflaeche(optionen.oberflaecheOrdner) : null;
 
-  return createServer(async (req, res) => {
+  return async (req, res, weiter) => {
     try {
-      if (!istErlaubterHost(req.headers.host)) throw new Fachfehler(421, 'Unbekannte Serveradresse.');
       const pfad = new URL(req.url ?? '/', 'http://localhost').pathname;
+      const eigenerPfad = pfad === '/api' || pfad.startsWith('/api/') || pfad.startsWith('/bilder/');
+      if (weiter && !eigenerPfad) return weiter();
+
+      if (!istErlaubterHost(req.headers.host)) throw new Fachfehler(421, 'Unbekannte Serveradresse.');
 
       if (req.method === 'GET' && pfad.startsWith('/bilder/')) {
-        await sendeBild(res, optionen.bilderOrdner, pfad.slice('/bilder/'.length));
+        await sendeBild(res, optionen.db, optionen.bilderOrdner, pfad.slice('/bilder/'.length));
         return;
       }
 
@@ -209,7 +241,15 @@ export function erstelleServer(optionen: ServerOptionen): Server {
         if (treffer) teile = treffer.slice(1);
         return treffer !== null;
       });
-      if (!route || !teile) throw new Fachfehler(404, 'Diese Adresse gibt es nicht.');
+      if (!route || !teile) {
+        if (req.method === 'GET' && !eigenerPfad) {
+          if (oberflaeche?.sende(res, pfad)) return;
+          if (!oberflaeche && pfad === '/') {
+            throw new Fachfehler(404, 'Die Oberfläche ist noch nicht gebaut. Bitte mit „npm start“ starten.');
+          }
+        }
+        throw new Fachfehler(404, 'Diese Adresse gibt es nicht.');
+      }
 
       const rolle = leseRolle(req);
       if (route.methode !== 'GET' && rolle !== 'max') {
@@ -226,5 +266,10 @@ export function erstelleServer(optionen: ServerOptionen): Server {
         sendeJson(res, 500, { fehler: 'Interner Fehler. Bitte später erneut versuchen.' });
       }
     }
-  });
+  };
+}
+
+export function erstelleServer(optionen: ServerOptionen): Server {
+  const handler = erstelleHandler(optionen);
+  return createServer((req, res) => void handler(req, res));
 }

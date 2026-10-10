@@ -2,7 +2,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 
-export type Ergebnis = 'bestaetigt' | 'fehler' | 'nachgebessert' | 'freigegeben';
+export type Ergebnis = 'bestaetigt' | 'fehler' | 'nachgebessert' | 'nacherfasst' | 'zurueckgenommen' | 'freigegeben';
 
 export interface Eintrag {
   anlageId: string;

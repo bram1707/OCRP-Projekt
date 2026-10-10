@@ -53,7 +53,12 @@
     "anlageId": "STA4",
     "bild": "STA4-08.svg",
     "ocrText": "A#H7 ..G! Q~e st;h ~~ H,n\n#w ~ G. r ..zk ;; tr",
-    "ocrKonfidenz": 0.34
+    "ocrKonfidenz": 0.34,
+    "nachKorrektur": {
+      "bild": "STA4-08-neu.svg",
+      "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nUWAGA! Ryzyko zgniecenia. Trzymać ręce z dala.",
+      "ocrKonfidenz": 0.95
+    }
   },
   {
     "id": "STA4-09",
@@ -179,6 +184,11 @@
     "anlageId": "SWR5",
     "bild": null,
     "ocrText": "",
-    "ocrKonfidenz": 0
+    "ocrKonfidenz": 0,
+    "nacherfassung": {
+      "bild": "SWR5-05.svg",
+      "ocrText": "Zutritt für Unbefugte verboten!\nВход только для персонала!",
+      "ocrKonfidenz": 0.95
+    }
   }
 ]

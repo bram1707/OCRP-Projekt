@@ -50,7 +50,9 @@ describe('lesende Endpunkte', () => {
   });
 
   test('keine Antwort enthält Erwartungswerte oder Korrekturdaten (AK-61)', async () => {
-    const verboten = new Set(['erwartung', 'lesbar', 'notiz', 'tatsaechlich', 'korrektur', 'nachKorrektur', 'ausgangszustand']);
+    const verboten = new Set([
+      'erwartung', 'lesbar', 'notiz', 'tatsaechlich', 'korrektur', 'nachKorrektur', 'ausgangszustand', 'nacherfassung', 'nachSimulation',
+    ]);
     const notizen = Object.values(erwartungen()).flatMap((e) => (e.notiz ? [e.notiz] : []));
     const schluessel = (wert: unknown): string[] =>
       Array.isArray(wert)
@@ -160,6 +162,8 @@ describe('Korrekturrunde 1', () => {
       ['/api/labels/SWR5-01/bestaetigen', undefined],
       ['/api/labels/SWR5-01/fehler', JSON.stringify({ grund: 'beschaedigt' })],
       ['/api/labels/SWR5-02/nachbessern', undefined],
+      ['/api/labels/SWR5-05/nacherfassen', undefined],
+      ['/api/labels/STA4-10/zuruecknehmen', undefined],
       ['/api/anlagen/SWR5/freigeben', undefined],
     ] as const;
     for (const [pfad, koerper] of schreibend) {
@@ -170,6 +174,8 @@ describe('Korrekturrunde 1', () => {
     }
     assert.equal((await anfrage(server, '/api/labels/SWR5-01')).daten.status, 'offen');
     assert.equal((await anfrage(server, '/api/labels/SWR5-02')).daten.status, 'fehlerhaft');
+    assert.equal((await anfrage(server, '/api/labels/SWR5-05')).daten.status, 'fehlt');
+    assert.equal((await anfrage(server, '/api/labels/STA4-10')).daten.status, 'bestaetigt');
   });
 
   test('R4: lesende Aufrufe und andere Methoden ändern nichts', async () => {

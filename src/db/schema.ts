@@ -1,6 +1,12 @@
 // Tabellen des Prüfsystems. Erwartungswerte der Testdaten stehen bewusst nicht
 // in der Datenbank (AK-61), ebenso wenig ein API-Schlüssel (AK-34) oder eine Soll-Sprache (AK-33).
 
+/**
+ * Stand des Schemas (PRAGMA user_version). Stufe 1 hatte keinen Stand (0).
+ * Stufe 2: Foto bei der Nachbesserung, nachgereichtes Foto, Zurücknehmen.
+ */
+export const SCHEMA_STAND = 2;
+
 export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS anlagen (
   id              TEXT PRIMARY KEY,
@@ -24,8 +30,14 @@ CREATE TABLE IF NOT EXISTS labels (
   status                  TEXT NOT NULL
     CHECK (status IN ('offen', 'unsicher', 'nachgebessert', 'fehlerhaft', 'bestaetigt', 'fehlt')),
   letzter_fehlergrund     TEXT CHECK (letzter_fehlergrund IN ('unleserlich', 'sprache_falsch', 'beschaedigt')),
+  -- was die simulierte Nachbesserung liefert (Foto ist optional)
+  korrektur_bild_pfad     TEXT,
   korrektur_ocr_text      TEXT,
-  korrektur_ocr_konfidenz REAL
+  korrektur_ocr_konfidenz REAL,
+  -- was die Simulation „Foto nachreichen“ liefert, nur bei Labels ohne Foto
+  nacherfassung_bild_pfad     TEXT,
+  nacherfassung_ocr_text      TEXT,
+  nacherfassung_ocr_konfidenz REAL
 );
 CREATE INDEX IF NOT EXISTS labels_anlage ON labels(anlage_id);
 
@@ -35,7 +47,8 @@ CREATE TABLE IF NOT EXISTS entscheidungen (
   label_id  TEXT REFERENCES labels(id),
   wer       TEXT NOT NULL,
   wann      TEXT NOT NULL,
-  ergebnis  TEXT NOT NULL CHECK (ergebnis IN ('bestaetigt', 'fehler', 'nachgebessert', 'freigegeben')),
+  ergebnis  TEXT NOT NULL
+    CHECK (ergebnis IN ('bestaetigt', 'fehler', 'nachgebessert', 'nacherfasst', 'zurueckgenommen', 'freigegeben')),
   grund     TEXT
 );
 CREATE INDEX IF NOT EXISTS entscheidungen_label ON entscheidungen(label_id);

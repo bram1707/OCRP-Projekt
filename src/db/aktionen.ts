@@ -3,11 +3,12 @@
 // Die KI ruft keine dieser Funktionen auf (AK-03); sie werden nur über Max' Aktionen ausgelöst.
 
 import type { DatabaseSync } from 'node:sqlite';
+import type { SprachAntwort } from '../ai/antwortSchema.ts';
 import { detectLanguage } from '../ai/detectLanguage.ts';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
 import { holeAnlage, holeLabel, holeLabels, type Anlage, type Label } from './abfragen.ts';
 import { protokolliere } from './protokoll.ts';
-import { istFehlergrund, PRUEFBAR, pruefeFreigabe, STATUS_TEXT } from './status.ts';
+import { anfangsstatus, istFehlergrund, PRUEFBAR, pruefeFreigabe, STATUS_TEXT, type Status } from './status.ts';
 
 /** Fachlicher Fehler mit passendem HTTP-Status und einer Meldung in einfacher Sprache. */
 export class Fachfehler extends Error {
@@ -65,6 +66,21 @@ export function meldeFehler(db: DatabaseSync, labelId: string, grund: unknown, w
   });
 }
 
+/** Ersetzt Foto, Text und Ergebnis der Spracherkennung eines Labels. */
+function schreibeErfassung(
+  db: DatabaseSync,
+  labelId: string,
+  erfassung: { bildPfad: string | null; ocrText: string; ocrKonfidenz: number },
+  e: SprachAntwort,
+): void {
+  db.prepare(`UPDATE labels SET bild_pfad = ?, ocr_text = ?, ocr_konfidenz = ?, sprachen = ?, konfidenz_je_sprache = ?,
+      sprach_konfidenz = ?, prioritaet = ?, begruendung = ?
+    WHERE id = ?`).run(
+    erfassung.bildPfad, erfassung.ocrText, erfassung.ocrKonfidenz, JSON.stringify(e.sprachen), JSON.stringify(e.konfidenzJeSprache),
+    e.konfidenz, e.prioritaet, e.begruendung, labelId,
+  );
+}
+
 /**
  * Simulierte Nachbesserung: Das Label wurde ersetzt und kommt als „Nachgebessert“ zurück
  * in Max' Prüfung. Liegen Korrekturdaten vor (neues Foto, neuer Text), läuft die
@@ -91,17 +107,76 @@ export async function bessereNach(
       throw new Fachfehler(409, 'Das Label wurde inzwischen geändert. Bitte neu laden.');
     }
     if (korrektur && neu) {
-      db.prepare(`UPDATE labels SET ocr_text = ?, ocr_konfidenz = ?, sprachen = ?, konfidenz_je_sprache = ?,
-          sprach_konfidenz = ?, prioritaet = ?, begruendung = ?, korrektur_ocr_text = NULL, korrektur_ocr_konfidenz = NULL
-        WHERE id = ?`).run(
-        korrektur.ocrText, korrektur.ocrKonfidenz, JSON.stringify(neu.sprachen), JSON.stringify(neu.konfidenzJeSprache),
-        neu.konfidenz, neu.prioritaet, neu.begruendung, label.id,
-      );
+      schreibeErfassung(db, label.id, { ...korrektur, bildPfad: korrektur.bildPfad ?? label.bildPfad }, neu);
+      db.prepare(`UPDATE labels SET korrektur_bild_pfad = NULL, korrektur_ocr_text = NULL, korrektur_ocr_konfidenz = NULL
+        WHERE id = ?`).run(label.id);
     }
     db.prepare("UPDATE labels SET status = 'nachgebessert' WHERE id = ?").run(label.id);
     protokolliere(db, {
       anlageId: label.anlageId, labelId: label.id, wer: 'simulation', wann: jetzt.toISOString(), ergebnis: 'nachgebessert', grund: null,
     });
+    return holeLabel(db, label.id)!;
+  });
+}
+
+/**
+ * Simulation „Foto nachreichen“: Für ein Label ohne Foto liefert die Instandhaltung Foto und Text.
+ * Beides kommt nur aus den Testdaten auf dem Server, nie aus der Anfrage. Die Spracherkennung
+ * läuft, der neue Status kommt wie bei der Erfassung aus ihrem Ergebnis (Offen oder Unsicher).
+ */
+export async function erfasseNach(
+  db: DatabaseSync,
+  labelId: string,
+  jetzt = new Date(),
+  modell: SprachModell = mockModell,
+): Promise<Label> {
+  const vorher = holeLabel(db, labelId);
+  if (!vorher) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  if (vorher.status !== 'fehlt') {
+    throw new Fachfehler(409, `Nur für Labels ohne Foto kann ein Foto nachgereicht werden. Label ${vorher.id} ist „${STATUS_TEXT[vorher.status]}“.`);
+  }
+  const erfassung = vorher.nacherfassung;
+  if (!erfassung) throw new Fachfehler(409, `Für Label ${vorher.id} liegt in der Simulation kein Foto vor.`);
+  const neu = await detectLanguage(erfassung.ocrText, erfassung.ocrKonfidenz, modell);
+
+  return inTransaktion(db, () => {
+    const label = holeLabel(db, labelId);
+    if (!label || label.status !== 'fehlt' || !label.nacherfassung) {
+      throw new Fachfehler(409, 'Das Label wurde inzwischen geändert. Bitte neu laden.');
+    }
+    schreibeErfassung(db, label.id, erfassung, neu);
+    const status = anfangsstatus(true, erfassung.ocrKonfidenz, neu.konfidenz, neu.sprachen);
+    db.prepare(`UPDATE labels SET status = ?, nacherfassung_bild_pfad = NULL, nacherfassung_ocr_text = NULL,
+        nacherfassung_ocr_konfidenz = NULL
+      WHERE id = ?`).run(status, label.id);
+    protokolliere(db, {
+      anlageId: label.anlageId, labelId: label.id, wer: 'simulation', wann: jetzt.toISOString(), ergebnis: 'nacherfasst', grund: null,
+    });
+    return holeLabel(db, label.id)!;
+  });
+}
+
+/**
+ * Max nimmt eine Bestätigung zurück, solange die Anlage nicht freigegeben ist (F5).
+ * Das Label bekommt den Status von vorher: „Nachgebessert“, wenn es aus der Nachbesserung kam,
+ * sonst den Status nach der Erfassung (Offen oder Unsicher).
+ */
+export function nimmBestaetigungZurueck(db: DatabaseSync, labelId: string, wer: string, jetzt = new Date()): Label {
+  return inTransaktion(db, () => {
+    const label = holeLabel(db, labelId);
+    if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+    if (label.status !== 'bestaetigt') {
+      throw new Fachfehler(409, `Nur bestätigte Labels können zurückgenommen werden. Label ${label.id} ist „${STATUS_TEXT[label.status]}“.`);
+    }
+    const anlage = holeAnlage(db, label.anlageId)!;
+    if (anlage.freigegebenAm) {
+      throw new Fachfehler(409, `${anlage.name} ist bereits freigegeben. Eine Bestätigung lässt sich nur vor der Freigabe zurücknehmen.`);
+    }
+    const vorher: Status = label.nachgebessert
+      ? 'nachgebessert'
+      : anfangsstatus(label.bildPfad !== null, label.ocrKonfidenz, label.sprachKonfidenz, label.sprachen);
+    db.prepare('UPDATE labels SET status = ? WHERE id = ?').run(vorher, label.id);
+    protokolliere(db, { anlageId: label.anlageId, labelId: label.id, wer, wann: jetzt.toISOString(), ergebnis: 'zurueckgenommen', grund: null });
     return holeLabel(db, label.id)!;
   });
 }

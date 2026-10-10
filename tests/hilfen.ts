@@ -20,6 +20,8 @@ export interface Erwartung {
   auffaellig: GrundCode[];
   status: Status;
   notiz?: string;
+  /** nach der simulierten Nachbesserung bzw. dem nachgereichten Foto */
+  nachSimulation?: { sprachen: string[]; lesbar: boolean; status: Status };
 }
 
 export function testdaten(): Testdaten {

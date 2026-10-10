@@ -21,6 +21,8 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
   const [fotoFehlt, setFotoFehlt] = useState(false);
   // Der Ablauf steht zusätzlich in einer Ref, damit zwei Klicks im selben Augenblick ihn nicht doppelt durchlaufen.
   const zustandRef = useRef<Ablauf>('laedt');
+  // Ebenso, ob das Foto fehlt: dann gibt es kein Bestätigen und kein Melden, Zurücknehmen aber schon.
+  const fotoFehltRef = useRef(false);
   const ueberschrift = useRef<HTMLHeadingElement>(null);
   const gruende = useRef<HTMLHeadingElement>(null);
   const bild = useRef<HTMLImageElement>(null);
@@ -33,26 +35,34 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     return r.senden;
   }, []);
 
+  /** Das Foto lädt nicht: Die Seite ist trotzdem fertig angezeigt, nur entscheiden kann Max ohne Foto nicht. */
+  const fotoLaedtNicht = useCallback(() => {
+    fotoFehltRef.current = true;
+    setFotoFehlt(true);
+    schritt('angezeigt');
+  }, [schritt]);
+
   const laden = useCallback(async () => {
     const nummer = ++anfrage.current;
     zustandRef.current = 'laedt';
     setZustand('laedt');
+    fotoFehltRef.current = false;
     setFotoFehlt(false);
     const [anlage, label] = await Promise.all([ladeAnlage(anlageId), ladeLabel(labelId)]);
     if (nummer !== anfrage.current) return;
     if (label.anlageId !== anlageId) throw new Error(`Label ${label.id} gehört nicht zu dieser Anlage.`);
     setDaten({ anlage, label });
     // Ohne Foto gibt es nichts abzuwarten; ist das Foto schon im Speicher, kommt kein neues „load“.
-    // Ein kaputtes Foto ist ebenfalls „complete“, hat aber keine Breite: dann bleiben die Knöpfe gesperrt.
+    // Ein kaputtes Foto ist ebenfalls „complete“, hat aber keine Breite: dann bleiben die Entscheidungsknöpfe gesperrt.
     requestAnimationFrame(() => {
       if (nummer !== anfrage.current) return;
       if (label.bildUrl === null) schritt('angezeigt');
       else if (bild.current?.complete) {
         if (bild.current.naturalWidth > 0) schritt('angezeigt');
-        else setFotoFehlt(true);
+        else fotoLaedtNicht();
       }
     });
-  }, [anlageId, labelId, schritt]);
+  }, [anlageId, labelId, schritt, fotoLaedtNicht]);
 
   useEffect(() => {
     setDaten(null);
@@ -141,7 +151,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
         schritt('angezeigt');
         return;
       case 'bildFehlt':
-        setFotoFehlt(true);
+        fotoLaedtNicht();
         return;
       case 'warum':
         setWarumOffen((w) => !w);
@@ -150,19 +160,19 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
         setFotoGross((g) => !g);
         return;
       case 'melden':
-        schritt('melden');
+        if (!fotoFehltRef.current) schritt('melden');
         return;
       case 'abbrechen':
         schritt('abbrechen');
         ueberschrift.current?.focus();
         return;
       case 'bestaetigen':
-        if (schritt('bestaetigen')) void entscheide(() => bestaetige(labelId), `${labelId} bestätigt.`, labelId);
+        if (!fotoFehltRef.current && schritt('bestaetigen')) void entscheide(() => bestaetige(labelId), `${labelId} bestätigt.`, labelId);
         return;
       case 'grund': {
         const grund: Fehlergrund = e.grund;
         const titel = FEHLERGRUENDE.find((g) => g.grund === grund)?.titel ?? grund;
-        if (schritt('grundGewaehlt')) {
+        if (!fotoFehltRef.current && schritt('grundGewaehlt')) {
           void entscheide(() => meldeFehler(labelId, grund), `${labelId} gemeldet (${titel}). Es kommt nach der Nachbesserung zurück.`);
         }
         return;

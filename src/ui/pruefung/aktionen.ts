@@ -2,7 +2,7 @@
 // es gibt keinen Aufruf für mehrere Labels. Die Regeln selbst prüft der Server.
 
 import type { Fehlergrund } from '../../db/status.ts';
-import { leseAntwort, ServerFehler, type AnlageAnsicht, type LabelAnsicht } from '../api.ts';
+import { labelPfad, leseAntwort, ServerFehler, type AnlageAnsicht, type LabelAnsicht } from '../api.ts';
 
 /** Sendet als simulierte Rolle „max“. Auch die Simulationsseite nutzt diesen Weg. */
 export async function sendeAlsMax<T>(pfad: string, koerper?: Record<string, unknown>): Promise<T> {
@@ -17,9 +17,7 @@ export async function sendeAlsMax<T>(pfad: string, koerper?: Record<string, unkn
   return leseAntwort<T>(res);
 }
 
-const label = (id: string, aktion: string) => `/api/labels/${encodeURIComponent(id)}/${aktion}`;
-
-export const bestaetige = (labelId: string) => sendeAlsMax<LabelAnsicht>(label(labelId, 'bestaetigen'));
-export const meldeFehler = (labelId: string, grund: Fehlergrund) => sendeAlsMax<LabelAnsicht>(label(labelId, 'fehler'), { grund });
-export const nimmZurueck = (labelId: string) => sendeAlsMax<LabelAnsicht>(label(labelId, 'zuruecknehmen'));
+export const bestaetige = (labelId: string) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'bestaetigen'));
+export const meldeFehler = (labelId: string, grund: Fehlergrund) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'fehler'), { grund });
+export const nimmZurueck = (labelId: string) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'zuruecknehmen'));
 export const gebeFrei = (anlageId: string) => sendeAlsMax<AnlageAnsicht>(`/api/anlagen/${encodeURIComponent(anlageId)}/freigeben`);

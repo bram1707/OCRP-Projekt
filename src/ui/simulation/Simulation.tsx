@@ -95,9 +95,8 @@ export function Simulation() {
     const anlagen = await ladeAnlagen();
     const je = await Promise.all(anlagen.map((a) => ladeAnlage(a.id)));
     setWartend(
-      je.flatMap(({ anlage, ausserhalbDerPruefung }) =>
-        ausserhalbDerPruefung.filter((l) => l.status === 'fehlerhaft' || l.status === 'fehlt').map((label) => ({ anlageName: anlage.name, label })),
-      ),
+      // Außerhalb der Prüfung liefert der Server nur „Fehlerhaft“ und „Fehlt“.
+      je.flatMap(({ anlage, ausserhalbDerPruefung }) => ausserhalbDerPruefung.map((label) => ({ anlageName: anlage.name, label }))),
     );
   }, []);
 

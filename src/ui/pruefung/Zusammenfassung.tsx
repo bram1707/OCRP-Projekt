@@ -36,9 +36,9 @@ export function Zusammenfassung({
         <dd>
           {daten.anzahlLabels} von {daten.sollAnzahl}
         </dd>
-        <dt className="font-semibold">Gefundene Sprachen</dt>
+        <dt className="font-semibold">Sicher erkannte Sprachen</dt>
         <dd>{sprachen}</dd>
-        <dt className="font-semibold">Davon auffällig</dt>
+        <dt className="font-semibold">Davon auffällig gewesen</dt>
         <dd>{daten.auffaellig}</dd>
         <dt className="font-semibold">Nachgebessert</dt>
         <dd>{daten.nachgebessert}</dd>

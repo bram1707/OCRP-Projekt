@@ -28,7 +28,7 @@ export interface EinzelansichtDaten {
   zustand: Ablauf;
   warumOffen: boolean;
   fotoGross: boolean;
-  /** Das Foto ließ sich nicht laden; dann bleiben die Entscheidungsknöpfe gesperrt. */
+  /** Das Foto ließ sich nicht laden; dann bleiben die Entscheidungsknöpfe gesperrt, Zurücknehmen geht weiter. */
   fotoFehlt?: boolean;
   fehler: string | null;
   meldung: MeldungDaten | null;

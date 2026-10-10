@@ -56,7 +56,10 @@ async function hole<T>(pfad: string): Promise<T> {
 
 const teil = (id: string) => encodeURIComponent(id);
 
+/** Adresse eines Labels, mit Aktion etwa „/api/labels/STA4-01/bestaetigen“. Nur hier entstehen solche Adressen. */
+export const labelPfad = (labelId: string, aktion?: string) => `/api/labels/${teil(labelId)}${aktion ? `/${aktion}` : ''}`;
+
 export const ladeAnlagen = () => hole<AnlageAnsicht[]>('/api/anlagen');
 export const ladeAnlage = (anlageId: string) => hole<AnlageMitLabels>(`/api/anlagen/${teil(anlageId)}/labels`);
 export const ladeZusammenfassung = (anlageId: string) => hole<Zusammenfassung>(`/api/anlagen/${teil(anlageId)}/zusammenfassung`);
-export const ladeLabel = (labelId: string) => hole<LabelAnsicht>(`/api/labels/${teil(labelId)}`);
+export const ladeLabel = (labelId: string) => hole<LabelAnsicht>(labelPfad(labelId));

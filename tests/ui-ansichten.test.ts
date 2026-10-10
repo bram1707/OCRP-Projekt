@@ -98,6 +98,10 @@ function einzel(daten: AnlageMitLabels, id: string, mehr: Record<string, unknown
   });
 }
 
+function kachel(l: LabelAnsicht, foto: 'laedt' | 'da' | 'fehlt', gesperrt = false): string {
+  return rendere(M.kachel!.KachelAnsicht, { label: l, gesperrt, onBestaetigen: ohneEreignis, foto });
+}
+
 const kacheln = (html: string) => [...html.matchAll(/data-kachel="([^"]+)"/g)].map((m) => m[1]);
 const knoepfe = (html: string) => [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => text(m[1]!));
 
@@ -127,8 +131,8 @@ describe('AK-02 Zusammenfassung und Freigabe', () => {
     const t = text(html);
     assert.deepEqual(f.sta4Zusammenfassung.offenePunkte, []);
     assert.match(t, /Labels 10 von 10/);
-    assert.match(t, /Gefundene Sprachen Deutsch, Englisch, Polnisch/);
-    assert.match(t, /Davon auffällig \d+/);
+    assert.match(t, /Sicher erkannte Sprachen Deutsch, Englisch, Polnisch/);
+    assert.match(t, /Davon auffällig gewesen \d+/);
     assert.match(t, /Nachgebessert 1/);
     assert.match(t, /Offene Punkte Keine offenen Punkte/);
     assert.deepEqual(knoepfe(html).filter((k) => /freigeben/i.test(k)), ['Anlage freigeben']);
@@ -218,9 +222,40 @@ describe('AK-10, AK-11 einzeln entscheiden', () => {
     }
     assert.doesNotMatch(text(einzel(f.sta4, 'STA4-09')), /Foto konnte nicht geladen werden/);
   });
+  test('R10: lädt das Foto nicht, gehen „Bestätigung zurücknehmen“ und „Rückgängig“ trotzdem', () => {
+    const meldung = { text: 'STA4-02 bestätigt.', rueckgaengig: 'STA4-02' };
+    const zehn = einzel(f.sta4, 'STA4-10', { fotoFehlt: true, meldung });
+    for (const wort of ['Bestätigung zurücknehmen', 'Rückgängig']) {
+      assert.ok(knoepfe(zehn).includes(wort), wort);
+      assert.doesNotMatch(zehn, new RegExp(`<button[^>]*disabled=""[^>]*>${wort}</button>`), wort);
+    }
+    const neun = einzel(f.sta4, 'STA4-09', { fotoFehlt: true, meldung });
+    assert.doesNotMatch(neun, /<button[^>]*disabled=""[^>]*>Rückgängig<\/button>/);
+    assert.match(neun, /<button[^>]*disabled=""[^>]*>Ja, bestätigen<\/button>/);
+  });
   test('während gespeichert wird, sind auch die Kachel-Knöpfe gesperrt', () => {
     const html = uebersicht(f.sta4, { speichert: true });
     assert.equal(zaehle(html, /<button[^>]*disabled=""[^>]*>STA4-0\d bestätigen/), 6);
+    for (const l of f.sta4.labels.filter((x) => !x.auffaellig && x.status === 'offen')) {
+      assert.match(kachel(l, 'da', true), /<button[^>]*disabled=""[^>]*>STA4-0\d bestätigen/, l.id);
+    }
+  });
+  test('R8: Kachel-Knopf erst, wenn das Foto geladen ist; lädt es nicht, ein Hinweis statt des Knopfs', () => {
+    const l = label(f.sta4, 'STA4-01');
+    assert.match(kachel(l, 'laedt'), /<button[^>]*disabled=""[^>]*>STA4-01 bestätigen/);
+    assert.deepEqual(knoepfe(kachel(l, 'da')), ['STA4-01 bestätigen']);
+    assert.doesNotMatch(kachel(l, 'da'), /disabled=""/);
+    const fehlt = kachel(l, 'fehlt');
+    assert.deepEqual(knoepfe(fehlt), []);
+    assert.match(text(fehlt), /Das Foto lädt nicht\. Bitte in der Einzelansicht prüfen\./);
+    assert.match(fehlt, /<a href="#\/anlage\/STA4\/label\/STA4-01"/);
+    // Auffällige Labels haben ohnehin keinen Kachel-Knopf, also auch keinen Hinweis.
+    assert.doesNotMatch(text(kachel(label(f.sta4, 'STA4-07'), 'fehlt')), /Einzelansicht prüfen/);
+    // Ohne geprüfte Foto-Adresse lädt nie ein Foto: kein Knopf.
+    assert.deepEqual(knoepfe(rendere(M.kachel!.Kachel, { label: { ...l, bildUrl: null }, gesperrt: false, onBestaetigen: ohneEreignis })), []);
+  });
+  test('R8: in der Übersicht sind die Kachel-Knöpfe gesperrt, bis das Foto geladen ist', () => {
+    assert.equal(zaehle(uebersicht(f.sta4), /<button[^>]*disabled=""[^>]*>STA4-0\d bestätigen/), 6);
   });
 });
 

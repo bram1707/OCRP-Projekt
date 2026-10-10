@@ -129,6 +129,10 @@ describe('Quelltext der Oberfläche', () => {
     const binden = dateien(UI).filter((d) => /from '\.\/aktionen\.ts'|from '\.\.\/pruefung\/aktionen\.ts'/.test(lies(d))).map((d) => relative(UI, d)).sort();
     assert.deepEqual(binden, ['pruefung/AnlageSeite.tsx', 'pruefung/LabelSeite.tsx', 'simulation/Simulation.tsx', 'simulation/aktionen.ts']);
   });
+  test('R12: Adressen für Labels entstehen an genau einer Stelle (api.ts)', () => {
+    const orte = dateien(UI).filter((d) => lies(d).includes('/api/labels/')).map((d) => relative(UI, d));
+    assert.deepEqual(orte, ['api.ts']);
+  });
   test('Server-Typen nur als Typen eingebunden, damit kein Server-Code in die Oberfläche gelangt', () => {
     for (const d of dateien(UI)) {
       for (const zeile of lies(d).split('\n').filter((z) => /from '\.\.\/(\.\.\/)?(server|db|ai)\//.test(z))) {

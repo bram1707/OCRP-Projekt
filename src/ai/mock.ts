@@ -1,6 +1,6 @@
 // Mock-Modus der Spracherkennung (Standard, läuft ohne Schlüssel).
 // Statt fester Antworten leitet der Mock die Sprachen regelbasiert aus typischen
-// Wörtern und Zeichen ab (Entscheidung Bram, 10.10.2026). Er liefert wie ein
+// Wörtern und Zeichen ab (Projektentscheidung vom 10.10.2026). Er liefert wie ein
 // echtes Modell einen JSON-Text, der danach durch die Schemaprüfung muss.
 
 import { findeBelege, type SprachTreffer } from './belege.ts';

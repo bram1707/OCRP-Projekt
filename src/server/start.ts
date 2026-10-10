@@ -2,6 +2,7 @@
 // Beim ersten Start wird die Datenbank mit den fiktiven Testdaten gefüllt.
 
 import { existsSync, mkdirSync } from 'node:fs';
+import type { AddressInfo } from 'node:net';
 import { dirname, join, resolve } from 'node:path';
 import { leseKonfiguration, waehleModell } from '../ai/konfiguration.ts';
 import { istLeer, ladeTestdaten, oeffneDatenbank, spieleTestdatenEin } from '../db/datenbank.ts';
@@ -20,7 +21,9 @@ mkdirSync(dirname(dbPfad), { recursive: true });
 const db = oeffneDatenbank(dbPfad);
 if (istLeer(db)) await spieleTestdatenEin(db, ladeTestdaten(testdaten), modell);
 
-const port = Number(process.env.PORT ?? 3000);
-erstelleServer({ db, bilderOrdner: join(testdaten, 'bilder'), modell }).listen(port, '127.0.0.1', () => {
+const server = erstelleServer({ db, bilderOrdner: join(testdaten, 'bilder'), modell });
+server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {
+  // Den tatsächlich belegten Port nennen (bei PORT=0 wählt das System einen freien).
+  const { port } = server.address() as AddressInfo;
   console.log(`Prüfsystem läuft auf http://127.0.0.1:${port} (Spracherkennung: ${konfiguration.modus}, nur fiktive Daten)`);
 });

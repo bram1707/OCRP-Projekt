@@ -236,3 +236,24 @@ describe('Bilder', () => {
     }
   });
 });
+
+describe('P5: gemeldetes Label über die Schnittstelle', () => {
+  test('ein während der Prüfung gemeldetes Label verlässt Max\' Liste und steht in „ausserhalbDerPruefung“', async () => {
+    const eigener = await starteServer(await neueDatenbank());
+    try {
+      const vorher = await anfrage(eigener, '/api/anlagen/STA4/labels');
+      assert.ok(vorher.daten.labels.some((l: { id: string }) => l.id === 'STA4-02'));
+      const meldung = await anfrage(eigener, '/api/labels/STA4-02/fehler', {
+        methode: 'POST', rolle: 'max', koerper: JSON.stringify({ grund: 'beschaedigt' }),
+      });
+      assert.equal(meldung.status, 200);
+      const nachher = await anfrage(eigener, '/api/anlagen/STA4/labels');
+      assert.ok(!nachher.daten.labels.some((l: { id: string }) => l.id === 'STA4-02'), 'nicht mehr in Max\' Liste');
+      const ausserhalb = nachher.daten.ausserhalbDerPruefung.find((l: { id: string }) => l.id === 'STA4-02');
+      assert.equal(ausserhalb?.status, 'fehlerhaft');
+      assert.equal(ausserhalb?.letzterFehlergrundText, 'Label beschädigt');
+    } finally {
+      await eigener.schliessen();
+    }
+  });
+});

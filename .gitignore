@@ -3,3 +3,12 @@ __pycache__/
 node_modules/
 .env
 daten/
+dist/
+*.sqlite
+*.sqlite-*
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+coverage/

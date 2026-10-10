@@ -89,6 +89,7 @@ export function Simulation() {
   const [meldung, setMeldung] = useState<string | null>(null);
   const [speichert, setSpeichert] = useState(false);
   const speichertRef = useRef(false);
+  const fokusDanach = useRef(false);
 
   const laden = useCallback(async () => {
     const anlagen = await ladeAnlagen();
@@ -117,9 +118,17 @@ export function Simulation() {
     } finally {
       await laden().catch(() => undefined);
       speichertRef.current = false;
+      fokusDanach.current = true;
       setSpeichert(false);
     }
   }
+
+  // Die Zeile mit dem gedrückten Knopf ist weg; der Fokus geht auf den Knopf der nächsten Zeile oder die Überschrift.
+  useEffect(() => {
+    if (speichert || !fokusDanach.current) return;
+    fokusDanach.current = false;
+    (document.querySelector<HTMLElement>('[data-wartend] button') ?? document.querySelector<HTMLElement>('h1'))?.focus();
+  }, [speichert, wartend]);
 
   if (ladefehler) return <Fehler text={ladefehler} />;
   if (!wartend) return <Laden />;

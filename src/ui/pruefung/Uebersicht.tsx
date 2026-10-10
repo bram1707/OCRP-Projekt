@@ -42,11 +42,13 @@ export function Uebersicht({
   ereignis,
   ueberschriftRef,
   abbrechenRef,
+  freigebenRef,
 }: {
   zustand: UebersichtDaten;
   ereignis: (e: UebersichtEreignis) => void;
   ueberschriftRef?: Ref<HTMLHeadingElement>;
   abbrechenRef?: Ref<HTMLButtonElement>;
+  freigebenRef?: Ref<HTMLButtonElement>;
 }) {
   const { daten, kacheln, nurAuffaellige, speichert, meldung, fehler, zusammenfassung, rueckfrage, freigabeFehler } = zustand;
   const { anlage, labels, ausserhalbDerPruefung } = daten;
@@ -149,6 +151,7 @@ export function Uebersicht({
             speichert={speichert}
             fehler={freigabeFehler}
             abbrechenRef={abbrechenRef}
+            freigebenRef={freigebenRef}
             onFreigeben={() => ereignis({ art: 'freigeben' })}
             onBestaetigen={() => ereignis({ art: 'freigabeBestaetigen' })}
             onAbbrechen={() => ereignis({ art: 'freigabeAbbrechen' })}

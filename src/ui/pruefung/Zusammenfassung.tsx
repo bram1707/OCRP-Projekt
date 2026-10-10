@@ -11,6 +11,7 @@ export function Zusammenfassung({
   speichert,
   fehler,
   abbrechenRef,
+  freigebenRef,
   onFreigeben,
   onBestaetigen,
   onAbbrechen,
@@ -20,6 +21,7 @@ export function Zusammenfassung({
   speichert: boolean;
   fehler: { text: string; gruende: readonly Hinderungsgrund[] } | null;
   abbrechenRef?: Ref<HTMLButtonElement>;
+  freigebenRef?: Ref<HTMLButtonElement>;
   onFreigeben: () => void;
   onBestaetigen: () => void;
   onAbbrechen: () => void;
@@ -50,7 +52,7 @@ export function Zusammenfassung({
         </div>
       )}
       {!rueckfrage ? (
-        <button type="button" className={`${KNOPF_HAUPT} mt-5`} disabled={speichert} onClick={onFreigeben}>
+        <button ref={freigebenRef} type="button" className={`${KNOPF_HAUPT} mt-5`} disabled={speichert} onClick={onFreigeben}>
           Anlage freigeben
         </button>
       ) : (

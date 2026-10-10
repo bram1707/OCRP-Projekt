@@ -112,6 +112,8 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
     if (id === labelId) {
       nav.setMeldung(meldung);
       await laden().catch((e: Error) => setLadefehler(e.message));
+      // Der Knopf „Bestätigung zurücknehmen“ ist weg; der Fokus geht wie bei jedem Label auf die Überschrift.
+      ueberschrift.current?.focus();
     } else {
       nav.navigiere(zumLabel(anlageId, id), meldung);
     }

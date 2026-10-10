@@ -35,6 +35,7 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
   const speichertRef = useRef(false);
   const ueberschrift = useRef<HTMLHeadingElement>(null);
   const abbrechen = useRef<HTMLButtonElement>(null);
+  const freigebenKnopf = useRef<HTMLButtonElement>(null);
 
   const anfrage = useRef(0);
 
@@ -72,10 +73,23 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
     if (rueckfrage) abbrechen.current?.focus();
   }, [rueckfrage]);
 
+  // Nach dem Schließen der Rückfrage geht der Fokus zurück auf „Anlage freigeben“ (oder die Überschrift,
+  // wenn der Knopf fehlt), sobald nichts mehr gespeichert wird und der Knopf wieder bedienbar ist.
+  const fokusZurueck = useRef(false);
+  const schliesseRueckfrage = () => {
+    fokusZurueck.current = true;
+    setRueckfrage(false);
+  };
+  useEffect(() => {
+    if (rueckfrage || speichert || !fokusZurueck.current) return;
+    fokusZurueck.current = false;
+    (freigebenKnopf.current ?? ueberschrift.current)?.focus();
+  }, [rueckfrage, speichert]);
+
   useEffect(() => {
     if (!rueckfrage) return;
     const taste = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setRueckfrage(false);
+      if (e.key === 'Escape') schliesseRueckfrage();
     };
     document.addEventListener('keydown', taste);
     return () => document.removeEventListener('keydown', taste);
@@ -129,7 +143,7 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
         setRueckfrage(true);
         return;
       case 'freigabeAbbrechen':
-        setRueckfrage(false);
+        schliesseRueckfrage();
         return;
       case 'freigabeBestaetigen':
         void schreibe(async () => {
@@ -141,9 +155,9 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
             ueberschrift.current?.focus();
           } catch (fehlerFreigabe) {
             if (fehlerFreigabe instanceof ServerFehler) {
-              setRueckfrage(false);
               setFreigabeFehler({ text: fehlerFreigabe.message, gruende: hinderungsgruende(fehlerFreigabe.details) });
               await laden();
+              schliesseRueckfrage();
               return;
             }
             throw fehlerFreigabe;
@@ -171,6 +185,7 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
       ereignis={ereignis}
       ueberschriftRef={ueberschrift}
       abbrechenRef={abbrechen}
+      freigebenRef={freigebenKnopf}
     />
   );
 }

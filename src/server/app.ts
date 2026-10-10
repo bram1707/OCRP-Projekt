@@ -1,0 +1,211 @@
+// Kleiner HTTP-Server auf node:http. Es gibt bewusst keinen Endpunkt, der mehrere
+// Labels auf einmal ändert (AK-11). Schreiben darf nur die simulierte Rolle „max“.
+
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+import type { DatabaseSync } from 'node:sqlite';
+import { mockModell, type SprachModell } from '../ai/mock.ts';
+import { holeAnlage, holeAnlagen, holeLabel, holeLabels } from '../db/abfragen.ts';
+import { bessereNach, bestaetigeLabel, Fachfehler, gebeAnlageFrei, meldeFehler } from '../db/aktionen.ts';
+import { BILD_DATEI } from '../db/datenbank.ts';
+import { anlageAnsicht, bewerteLabels, labelAnsicht, labelsFuerMax, zusammenfassung } from './ansichten.ts';
+
+export interface ServerOptionen {
+  db: DatabaseSync;
+  bilderOrdner: string;
+  modell?: SprachModell;
+}
+
+/** Simulierte Rollen, es gibt keine Anmeldung. */
+export type Rolle = 'max' | 'marie';
+
+const MAX_KOERPER = 10 * 1024;
+
+interface Anfrage {
+  rolle: Rolle | null;
+  koerper: () => Promise<Record<string, unknown>>;
+}
+
+interface Route {
+  methode: 'GET' | 'POST';
+  muster: RegExp;
+  schreibend: boolean;
+  aktion: (anfrage: Anfrage, teile: string[]) => Promise<unknown> | unknown;
+}
+
+function leseRolle(req: IncomingMessage): Rolle | null {
+  const wert = req.headers['x-rolle'];
+  return wert === 'max' || wert === 'marie' ? wert : null;
+}
+
+function leseKoerper(req: IncomingMessage): Promise<Record<string, unknown>> {
+  return new Promise((aufloesen, ablehnen) => {
+    const teile: Buffer[] = [];
+    let groesse = 0;
+    req.on('data', (stueck: Buffer) => {
+      groesse += stueck.length;
+      if (groesse > MAX_KOERPER) {
+        // Rest verwerfen statt speichern; die Verbindung wird nach der Antwort geschlossen.
+        req.removeAllListeners('data');
+        req.resume();
+        ablehnen(new Fachfehler(413, 'Die Anfrage ist zu groß.'));
+        return;
+      }
+      teile.push(stueck);
+    });
+    req.on('end', () => {
+      const text = Buffer.concat(teile).toString('utf8').trim();
+      if (text === '') return aufloesen({});
+      try {
+        const daten: unknown = JSON.parse(text);
+        if (typeof daten !== 'object' || daten === null || Array.isArray(daten)) {
+          return ablehnen(new Fachfehler(400, 'Die Anfrage muss ein JSON-Objekt sein.'));
+        }
+        aufloesen(daten as Record<string, unknown>);
+      } catch {
+        ablehnen(new Fachfehler(400, 'Die Anfrage ist kein gültiges JSON.'));
+      }
+    });
+    req.on('error', ablehnen);
+  });
+}
+
+function sendeJson(res: ServerResponse, status: number, daten: unknown): void {
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    ...(status === 413 ? { Connection: 'close' } : {}),
+  });
+  res.end(JSON.stringify(daten));
+}
+
+function routen(optionen: ServerOptionen): Route[] {
+  const { db } = optionen;
+  const modell = optionen.modell ?? mockModell;
+
+  const anlageOder404 = (id: string) => {
+    const anlage = holeAnlage(db, id);
+    if (!anlage) throw new Fachfehler(404, 'Diese Anlage gibt es nicht.');
+    return anlage;
+  };
+  const labelAntwort = (id: string) => {
+    const label = holeLabel(db, id);
+    if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+    // Auffälligkeit hängt von den anderen Labels der Anlage ab.
+    const bewertung = bewerteLabels(holeLabels(db, label.anlageId));
+    return labelAnsicht(label, bewertung.get(label.id));
+  };
+
+  return [
+    {
+      methode: 'GET', muster: /^\/api\/anlagen$/, schreibend: false,
+      aktion: () => holeAnlagen(db).map((a) => anlageAnsicht(a, holeLabels(db, a.id))),
+    },
+    {
+      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/labels$/, schreibend: false,
+      aktion: (_a, [id]) => {
+        const anlage = anlageOder404(id!);
+        const labels = holeLabels(db, anlage.id);
+        return { anlage: anlageAnsicht(anlage, labels), labels: labelsFuerMax(labels) };
+      },
+    },
+    {
+      methode: 'GET', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/zusammenfassung$/, schreibend: false,
+      aktion: (_a, [id]) => {
+        const anlage = anlageOder404(id!);
+        return zusammenfassung(anlage, holeLabels(db, anlage.id));
+      },
+    },
+    {
+      methode: 'POST', muster: /^\/api\/anlagen\/([A-Z0-9-]+)\/freigeben$/, schreibend: true,
+      aktion: (_a, [id]) => {
+        const anlage = gebeAnlageFrei(db, id!, 'max');
+        return anlageAnsicht(anlage, holeLabels(db, anlage.id));
+      },
+    },
+    {
+      methode: 'GET', muster: /^\/api\/labels\/([A-Z0-9-]+)$/, schreibend: false,
+      aktion: (_a, [id]) => labelAntwort(id!),
+    },
+    {
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/bestaetigen$/, schreibend: true,
+      aktion: (_a, [id]) => {
+        bestaetigeLabel(db, id!, 'max');
+        return labelAntwort(id!);
+      },
+    },
+    {
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/fehler$/, schreibend: true,
+      aktion: async (anfrage, [id]) => {
+        const { grund } = await anfrage.koerper();
+        meldeFehler(db, id!, grund, 'max');
+        return labelAntwort(id!);
+      },
+    },
+    {
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/nachbessern$/, schreibend: true,
+      aktion: async (_a, [id]) => {
+        await bessereNach(db, id!, new Date(), modell);
+        return labelAntwort(id!);
+      },
+    },
+  ];
+}
+
+async function sendeBild(res: ServerResponse, bilderOrdner: string, datei: string): Promise<void> {
+  if (!BILD_DATEI.test(datei)) throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
+  let inhalt: Buffer;
+  try {
+    inhalt = await readFile(join(bilderOrdner, datei));
+  } catch {
+    throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
+  }
+  res.writeHead(200, {
+    'Content-Type': 'image/svg+xml',
+    'X-Content-Type-Options': 'nosniff',
+    // SVGs dürfen keine Skripte ausführen.
+    'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'",
+  });
+  res.end(inhalt);
+}
+
+export function erstelleServer(optionen: ServerOptionen): Server {
+  const tabelle = routen(optionen);
+
+  return createServer(async (req, res) => {
+    try {
+      const pfad = new URL(req.url ?? '/', 'http://localhost').pathname;
+
+      if (req.method === 'GET' && pfad.startsWith('/bilder/')) {
+        await sendeBild(res, optionen.bilderOrdner, pfad.slice('/bilder/'.length));
+        return;
+      }
+
+      let teile: string[] | null = null;
+      const route = tabelle.find((r) => {
+        if (r.methode !== req.method) return false;
+        const treffer = r.muster.exec(pfad);
+        if (treffer) teile = treffer.slice(1);
+        return treffer !== null;
+      });
+      if (!route || !teile) throw new Fachfehler(404, 'Diese Adresse gibt es nicht.');
+
+      const rolle = leseRolle(req);
+      if (route.schreibend && rolle !== 'max') {
+        throw new Fachfehler(403, 'Nur Max (Qualitätsmanagement) darf Labels prüfen und Anlagen freigeben.');
+      }
+
+      const ergebnis = await route.aktion({ rolle, koerper: () => leseKoerper(req) }, teile);
+      sendeJson(res, 200, ergebnis);
+    } catch (fehler) {
+      if (fehler instanceof Fachfehler) {
+        sendeJson(res, fehler.status, { fehler: fehler.message, details: fehler.details ?? null });
+      } else {
+        console.error(fehler);
+        sendeJson(res, 500, { fehler: 'Interner Fehler. Bitte später erneut versuchen.' });
+      }
+    }
+  });
+}

@@ -1,0 +1,184 @@
+[
+  {
+    "id": "STA4-01",
+    "anlageId": "STA4",
+    "bild": "STA4-01.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nUWAGA! Ryzyko zgniecenia. Trzymać ręce z dala.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "STA4-02",
+    "anlageId": "STA4",
+    "bild": "STA4-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nUWAGA! Gorąca powierzchnia. Nie dotykać.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "STA4-03",
+    "anlageId": "STA4",
+    "bild": "STA4-03.svg",
+    "ocrText": "GEFAHR! Hochspannung. Vor Wartung abschalten.\nNIEBEZPIECZEŃSTWO! Wysokie napięcie. Wyłączyć przed konserwacją.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "STA4-04",
+    "anlageId": "STA4",
+    "bild": "STA4-04.svg",
+    "ocrText": "Schutzbrille tragen! Nur mit Schutzbrille benutzen.\nNosić okulary ochronne!",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "STA4-05",
+    "anlageId": "STA4",
+    "bild": "STA4-05.svg",
+    "ocrText": "Gehörschutz tragen! Nur für befugte Personen.\nNosić ochronniki słuchu!",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "STA4-06",
+    "anlageId": "STA4",
+    "bild": "STA4-06.svg",
+    "ocrText": "Zutritt für Unbefugte verboten!\nOsobom nieupoważnionym wstęp wzbroniony!",
+    "ocrKonfidenz": 0.97
+  },
+  {
+    "id": "STA4-07",
+    "anlageId": "STA4",
+    "bild": "STA4-07.svg",
+    "ocrText": "ACHTUNG! Stromschlag. Nicht öffnen.\nWARNING! Electric shock. Do not open.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "STA4-08",
+    "anlageId": "STA4",
+    "bild": "STA4-08.svg",
+    "ocrText": "A#H7 ..G! Q~e st;h ~~ H,n\n#w ~ G. r ..zk ;; tr",
+    "ocrKonfidenz": 0.34
+  },
+  {
+    "id": "STA4-09",
+    "anlageId": "STA4",
+    "bild": "STA4-09.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nUWаGа! Ryzyko zgniеcеniа. Trzymаć ręce z dаlеkа.",
+    "ocrKonfidenz": 0.83
+  },
+  {
+    "id": "STA4-10",
+    "anlageId": "STA4",
+    "bild": "STA4-10.svg",
+    "ocrText": "Maschine nur mit Schutzbrille benutzen.\nUwaga! Przed konserwacją wyłączyć maszynę.",
+    "ocrKonfidenz": 0.95,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-10T07:40:00.000Z"
+    }
+  },
+  {
+    "id": "FOE2-01",
+    "anlageId": "FOE2",
+    "bild": "FOE2-01.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nATTENTION ! Risque d'écrasement. Tenir les mains éloignées.",
+    "ocrKonfidenz": 0.95,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-09T14:10:00.000Z"
+    }
+  },
+  {
+    "id": "FOE2-02",
+    "anlageId": "FOE2",
+    "bild": "FOE2-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche.\nATTENTION ! Surface chaude. Ne pas toucher.",
+    "ocrKonfidenz": 0.94,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-09T14:12:00.000Z"
+    }
+  },
+  {
+    "id": "FOE2-03",
+    "anlageId": "FOE2",
+    "bild": "FOE2-03.svg",
+    "ocrText": "GEFAHR! Hochspannung. Nicht öffnen.\nDANGER ! Haute tension. Ne pas ouvrir.",
+    "ocrKonfidenz": 0.96,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-09T14:14:00.000Z"
+    }
+  },
+  {
+    "id": "FOE2-04",
+    "anlageId": "FOE2",
+    "bild": "FOE2-04.svg",
+    "ocrText": "Nur mit Schutzbrille arbeiten! Schutzbrille tragen.\nPorter des lunettes de protection !",
+    "ocrKonfidenz": 0.93,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-09T14:16:00.000Z"
+    }
+  },
+  {
+    "id": "FOE2-05",
+    "anlageId": "FOE2",
+    "bild": "FOE2-05.svg",
+    "ocrText": "Zutritt für Unbefugte verboten!\nEntrée interdite. Accès autorisé uniquement au personnel.",
+    "ocrKonfidenz": 0.95,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-09T14:18:00.000Z"
+    }
+  },
+  {
+    "id": "SWR5-01",
+    "anlageId": "SWR5",
+    "bild": "SWR5-01.svg",
+    "ocrText": "ACHTUNG! Hochspannung. Nicht öffnen.\nВНИМАНИЕ! Высокое напряжение. Не открывать.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "SWR5-02",
+    "anlageId": "SWR5",
+    "bild": "SWR5-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nОСТОРОЖНО! Горячая поверхность. Не прикасаться.",
+    "ocrKonfidenz": 0.85,
+    "ausgangszustand": {
+      "status": "fehlerhaft",
+      "fehlergrund": "beschaedigt",
+      "am": "2026-10-10T08:05:00.000Z"
+    },
+    "nachKorrektur": {
+      "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nОСТОРОЖНО! Горячая поверхность. Не прикасаться.",
+      "ocrKonfidenz": 0.97
+    }
+  },
+  {
+    "id": "SWR5-03",
+    "anlageId": "SWR5",
+    "bild": "SWR5-03.svg",
+    "ocrText": "Schutzbrille tragen! Nur für Wartungspersonal.\nНосить защитные очки!",
+    "ocrKonfidenz": 0.94,
+    "ausgangszustand": {
+      "status": "nachgebessert",
+      "fehlergrund": "sprache_falsch",
+      "am": "2026-10-10T07:15:00.000Z"
+    }
+  },
+  {
+    "id": "SWR5-04",
+    "anlageId": "SWR5",
+    "bild": "SWR5-04.svg",
+    "ocrText": "Vor Wartung abschalten!\nОтключить перед обслуживанием!",
+    "ocrKonfidenz": 0.96,
+    "ausgangszustand": {
+      "status": "bestaetigt",
+      "am": "2026-10-10T07:20:00.000Z"
+    }
+  },
+  {
+    "id": "SWR5-05",
+    "anlageId": "SWR5",
+    "bild": null,
+    "ocrText": "",
+    "ocrKonfidenz": 0
+  }
+]

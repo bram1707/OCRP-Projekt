@@ -1,0 +1,10 @@
+[
+  { "id": "STA4", "name": "Stanzanlage 4", "sollAnzahl": 10 },
+  {
+    "id": "FOE2",
+    "name": "Förderband 2",
+    "sollAnzahl": 5,
+    "freigabe": { "von": "max", "am": "2026-10-09T15:00:00.000Z" }
+  },
+  { "id": "SWR5", "name": "Schweißroboter 5", "sollAnzahl": 5 }
+]

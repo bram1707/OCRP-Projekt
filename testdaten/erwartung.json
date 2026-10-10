@@ -1,0 +1,216 @@
+{
+  "_hinweis": "Erwartungswerte NUR für Tests. Der Server liest diese Datei nie, und sie erscheint nie in der Ansicht (AK-61).",
+  "STA4-01": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-02": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-03": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-04": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-05": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-06": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "STA4-07": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [
+      "abweichende_sprachen"
+    ],
+    "status": "offen",
+    "notiz": "Abweichende Kombination: Deutsch/Englisch statt Deutsch/Polnisch wie die übrigen Labels."
+  },
+  "STA4-08": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": false,
+    "unsicher": true,
+    "auffaellig": [
+      "unsicher_ocr",
+      "unsicher_sprache",
+      "text_unleserlich"
+    ],
+    "status": "unsicher",
+    "notiz": "Unleserlich: Foto verschwommen, OCR liefert nur Zeichensalat."
+  },
+  "STA4-09": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": false,
+    "unsicher": true,
+    "auffaellig": [
+      "unsicher_sprache"
+    ],
+    "status": "unsicher",
+    "notiz": "Falsch erkannt: OCR hat im polnischen Teil a und e als kyrillische Buchstaben gelesen, der Vorschlag enthält deshalb fälschlich Russisch."
+  },
+  "STA4-10": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "FOE2-01": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "FOE2-02": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "FOE2-03": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "FOE2-04": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "FOE2-05": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "SWR5-01": {
+    "sprachen": [
+      "de",
+      "ru"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "SWR5-02": {
+    "sprachen": [
+      "de",
+      "ru"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "fehlerhaft",
+    "notiz": "Von Max als beschädigt gemeldet, wartet auf Nachbesserung."
+  },
+  "SWR5-03": {
+    "sprachen": [
+      "de",
+      "ru"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [
+      "nachgebessert"
+    ],
+    "status": "nachgebessert",
+    "notiz": "Russischer Teil fehlte, nach Nachbesserung zurück in der Prüfung."
+  },
+  "SWR5-04": {
+    "sprachen": [
+      "de",
+      "ru"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "bestaetigt"
+  },
+  "SWR5-05": {
+    "sprachen": [],
+    "lesbar": false,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "fehlt",
+    "notiz": "Ohne Foto: laut Anlagenliste vorhanden, aber nicht fotografiert."
+  }
+}

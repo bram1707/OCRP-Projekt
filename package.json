@@ -1,0 +1,20 @@
+{
+  "name": "ocr-label-pruefsystem",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP: Sicherheits- und Warnlabels einzeln prüfen (nur fiktive Daten, KI im Mock-Modus)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "server": "node --disable-warning=ExperimentalWarning src/server/start.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "bilder": "node testdaten/erzeuge-bilder.ts"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}

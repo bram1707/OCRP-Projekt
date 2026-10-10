@@ -1,6 +1,7 @@
 // Status eines Labels, Sperre der Anlage und Reihenfolge in Max' Liste.
 // Reine Funktionen ohne Datenbank, damit sie einzeln testbar sind.
 
+import type { Prioritaet } from '../ai/antwortSchema.ts';
 import { istUnsicher } from '../ai/detectLanguage.ts';
 
 export const STATUS = ['offen', 'unsicher', 'nachgebessert', 'fehlerhaft', 'bestaetigt', 'fehlt'] as const;
@@ -104,11 +105,18 @@ const RANG_MAX: Record<Status, number> = {
   fehlt: 5,
 };
 
-/** Sortiert nach Status-Relevanz, innerhalb gleichen Status auffällige vor unauffälligen (AK-19, AK-32). */
-export function sortiereFuerMax<T extends { id: string; status: Status; auffaellig: boolean }>(labels: readonly T[]): T[] {
+/**
+ * Sortiert nach Status-Relevanz (AK-13). Innerhalb gleichen Status zuerst „genau prüfen“ (AK-32),
+ * dann auffällige vor unauffälligen (AK-19), dann nach Kennung.
+ */
+export function sortiereFuerMax<T extends { id: string; status: Status; auffaellig: boolean; prioritaet: Prioritaet }>(
+  labels: readonly T[],
+): T[] {
+  const genau = (l: T) => Number(l.prioritaet === 'genau_pruefen');
   return [...labels].sort(
     (a, b) =>
       RANG_MAX[a.status] - RANG_MAX[b.status] ||
+      genau(b) - genau(a) ||
       Number(b.auffaellig) - Number(a.auffaellig) ||
       a.id.localeCompare(b.id),
   );

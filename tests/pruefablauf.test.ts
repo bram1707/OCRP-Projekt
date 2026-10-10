@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, test } from 'node:test';
 import { holeAnlage, holeEntscheidungen, holeLabel, holeLabels } from '../src/db/abfragen.ts';
 import { bessereNach, bestaetigeLabel, Fachfehler, gebeAnlageFrei, meldeFehler } from '../src/db/aktionen.ts';
-import { istGesperrt, PRUEFBAR, pruefeFreigabe, STATUS, type Status } from '../src/db/status.ts';
+import { istGesperrt, PRUEFBAR, pruefeFreigabe, sortiereFuerMax, STATUS, type Status } from '../src/db/status.ts';
 import { anlageAnsicht, bewerteLabels, labelsFuerMax, zusammenfassung } from '../src/server/ansichten.ts';
 import { erwartungen, neueDatenbank, WURZEL } from './hilfen.ts';
 
@@ -175,6 +175,15 @@ describe('AK-10, AK-11, AK-12, AK-22 Prüfen, Melden, Nachbessern', () => {
 });
 
 describe('AK-13, AK-32 Reihenfolge in Max\' Liste', () => {
+  test('N1: innerhalb eines Status steht „genau prüfen“ vor „normal“, auch ohne Auffälligkeit', () => {
+    const liste = sortiereFuerMax([
+      { id: 'A', status: 'offen', auffaellig: false, prioritaet: 'normal' },
+      { id: 'B', status: 'offen', auffaellig: false, prioritaet: 'genau_pruefen' },
+      { id: 'C', status: 'offen', auffaellig: true, prioritaet: 'normal' },
+      { id: 'D', status: 'unsicher', auffaellig: true, prioritaet: 'genau_pruefen' },
+    ] as const);
+    assert.deepEqual(liste.map((l) => l.id), ['D', 'B', 'C', 'A']);
+  });
   test('R1: fehlerhafte und fehlende Labels stehen nicht in Max\' Liste', async () => {
     const db = await neueDatenbank();
     const ids = labelsFuerMax(holeLabels(db, 'SWR5')).map((l) => l.id);

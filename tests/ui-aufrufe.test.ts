@@ -4,7 +4,7 @@
 import assert from 'node:assert/strict';
 import type { DatabaseSync } from 'node:sqlite';
 import { afterEach, beforeEach, describe, test } from 'node:test';
-import { ladeAnlage, ladeAnlagen, ladeLabel, ladeZusammenfassung, ServerFehler } from '../src/ui/api.ts';
+import { ladeAnlage, ladeAnlagen, ladeLabel, ladeMarie, ladeZusammenfassung, ServerFehler } from '../src/ui/api.ts';
 import * as pruefung from '../src/ui/pruefung/aktionen.ts';
 import * as simulation from '../src/ui/simulation/aktionen.ts';
 import { neueDatenbank, starteServer, type TestServer } from './hilfen.ts';
@@ -53,6 +53,8 @@ describe('AK-03 Laden, Öffnen und Blättern schreiben nie', () => {
       await ladeZusammenfassung(a.id);
       for (const l of [...d.labels, ...d.ausserhalbDerPruefung]) await ladeLabel(l.id);
     }
+    await ladeMarie();
+    assert.ok(aufrufe.some((a) => a.pfad === '/api/marie'));
     assert.ok(aufrufe.length > 20);
     for (const a of aufrufe) {
       assert.equal(a.methode, 'GET', a.pfad);

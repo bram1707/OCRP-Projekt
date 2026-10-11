@@ -2,8 +2,11 @@
 // ausschließlich in pruefung/aktionen.ts und simulation/aktionen.ts.
 
 import type { AnlageAnsicht, LabelAnsicht, Zusammenfassung } from '../server/ansichten.ts';
+import type { MarieUebersicht } from '../server/marie.ts';
 
 export type { AnlageAnsicht, LabelAnsicht, Zusammenfassung };
+export type { MarieAnlage, MarieLabel, MarieUebersicht } from '../server/marie.ts';
+export type { GruppeMarie } from '../db/status.ts';
 export type { Grund } from '../ai/auffaelligkeit.ts';
 export type { Beleg } from '../ai/belege.ts';
 export type { Hinderungsgrund, Status } from '../db/status.ts';
@@ -63,3 +66,7 @@ export const ladeAnlagen = () => hole<AnlageAnsicht[]>('/api/anlagen');
 export const ladeAnlage = (anlageId: string) => hole<AnlageMitLabels>(`/api/anlagen/${teil(anlageId)}/labels`);
 export const ladeZusammenfassung = (anlageId: string) => hole<Zusammenfassung>(`/api/anlagen/${teil(anlageId)}/zusammenfassung`);
 export const ladeLabel = (labelId: string) => hole<LabelAnsicht>(labelPfad(labelId));
+/** Maries Übersicht in einem Abruf (AK-40 bis AK-45) */
+export const ladeMarie = () => hole<MarieUebersicht>('/api/marie');
+/** Adresse für das Signal nach jeder Änderung (AK-44) */
+export const EREIGNISSE = '/api/ereignisse';

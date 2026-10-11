@@ -64,15 +64,32 @@ export function Legende({ label }: { label: LabelAnsicht }) {
   );
 }
 
-export function Warum({ label }: { label: LabelAnsicht }) {
+/**
+ * Belege für Sprache und Auffälligkeit (AK-20, AK-43). `titelId` und `ebene` lassen sich setzen,
+ * damit mehrere dieser Bereiche auf einer Seite stehen können (Maries Liste).
+ */
+export function Warum({
+  label,
+  titelId = 'warum-titel',
+  ebene = 3,
+  auffaelligErklaeren = false,
+}: {
+  label: LabelAnsicht;
+  titelId?: string;
+  ebene?: 3 | 4;
+  /** Satz „Auffällig heißt …“ direkt dabei, wo er nicht schon auf der Seite steht (Maries Liste) */
+  auffaelligErklaeren?: boolean;
+}) {
   const stuecke = textStuecke(label.ocrText, label.belege);
   const buchstaben = einzelneBuchstaben(stuecke);
   const codes = [...new Set(label.belege.map((b) => b.sprache))];
+  const Titel = ebene === 3 ? 'h3' : 'h4';
+  const Untertitel = ebene === 3 ? 'h4' : 'h5';
   return (
-    <section className="mt-4 rounded-xl border-2 border-slate-400 bg-white p-4" aria-labelledby="warum-titel">
-      <h3 id="warum-titel" className="text-xl font-bold">
+    <section className="mt-4 rounded-xl border-2 border-slate-400 bg-white p-4" aria-labelledby={titelId}>
+      <Titel id={titelId} className="text-xl font-bold">
         Woran die Sprache erkannt wurde
-      </h3>
+      </Titel>
       <p className="mt-2">{label.begruendung}</p>
       {label.belege.length === 0 ? (
         <p className="mt-2 font-semibold">Keine typischen Wörter oder Zeichen gefunden.</p>
@@ -102,7 +119,8 @@ export function Warum({ label }: { label: LabelAnsicht }) {
       )}
       {label.gruende.length > 0 && (
         <>
-          <h4 className="mt-4 text-lg font-bold">Warum auffällig</h4>
+          <Untertitel className="mt-4 text-lg font-bold">Warum auffällig</Untertitel>
+          {auffaelligErklaeren && <p className="mt-1 text-slate-700">Auffällig heißt: Max soll genauer hinsehen. Es ist kein Fehler.</p>}
           <ul className="mt-1 list-disc pl-6">
             {label.gruende.map((g) => (
               <li key={g.code}>{g.text}</li>

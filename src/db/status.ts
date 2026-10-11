@@ -121,3 +121,35 @@ export function sortiereFuerMax<T extends { id: string; status: Status; auffaell
       a.id.localeCompare(b.id),
   );
 }
+
+/** Maries vier Zahlen (AK-40): jedes Label gehört zu genau einer Gruppe. */
+export const GRUPPEN_MARIE = ['offen', 'erledigt', 'fehlerhaft'] as const;
+export type GruppeMarie = (typeof GRUPPEN_MARIE)[number];
+
+/**
+ * Zuordnung wie HMW 2 (Widerspruch 6 der Akzeptanzkriterien): „fehlerhaft“ schließt Unsicher und Fehlt ein.
+ * Nachgebessert wartet wieder auf Max und zählt deshalb als offen (wie AK-12).
+ */
+export const GRUPPE_MARIE: Record<Status, GruppeMarie> = {
+  offen: 'offen',
+  nachgebessert: 'offen',
+  bestaetigt: 'erledigt',
+  unsicher: 'fehlerhaft',
+  fehlerhaft: 'fehlerhaft',
+  fehlt: 'fehlerhaft',
+};
+
+/** Relevanz bei Marie (AK-41): Fehlt, Fehlerhaft, Unsicher, Offen, Bestätigt; Nachgebessert vor Offen. */
+export const RANG_MARIE: Record<Status, number> = {
+  fehlt: 0,
+  fehlerhaft: 1,
+  unsicher: 2,
+  nachgebessert: 3,
+  offen: 4,
+  bestaetigt: 5,
+};
+
+/** Sortiert nach Maries Relevanz, bei gleichem Status nach Kennung. */
+export function sortiereFuerMarie<T extends { status: Status; schluessel: string }>(labels: readonly T[]): T[] {
+  return [...labels].sort((a, b) => RANG_MARIE[a.status] - RANG_MARIE[b.status] || a.schluessel.localeCompare(b.schluessel));
+}

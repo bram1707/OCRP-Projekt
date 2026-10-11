@@ -130,3 +130,22 @@ export function holeEntscheidungen(db: DatabaseSync, labelId: string): Entscheid
     grund: (z.grund as string | null) ?? null,
   }));
 }
+
+export interface LetzteEntscheidung {
+  wer: string;
+  wann: string;
+  grund: string | null;
+}
+
+/** Je Label der jeweils letzte Protokolleintrag je Ergebnis, etwa wann es zuletzt bestätigt wurde (AK-22, AK-43). */
+export function holeLetzteEntscheidungen(db: DatabaseSync): Map<string, Partial<Record<Ergebnis, LetzteEntscheidung>>> {
+  const zeilen = db.prepare('SELECT label_id, wer, wann, ergebnis, grund FROM entscheidungen WHERE label_id IS NOT NULL ORDER BY id').all() as Zeile[];
+  const je = new Map<string, Partial<Record<Ergebnis, LetzteEntscheidung>>>();
+  for (const z of zeilen) {
+    const id = z.label_id as string;
+    const eintraege = je.get(id) ?? {};
+    eintraege[z.ergebnis as Ergebnis] = { wer: z.wer as string, wann: z.wann as string, grund: (z.grund as string | null) ?? null };
+    je.set(id, eintraege);
+  }
+  return je;
+}

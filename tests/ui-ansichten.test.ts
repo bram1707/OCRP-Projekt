@@ -474,11 +474,12 @@ describe('AK-21 einfache Bedienung', () => {
     }),
   });
   test('Hinweis „Testversion …“ im Rahmen jeder Seite', () => {
-    for (const simulation of [false, true]) {
-      const html = rendere(M.rahmen!.Rahmen, { simulation, children: 'Inhalt' });
-      assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./);
+    for (const bereich of ['max', 'marie', 'simulation']) {
+      const html = rendere(M.rahmen!.Rahmen, { bereich, children: 'Inhalt' });
+      assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./, bereich);
     }
     assert.match(text(rendere(M.rahmen!.Rahmen, { children: 'x' })), /Label-Prüfung · Max \(Qualitätsmanagement\)/);
+    assert.match(text(rendere(M.rahmen!.Rahmen, { bereich: 'marie', children: 'x' })), /Übersicht · Marie \(Fertigungsleitung\)/);
   });
   test('Überschriften ohne Sprung: auf die Anlage folgt „Labels“, dann die Kacheln', () => {
     const ebenen = [...uebersicht(f.sta4).matchAll(/<h(\d)\b[^>]*>([\s\S]*?)<\/h\1>/g)].map((m) => [Number(m[1]), text(m[2]!)] as const);

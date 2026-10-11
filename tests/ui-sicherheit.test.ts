@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { after, before, describe, test } from 'node:test';
 import { build, createServer, type ViteDevServer } from 'vite';
-import type { AnlageMitLabels, Zusammenfassung } from '../src/ui/api.ts';
+import type { AnlageMitLabels, MarieUebersicht, Zusammenfassung } from '../src/ui/api.ts';
 import { erstelleServer } from '../src/server/app.ts';
 import { CSP_OBERFLAECHE } from '../src/server/statisch.ts';
 import { anfrage, BILDER, erwartungen, neueDatenbank, TESTDATEN, WURZEL, type TestServer } from './hilfen.ts';
@@ -26,7 +26,8 @@ function dateien(ordner: string): string[] {
 /** Ersetzt jeden Text in den Daten durch den Angriffstext; Zahlen und Wahrheitswerte bleiben. */
 function vergifte<T>(wert: T, schluessel = ''): T {
   if (typeof wert === 'string') {
-    if (schluessel === 'status') return wert;
+    // Feste Werte, nach denen die Oberfläche auswählt (Status, Maries Gruppen), bleiben.
+    if (schluessel === 'status' || schluessel === 'gruppe' || schluessel === 'dringendster') return wert;
     if (schluessel === 'bildUrl') return 'javascript:alert(1)' as T;
     return ANGRIFF as T;
   }
@@ -39,7 +40,7 @@ function vergifte<T>(wert: T, schluessel = ''): T {
 
 describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
   let vite: ViteDevServer;
-  let d: { sta4: AnlageMitLabels; swr5: AnlageMitLabels; zf: Zusammenfassung; anlagen: unknown[] };
+  let d: { sta4: AnlageMitLabels; swr5: AnlageMitLabels; zf: Zusammenfassung; anlagen: unknown[]; marie: MarieUebersicht };
   before(async () => {
     vite = await starteVite();
     d = await mitServer(async (s) => ({
@@ -47,6 +48,7 @@ describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
       swr5: await json(s, '/api/anlagen/SWR5/labels'),
       zf: await json(s, '/api/anlagen/SWR5/zusammenfassung'),
       anlagen: await json(s, '/api/anlagen'),
+      marie: await json(s, '/api/marie'),
     }));
   });
   after(() => vite.close());
@@ -59,6 +61,7 @@ describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
     const { Warum } = await lade(vite, '/pruefung/Warum.tsx');
     const { StartAnsicht } = await lade(vite, '/start/Startseite.tsx');
     const { SimulationAnsicht } = await lade(vite, '/simulation/Simulation.tsx');
+    const { MarieAnsicht } = await lade(vite, '/marie/MarieAnsicht.tsx');
     const { Fehler } = await lade(vite, '/rahmen.tsx');
     const zf = { ...g.zf, offenePunkte: g.zf.offenePunkte };
     const seiten = [
@@ -89,6 +92,10 @@ describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
         speichert: false, meldung: ANGRIFF, fehler: ANGRIFF, onNachbessern: ohne, onFotoNachreichen: ohne,
       }),
       rendere(Fehler, { text: ANGRIFF, gruende: [{ labelId: null, text: ANGRIFF }] }),
+      // Maries Übersicht: Namen, Gründe, „Warum?“-Belege, Label-Texte; alle Anlagen tragen hier dieselbe Kennung.
+      ...[{ art: 'zahl', zahl: 'fehlerhaft' }, { art: 'zahl', zahl: 'gesamt' }, { art: 'anlage', anlageId: ANGRIFF }].map((auswahl) =>
+        rendere(MarieAnsicht, { daten: { daten: g.marie, auswahl, aktualisiert: ANGRIFF, verbunden: false } }),
+      ),
     ];
     for (const html of seiten) {
       assert.ok(html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'Angriffstext erscheint als Text');

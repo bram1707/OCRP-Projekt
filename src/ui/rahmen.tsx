@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import type { Hinderungsgrund } from './api.ts';
-import { zurSimulation, zurStartseite } from './route.ts';
+import { zuMarie, zurSimulation, zurStartseite } from './route.ts';
 import type { StatusAnzeige } from './status.ts';
 
 export const KNOPF_HAUPT =
@@ -15,7 +15,23 @@ export const KNOPF_GEWAEHLT =
   'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-50 px-5 py-2 text-lg font-semibold text-blue-950 hover:bg-blue-100';
 export const VERWEIS = 'font-semibold text-blue-800 underline underline-offset-4 hover:text-blue-950';
 
-export function Rahmen({ children, simulation = false, ansage = null }: { children: ReactNode; simulation?: boolean; ansage?: string | null }) {
+/** Wessen Seite: Max' Prüfung, Maries Übersicht oder die Simulation der Instandhaltung */
+export type Bereich = 'max' | 'marie' | 'simulation';
+
+const TITEL: Record<Bereich, string> = {
+  max: 'Label-Prüfung · Max (Qualitätsmanagement)',
+  marie: 'Übersicht · Marie (Fertigungsleitung)',
+  simulation: 'Simulation: Instandhaltung (nur im Prototyp)',
+};
+
+/** Titel des Browserfensters je Bereich */
+export const FENSTERTITEL: Record<Bereich, string> = {
+  max: 'Label-Prüfung · Max',
+  marie: 'Übersicht · Marie (nur ansehen)',
+  simulation: 'Simulation · Instandhaltung',
+};
+
+export function Rahmen({ children, bereich = 'max', ansage = null }: { children: ReactNode; bereich?: Bereich; ansage?: string | null }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Bleibt beim Seitenwechsel bestehen, damit Bildschirmleser „… bestätigt.“ auch nach dem Sprung zum nächsten Label ansagen. */}
@@ -24,8 +40,8 @@ export function Rahmen({ children, simulation = false, ansage = null }: { childr
       </div>
       <header className="border-b-2 border-slate-300 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <a href={zurStartseite()} className="text-xl font-bold text-slate-900 no-underline">
-            {simulation ? 'Simulation: Instandhaltung (nur im Prototyp)' : 'Label-Prüfung · Max (Qualitätsmanagement)'}
+          <a href={bereich === 'marie' ? zuMarie() : zurStartseite()} className="text-xl font-bold text-slate-900 no-underline">
+            {TITEL[bereich]}
           </a>
         </div>
         <p className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-center text-amber-950">
@@ -33,15 +49,27 @@ export function Rahmen({ children, simulation = false, ansage = null }: { childr
         </p>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-      <footer className="mx-auto max-w-6xl border-t border-slate-300 px-4 py-6 text-slate-700">
-        {simulation ? (
+      <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-8 gap-y-2 border-t border-slate-300 px-4 py-6 text-slate-700">
+        {bereich === 'simulation' && (
           <a href={zurStartseite()} className={VERWEIS}>
             Zurück zur Label-Prüfung
           </a>
-        ) : (
-          <a href={zurSimulation()} className="text-slate-700 underline underline-offset-4">
-            Simulation: Instandhaltung (nur im Prototyp)
+        )}
+        {bereich === 'marie' && (
+          // Bis zur Rollenwahl (Stufe 4) der einzige Weg zu Max' Seiten, ausdrücklich als Rollenwechsel benannt.
+          <a href={zurStartseite()} className="text-slate-700 underline underline-offset-4">
+            Rolle wechseln (nur im Prototyp): Label-Prüfung von Max
           </a>
+        )}
+        {bereich === 'max' && (
+          <>
+            <a href={zuMarie()} className="text-slate-700 underline underline-offset-4">
+              Übersicht für Marie (Fertigungsleitung)
+            </a>
+            <a href={zurSimulation()} className="text-slate-700 underline underline-offset-4">
+              Simulation: Instandhaltung (nur im Prototyp)
+            </a>
+          </>
         )}
       </footer>
     </div>

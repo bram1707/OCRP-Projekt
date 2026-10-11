@@ -6,7 +6,7 @@ import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
-import { holeAnlage, holeAnlagen, holeLabel, holeLabels, istBildInVerwendung } from '../db/abfragen.ts';
+import { holeAnlage, holeAnlagen, holeLabel, holeLabels, holeLetzteEntscheidungen, istBildInVerwendung } from '../db/abfragen.ts';
 import {
   bessereNach, bestaetigeLabel, erfasseNach, Fachfehler, gebeAnlageFrei, meldeFehler, nimmBestaetigungZurueck,
 } from '../db/aktionen.ts';
@@ -14,6 +14,8 @@ import { BILD_DATEI } from '../db/datenbank.ts';
 import {
   anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
 } from './ansichten.ts';
+import { Ereignisse } from './ereignisse.ts';
+import { marieUebersicht } from './marie.ts';
 import { CSP_SVG, ladeOberflaeche } from './statisch.ts';
 
 export interface ServerOptionen {
@@ -22,6 +24,8 @@ export interface ServerOptionen {
   modell?: SprachModell;
   /** Ordner der gebauten Oberfläche (dist/). Ohne ihn liefert der Server nur die Schnittstelle und die Fotos. */
   oberflaecheOrdner?: string;
+  /** Verteiler für das Signal nach jeder Änderung (AK-44); ohne Angabe ein eigener */
+  ereignisse?: Ereignisse;
 }
 
 /** Wird aufgerufen, wenn der Handler nicht zuständig ist (Entwicklungsserver von Vite). */
@@ -153,6 +157,14 @@ function routen(optionen: ServerOptionen): Route[] {
       },
     },
     {
+      // Maries Übersicht (AK-40 bis AK-45), nur lesend.
+      methode: 'GET', muster: /^\/api\/marie$/,
+      aktion: () => marieUebersicht(
+        holeAnlagen(db).map((anlage) => ({ anlage, labels: holeLabels(db, anlage.id) })),
+        holeLetzteEntscheidungen(db),
+      ),
+    },
+    {
       methode: 'GET', muster: /^\/api\/labels\/([A-Z0-9-]+)$/,
       aktion: (_a, [id]) => labelAntwort(id!),
     },
@@ -219,9 +231,11 @@ async function sendeBild(res: ServerResponse, db: DatabaseSync, bilderOrdner: st
  */
 export function erstelleHandler(optionen: ServerOptionen): Handler {
   const tabelle = routen(optionen);
+  const ereignisse = optionen.ereignisse ?? new Ereignisse();
   const oberflaeche = optionen.oberflaecheOrdner ? ladeOberflaeche(optionen.oberflaecheOrdner) : null;
 
   return async (req, res, weiter) => {
+    let geaendert = false;
     try {
       const pfad = new URL(req.url ?? '/', 'http://localhost').pathname;
       const eigenerPfad = pfad === '/api' || pfad.startsWith('/api/') || pfad.startsWith('/bilder/');
@@ -231,6 +245,12 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
 
       if (req.method === 'GET' && pfad.startsWith('/bilder/')) {
         await sendeBild(res, optionen.db, optionen.bilderOrdner, pfad.slice('/bilder/'.length));
+        return;
+      }
+
+      // Offene Verbindung für das Signal nach jeder Änderung (AK-44). Sie liefert keine Daten.
+      if (req.method === 'GET' && pfad === '/api/ereignisse') {
+        if (!ereignisse.verbinde(res)) throw new Fachfehler(503, 'Zu viele offene Verbindungen. Bitte später erneut versuchen.');
         return;
       }
 
@@ -258,6 +278,7 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
 
       const ergebnis = await route.aktion({ rolle, koerper: () => leseKoerper(req) }, teile);
       sendeJson(res, 200, ergebnis);
+      geaendert = route.methode !== 'GET';
     } catch (fehler) {
       if (fehler instanceof Fachfehler) {
         sendeJson(res, fehler.status, { fehler: fehler.message, details: fehler.details ?? null });
@@ -266,10 +287,20 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
         sendeJson(res, 500, { fehler: 'Interner Fehler. Bitte später erneut versuchen.' });
       }
     }
+    // Erst nach der Antwort und außerhalb von try/catch: Das Signal darf die gesendete Antwort nie in den Fehlerweg bringen.
+    if (geaendert) ereignisse.melde();
   };
 }
 
 export function erstelleServer(optionen: ServerOptionen): Server {
-  const handler = erstelleHandler(optionen);
-  return createServer((req, res) => void handler(req, res));
+  const ereignisse = optionen.ereignisse ?? new Ereignisse();
+  const handler = erstelleHandler({ ...optionen, ereignisse });
+  const server = createServer((req, res) => void handler(req, res));
+  // Offene Signal-Verbindungen enden nie von selbst; ohne das würde close() ewig warten.
+  const schliesse = server.close.bind(server);
+  server.close = (fertig?: (fehler?: Error) => void) => {
+    ereignisse.schliesseAlle();
+    return schliesse(fertig);
+  };
+  return server;
 }

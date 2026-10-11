@@ -4,7 +4,7 @@
 import type { Ref } from 'react';
 import type { AnlageMitLabels, Hinderungsgrund, LabelAnsicht, Zusammenfassung as ZusammenfassungDaten } from '../api.ts';
 import { Balken, Fehler, KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type MeldungDaten } from '../rahmen.tsx';
-import { zurStartseite } from '../route.ts';
+import { zurAnlagenliste } from '../route.ts';
 import { istPruefbar, sperreAnzeige } from '../status.ts';
 import { Kachel } from './Kachel.tsx';
 import { anzahl, filtere, fortschritt, naechstesLabel, sperrgrund, zaehlzeile } from './logik.ts';
@@ -61,7 +61,7 @@ export function Uebersicht({
   return (
     <>
       <nav className="mb-3">
-        <a href={zurStartseite()} className={VERWEIS}>
+        <a href={zurAnlagenliste()} className={VERWEIS}>
           Alle Anlagen
         </a>
       </nav>

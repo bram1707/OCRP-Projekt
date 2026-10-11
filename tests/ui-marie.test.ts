@@ -72,7 +72,7 @@ after(async () => {
 type Auswahl = { art: 'zahl'; zahl: string } | { art: 'anlage'; anlageId: string } | null;
 
 function marie(daten: MarieUebersicht, auswahl: Auswahl = null, mehr: Record<string, unknown> = {}): string {
-  return rendere(M.ansicht!.MarieAnsicht, { daten: { daten, auswahl, aktualisiert: '04:12:05', verbunden: true, ...mehr } });
+  return rendere(M.ansicht!.MarieAnsicht, { daten: { daten, auswahl, verbunden: true, ...mehr } });
 }
 const zahl = (z: string): Auswahl => ({ art: 'zahl', zahl: z });
 const anlage = (id: string): Auswahl => ({ art: 'anlage', anlageId: id });
@@ -305,11 +305,15 @@ describe('AK-44 sofort aktuell', () => {
     assert.match(readFileSync(join(UI, 'api.ts'), 'utf8'), /export const EREIGNISSE = '\/api\/ereignisse';/);
   });
 
-  test('Zeit der letzten Aktualisierung sichtbar; ohne Verbindung ein deutlicher Hinweis', () => {
-    assert.match(text(element(marie(f.basis), 'p', 'data-aktualisiert', '')!), /^Aktualisiert um 04:12:05\. Die Übersicht aktualisiert sich von selbst\.$/);
+  test('„Die Übersicht ist aktuell“ ohne Uhrzeit (Stufe 4); ohne Verbindung ein deutlicher Hinweis', () => {
+    const verbunden = text(element(marie(f.basis), 'p', 'data-aktualisiert', '')!);
+    assert.equal(verbunden, 'Die Übersicht ist aktuell und aktualisiert sich von selbst.');
     const getrennt = element(marie(f.basis, null, { verbunden: false }), 'p', 'data-aktualisiert', '')!;
-    assert.match(text(getrennt), /Stand 04:12:05\. Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell\./);
-    // Bildschirmleser erfahren den Abbruch sofort; die Uhrzeit beim normalen Nachladen wird nicht angesagt.
+    assert.match(text(getrennt), /^Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell\./);
+    // Keine Uhrzeit: Sie verriete, wann Max zuletzt entschieden hat.
+    for (const t of [verbunden, text(getrennt)]) assert.doesNotMatch(t, /\d{1,2}:\d\d|Uhr|Stand \d/);
+    assert.doesNotMatch(readFileSync(join(UI, 'marie', 'MarieSeite.tsx'), 'utf8'), /toLocaleTimeString|uhrzeit/);
+    // Bildschirmleser erfahren den Abbruch sofort; das normale Nachladen wird nicht angesagt.
     assert.match(getrennt, /role="alert"/);
     assert.doesNotMatch(element(marie(f.basis), 'p', 'data-aktualisiert', '')!, /role=/);
   });
@@ -405,14 +409,17 @@ describe('Querschnitt (AK-14, AK-21, AK-61)', () => {
     }
   });
 
-  test('Rahmen für Marie: eigene Kopfzeile, Hinweis „Testversion“, Weg zur Label-Prüfung', () => {
+  test('Rahmen für Marie: eigene Kopfzeile, Hinweis „Testversion“, nur „Rolle wechseln“ zur Rollenwahl (R16a)', () => {
     const html = rendere(M.rahmen!.Rahmen, { bereich: 'marie', children: 'x' });
     assert.match(text(html), /Übersicht · Marie \(Fertigungsleitung\)/);
     assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./);
-    assert.match(html, /<a href="#\/"[^>]*>Rolle wechseln \(nur im Prototyp\): Label-Prüfung von Max<\/a>/);
-    assert.deepEqual([...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/marie', '#/'], 'sonst kein Weg zu Max oder zur Simulation');
-    assert.doesNotMatch(html, /Simulation: Instandhaltung/, 'die Simulation gehört nicht zu Maries Seiten');
-    assert.match(rendere(M.rahmen!.Rahmen, { children: 'x' }), /<a href="#\/marie"[^>]*>Übersicht für Marie \(Fertigungsleitung\)<\/a>/);
+    assert.match(html, /<a href="#\/"[^>]*>Rolle wechseln<\/a>/);
+    assert.deepEqual([...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/marie', '#/'], 'kein Weg direkt zu Max oder zur Simulation');
+    assert.doesNotMatch(html, /Simulation|Label-Prüfung/, 'Max und die Simulation stehen nicht in Maries Rahmen');
+    // Der einzige Knopf im Rahmen ist „Rückmeldung geben“ (AK-51, Zusatz zu AK-46); Maries Inhalt hat keinen.
+    assert.deepEqual([...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => text(m[1]!)), ['Rückmeldung geben']);
+    // Auch Max' Rahmen führt nicht mehr direkt zu Marie, sondern über die Rollenwahl.
+    assert.deepEqual([...rendere(M.rahmen!.Rahmen, { children: 'x' }).matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/anlagen', '#/']);
   });
 
   test('„Warum?“-Schalter sind groß genug zum Antippen', () => {
@@ -434,8 +441,11 @@ describe('Adressen für Maries Seiten', () => {
     // Auch eine fehlerhafte Adresse unter #/marie bleibt in Maries Rahmen, ohne Wege zu Max.
     const { bereichDerAdresse } = M.route!;
     for (const h of ['#/marie', '#/marie/', '#/marie/anlage/sta4', '#/Marie', '#/marie/zahl/alle']) assert.equal(bereichDerAdresse(h), 'marie', h);
-    for (const h of ['', '#/', '#/anlage/STA4', '#/xyz', '#/marienkaefer']) assert.equal(bereichDerAdresse(h), 'max', h);
+    for (const h of ['#/anlagen', '#/anlage/STA4', '#/anlage/sta4', '#/anlage/STA4/label/STA4-01']) assert.equal(bereichDerAdresse(h), 'max', h);
+    // Seit Stufe 4 ist #/ die Rollenwahl; Unbekanntes außerhalb von Max und Marie gehört dorthin.
+    for (const h of ['', '#/', '#/xyz', '#/marienkaefer']) assert.equal(bereichDerAdresse(h), 'start', h);
     assert.equal(bereichDerAdresse('#/simulation'), 'simulation');
+    assert.equal(bereichDerAdresse('#/rueckmeldungen'), 'testleitung');
     assert.equal(zurMarieZahl('offen'), '#/marie/zahl/offen');
     assert.equal(zurMarieAnlage('SWR5'), '#/marie/anlage/SWR5');
   });

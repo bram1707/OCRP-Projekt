@@ -38,7 +38,7 @@ export function zaehlzeile(a: AnlageAnsicht): string {
   return `${anzahl(a.sollAnzahl, 'Label', 'Labels')}: ${teile.join(', ')}`;
 }
 
-/** Was Max auf der Startseite zu tun hat. */
+/** Was Max in der Liste der Anlagen zu tun hat. */
 export function aufgabeText(a: AnlageAnsicht): string {
   const offen = a.auffaellig + a.unauffaellig;
   if (!a.gesperrt) return 'Freigegeben, nichts mehr zu tun';

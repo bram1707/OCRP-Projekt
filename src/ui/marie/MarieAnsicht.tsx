@@ -17,8 +17,6 @@ import {
 export interface MarieAnsichtDaten {
   daten: MarieUebersicht;
   auswahl: MarieAuswahl | null;
-  /** Uhrzeit des letzten Abrufs, z. B. „04:12:05“ */
-  aktualisiert: string | null;
   /** ob das Signal für Änderungen gerade ankommt (AK-44) */
   verbunden: boolean;
 }
@@ -167,7 +165,7 @@ function Auswahl({ daten, auswahl, auswahlRef }: { daten: MarieUebersicht; auswa
 }
 
 export function MarieAnsicht({
-  daten: { daten, auswahl, aktualisiert, verbunden },
+  daten: { daten, auswahl, verbunden },
   ueberschriftRef,
   auswahlRef,
 }: {
@@ -186,12 +184,13 @@ export function MarieAnsicht({
         {antwort(daten)}
       </p>
       {verbunden ? (
+        // Ohne Uhrzeit: Wann genau Max etwas entschieden hat, soll die Übersicht nicht verraten (Stufe 4).
         <p className="mt-1 text-slate-700" data-aktualisiert="">
-          {aktualisiert ? `Aktualisiert um ${aktualisiert}. ` : ''}Die Übersicht aktualisiert sich von selbst.
+          Die Übersicht ist aktuell und aktualisiert sich von selbst.
         </p>
       ) : (
         <p className="mt-1 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-amber-950" data-aktualisiert="" role="alert">
-          {aktualisiert ? `Stand ${aktualisiert}. ` : ''}Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell. Die Seite
+          Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell. Die Seite
           versucht es von selbst weiter.
         </p>
       )}

@@ -135,8 +135,3 @@ export function aenderungsAnsage(alt: MarieUebersicht, neu: MarieUebersicht): st
   const { gesamt, offen, erledigt, fehlerhaft } = neu.zahlen;
   return [`Neuer Stand: ${gesamt} gesamt, ${offen} offen, ${erledigt} erledigt, ${fehlerhaft} fehlerhaft.`, ...sperren].join(' ');
 }
-
-/** „04:12:05“ */
-export function uhrzeit(datum: Date): string {
-  return datum.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-}

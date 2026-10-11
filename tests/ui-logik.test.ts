@@ -225,7 +225,10 @@ describe('Kleinigkeiten', () => {
     assert.equal(sperrgrund(label(swr5, 'SWR5-05')), 'Label SWR5-05: kein Foto vorhanden.');
   });
   test('Adressen', () => {
-    assert.deepEqual(leseRoute(''), { seite: 'start' });
+    // Seit Stufe 4: #/ ist die Rollenwahl, Max' Anlagen stehen unter #/anlagen.
+    for (const h of ['', '#', '#/']) assert.deepEqual(leseRoute(h), { seite: 'rollenwahl' }, h);
+    assert.deepEqual(leseRoute('#/anlagen'), { seite: 'anlagen' });
+    assert.deepEqual(leseRoute('#/rueckmeldungen'), { seite: 'rueckmeldungen' });
     assert.deepEqual(leseRoute(zurAnlage('STA4')), { seite: 'anlage', anlageId: 'STA4' });
     assert.deepEqual(leseRoute(zumLabel('STA4', 'STA4-03')), { seite: 'label', anlageId: 'STA4', labelId: 'STA4-03' });
     assert.deepEqual(leseRoute('#/simulation'), { seite: 'simulation' });

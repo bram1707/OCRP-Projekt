@@ -1,5 +1,5 @@
 // Nur lesende Aufrufe der Schnittstelle, ohne Rolle. Schreibende Aufrufe liegen
-// ausschließlich in pruefung/aktionen.ts und simulation/aktionen.ts.
+// ausschließlich in pruefung/aktionen.ts, simulation/aktionen.ts und testleitung/aktionen.ts.
 
 import type { AnlageAnsicht, LabelAnsicht, Zusammenfassung } from '../server/ansichten.ts';
 import type { MarieUebersicht } from '../server/marie.ts';
@@ -10,6 +10,7 @@ export type { GruppeMarie } from '../db/status.ts';
 export type { Grund } from '../ai/auffaelligkeit.ts';
 export type { Beleg } from '../ai/belege.ts';
 export type { Hinderungsgrund, Status } from '../db/status.ts';
+export type { Rueckmeldung } from '../db/feedback.ts';
 
 export interface AnlageMitLabels {
   anlage: AnlageAnsicht;

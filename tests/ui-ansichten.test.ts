@@ -30,7 +30,7 @@ const label = (d: AnlageMitLabels, id: string): LabelAnsicht => alle(d).find((l)
 before(async () => {
   vite = await starteVite();
   M = {
-    start: await lade(vite, '/start/Startseite.tsx'),
+    anlagenliste: await lade(vite, '/pruefung/Anlagenliste.tsx'),
     uebersicht: await lade(vite, '/pruefung/Uebersicht.tsx'),
     kachel: await lade(vite, '/pruefung/Kachel.tsx'),
     einzel: await lade(vite, '/pruefung/Einzelansicht.tsx'),
@@ -106,8 +106,8 @@ const kacheln = (html: string) => [...html.matchAll(/data-kachel="([^"]+)"/g)].m
 const knoepfe = (html: string) => [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => text(m[1]!));
 
 describe('AK-01 Gesperrt oder Freigegeben', () => {
-  test('Startseite: Stanzanlage 4 und Schweißroboter 5 „Gesperrt“, Förderband 2 „Freigegeben“, gesperrte zuerst', () => {
-    const html = rendere(M.start!.StartAnsicht, { anlagen: f.anlagen });
+  test('Anlagen von Max: Stanzanlage 4 und Schweißroboter 5 „Gesperrt“, Förderband 2 „Freigegeben“, gesperrte zuerst', () => {
+    const html = rendere(M.anlagenliste!.AnlagenlisteAnsicht, { anlagen: f.anlagen });
     assert.match(text(element(html, 'a', 'data-anlage', 'STA4')!), /Gesperrt/);
     assert.match(text(element(html, 'a', 'data-anlage', 'SWR5')!), /Gesperrt/);
     assert.match(text(element(html, 'a', 'data-anlage', 'FOE2')!), /Freigegeben/);
@@ -118,7 +118,7 @@ describe('AK-01 Gesperrt oder Freigegeben', () => {
   });
   test('das Wort kommt aus „gesperrt“ des Servers: alle bestätigt, aber gesperrt → „Gesperrt“', () => {
     const sta4 = { ...f.sta4Fertig.anlage, gesperrt: true };
-    const html = rendere(M.start!.StartAnsicht, { anlagen: [sta4] });
+    const html = rendere(M.anlagenliste!.AnlagenlisteAnsicht, { anlagen: [sta4] });
     assert.match(text(html), /Gesperrt/);
     assert.doesNotMatch(text(html), /Freigegeben/);
     assert.match(text(uebersicht({ ...f.sta4Fertig, anlage: sta4 })), /Stanzanlage 4 Gesperrt/);
@@ -201,7 +201,7 @@ describe('AK-10, AK-11 einzeln entscheiden', () => {
       uebersicht(f.sta4, { nurAuffaellige: true }),
       uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung }),
       einzel(f.sta4, 'STA4-09'),
-      rendere(M.start!.StartAnsicht, { anlagen: f.anlagen }),
+      rendere(M.anlagenliste!.AnlagenlisteAnsicht, { anlagen: f.anlagen }),
     ];
     for (const html of seiten) assert.doesNotMatch(text(html), /alle (labels )?bestätigen|alle markieren|alle auswählen/i);
   });
@@ -461,7 +461,7 @@ describe('AK-20 „Warum?“', () => {
 
 describe('AK-21 einfache Bedienung', () => {
   const seiten = () => ({
-    start: rendere(M.start!.StartAnsicht, { anlagen: f.anlagen }),
+    anlagen: rendere(M.anlagenliste!.AnlagenlisteAnsicht, { anlagen: f.anlagen }),
     sta4: uebersicht(f.sta4, { nurAuffaellige: true }),
     swr5: uebersicht(f.swr5Fertig, { zusammenfassung: f.swr5Zusammenfassung }),
     fertig: uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung, rueckfrage: true }),
@@ -474,7 +474,7 @@ describe('AK-21 einfache Bedienung', () => {
     }),
   });
   test('Hinweis „Testversion …“ im Rahmen jeder Seite', () => {
-    for (const bereich of ['max', 'marie', 'simulation']) {
+    for (const bereich of ['start', 'max', 'marie', 'simulation', 'testleitung']) {
       const html = rendere(M.rahmen!.Rahmen, { bereich, children: 'Inhalt' });
       assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./, bereich);
     }

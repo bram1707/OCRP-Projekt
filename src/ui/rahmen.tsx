@@ -1,37 +1,48 @@
-// Gemeinsame Bausteine: Seitenrahmen mit Hinweis „Testversion“, Statusmarke, Fortschrittsbalken,
-// Meldungen und Fehler. Alle Texte vom Server werden von React als Text eingesetzt, nie als HTML.
+// Gemeinsame Bausteine: Seitenrahmen mit Rolle, „Rolle wechseln“, Hinweis „Testversion“ und „Rückmeldung geben“,
+// dazu Statusmarke, Fortschrittsbalken, Meldungen und Fehler. Alle Texte vom Server werden von React als Text
+// eingesetzt, nie als HTML.
 
 import type { ReactNode } from 'react';
 import type { Hinderungsgrund } from './api.ts';
-import { zuMarie, zurSimulation, zurStartseite } from './route.ts';
+import { STARTSEITE_DES_BEREICHS, zurRollenwahl, type Bereich } from './route.ts';
 import type { StatusAnzeige } from './status.ts';
+import { KNOPF_NEBEN, VERWEIS } from './stile.ts';
+import { Rueckmeldung } from './testleitung/Rueckmeldung.tsx';
+import type { Szenario } from './testleitung/szenarien.ts';
 
-export const KNOPF_HAUPT =
-  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-800 px-5 py-2 text-lg font-semibold text-white hover:bg-blue-900 disabled:cursor-not-allowed disabled:border-slate-500 disabled:bg-slate-500';
-export const KNOPF_NEBEN =
-  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-slate-700 bg-white px-5 py-2 text-lg font-semibold text-slate-900 hover:bg-slate-100 disabled:cursor-not-allowed disabled:text-slate-600';
-/** Gewählter Schalter: eigene vollständige Klassen, weil Tailwind bei zwei Hintergründen nicht nach der Reihenfolge im Attribut entscheidet. */
-export const KNOPF_GEWAEHLT =
-  'inline-flex min-h-12 items-center justify-center rounded-lg border-2 border-blue-800 bg-blue-50 px-5 py-2 text-lg font-semibold text-blue-950 hover:bg-blue-100';
-export const VERWEIS = 'font-semibold text-blue-800 underline underline-offset-4 hover:text-blue-950';
+export { KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, VERWEIS } from './stile.ts';
+export type { Bereich } from './route.ts';
 
-/** Wessen Seite: Max' Prüfung, Maries Übersicht oder die Simulation der Instandhaltung */
-export type Bereich = 'max' | 'marie' | 'simulation';
-
+/** In welcher Rolle man gerade ist; steht oben auf jeder Seite. */
 const TITEL: Record<Bereich, string> = {
+  start: 'Label-Prüfung · Prototyp',
   max: 'Label-Prüfung · Max (Qualitätsmanagement)',
   marie: 'Übersicht · Marie (Fertigungsleitung)',
   simulation: 'Simulation: Instandhaltung (nur im Prototyp)',
+  testleitung: 'Testleitung (nur im Prototyp)',
 };
 
-/** Titel des Browserfensters je Bereich */
+/** Titel des Browserfensters je Bereich, damit mehrere offene Fenster unterscheidbar sind */
 export const FENSTERTITEL: Record<Bereich, string> = {
+  start: 'Rolle wählen · Label-Prüfung',
   max: 'Label-Prüfung · Max',
   marie: 'Übersicht · Marie (nur ansehen)',
   simulation: 'Simulation · Instandhaltung',
+  testleitung: 'Rückmeldungen · Testleitung',
 };
 
-export function Rahmen({ children, bereich = 'max', ansage = null }: { children: ReactNode; bereich?: Bereich; ansage?: string | null }) {
+export function Rahmen({
+  children,
+  bereich = 'max',
+  ansage = null,
+  szenario = 'allgemein',
+}: {
+  children: ReactNode;
+  bereich?: Bereich;
+  ansage?: string | null;
+  /** Vorauswahl für „Rückmeldung geben“ */
+  szenario?: Szenario;
+}) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       {/* Bleibt beim Seitenwechsel bestehen, damit Bildschirmleser „… bestätigt.“ auch nach dem Sprung zum nächsten Label ansagen. */}
@@ -40,9 +51,15 @@ export function Rahmen({ children, bereich = 'max', ansage = null }: { children:
       </div>
       <header className="border-b-2 border-slate-300 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <a href={bereich === 'marie' ? zuMarie() : zurStartseite()} className="text-xl font-bold text-slate-900 no-underline">
+          <a href={STARTSEITE_DES_BEREICHS[bereich]} className="text-xl font-bold text-slate-900 no-underline">
             {TITEL[bereich]}
           </a>
+          {/* Der einzige Weg zu den Seiten einer anderen Rolle führt über die Rollenwahl (R16a). */}
+          {bereich !== 'start' && (
+            <a href={zurRollenwahl()} className={`${VERWEIS} inline-flex min-h-12 items-center`}>
+              Rolle wechseln
+            </a>
+          )}
         </div>
         <p className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-center text-amber-950">
           Testversion: Texterkennung und Spracherkennung sind simuliert.
@@ -50,27 +67,7 @@ export function Rahmen({ children, bereich = 'max', ansage = null }: { children:
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-8 gap-y-2 border-t border-slate-300 px-4 py-6 text-slate-700">
-        {bereich === 'simulation' && (
-          <a href={zurStartseite()} className={VERWEIS}>
-            Zurück zur Label-Prüfung
-          </a>
-        )}
-        {bereich === 'marie' && (
-          // Bis zur Rollenwahl (Stufe 4) der einzige Weg zu Max' Seiten, ausdrücklich als Rollenwechsel benannt.
-          <a href={zurStartseite()} className="text-slate-700 underline underline-offset-4">
-            Rolle wechseln (nur im Prototyp): Label-Prüfung von Max
-          </a>
-        )}
-        {bereich === 'max' && (
-          <>
-            <a href={zuMarie()} className="text-slate-700 underline underline-offset-4">
-              Übersicht für Marie (Fertigungsleitung)
-            </a>
-            <a href={zurSimulation()} className="text-slate-700 underline underline-offset-4">
-              Simulation: Instandhaltung (nur im Prototyp)
-            </a>
-          </>
-        )}
+        <Rueckmeldung bereich={bereich} szenario={szenario} />
       </footer>
     </div>
   );

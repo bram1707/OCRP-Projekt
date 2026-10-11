@@ -1,5 +1,5 @@
 // Oberfläche, Sicherheit und Bau (AK-14, AK-61): Server-Texte erscheinen nur als Text, kein
-// gefährlicher Code, schreibende Aufrufe nur in pruefung/ und simulation/, die gebaute Oberfläche
+// gefährlicher Code, schreibende Aufrufe nur in pruefung/, simulation/ und testleitung/, die gebaute Oberfläche
 // enthält keine Erwartungswerte, Entwicklungsserver und Auslieferung geben keine Projektdateien heraus.
 
 import assert from 'node:assert/strict';
@@ -59,13 +59,13 @@ describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
     const { Uebersicht } = await lade(vite, '/pruefung/Uebersicht.tsx');
     const { Einzelansicht } = await lade(vite, '/pruefung/Einzelansicht.tsx');
     const { Warum } = await lade(vite, '/pruefung/Warum.tsx');
-    const { StartAnsicht } = await lade(vite, '/start/Startseite.tsx');
+    const { AnlagenlisteAnsicht } = await lade(vite, '/pruefung/Anlagenliste.tsx');
     const { SimulationAnsicht } = await lade(vite, '/simulation/Simulation.tsx');
     const { MarieAnsicht } = await lade(vite, '/marie/MarieAnsicht.tsx');
     const { Fehler } = await lade(vite, '/rahmen.tsx');
     const zf = { ...g.zf, offenePunkte: g.zf.offenePunkte };
     const seiten = [
-      rendere(StartAnsicht, { anlagen: g.anlagen }),
+      rendere(AnlagenlisteAnsicht, { anlagen: g.anlagen }),
       rendere(Uebersicht, {
         zustand: {
           daten: g.swr5, kacheln: g.swr5.labels, nurAuffaellige: false, speichert: false, meldung: { text: ANGRIFF, rueckgaengig: ANGRIFF },
@@ -94,7 +94,7 @@ describe('jeder Text vom Server erscheint als Text, nie als HTML', () => {
       rendere(Fehler, { text: ANGRIFF, gruende: [{ labelId: null, text: ANGRIFF }] }),
       // Maries Übersicht: Namen, Gründe, „Warum?“-Belege, Label-Texte; alle Anlagen tragen hier dieselbe Kennung.
       ...[{ art: 'zahl', zahl: 'fehlerhaft' }, { art: 'zahl', zahl: 'gesamt' }, { art: 'anlage', anlageId: ANGRIFF }].map((auswahl) =>
-        rendere(MarieAnsicht, { daten: { daten: g.marie, auswahl, aktualisiert: ANGRIFF, verbunden: false } }),
+        rendere(MarieAnsicht, { daten: { daten: g.marie, auswahl, verbunden: false } }),
       ),
     ];
     for (const html of seiten) {
@@ -123,18 +123,21 @@ describe('Quelltext der Oberfläche', () => {
       assert.doesNotMatch(inhalt, /erwartung|['"]lesbar['"]|\blesbar\s*:|nachKorrektur|nachSimulation/i, name(d));
     }
   });
-  test('schreibende Aufrufe nur in pruefung/ und simulation/', () => {
+  test('schreibende Aufrufe nur in pruefung/, simulation/ und testleitung/ (Rückmeldung, Stufe 4)', () => {
     for (const d of dateien(UI)) {
       const inhalt = lies(d);
       const ort = relative(UI, d).split('/')[0];
-      const darfSchreiben = ort === 'pruefung' || ort === 'simulation';
+      const darfSchreiben = ort === 'pruefung' || ort === 'simulation' || ort === 'testleitung';
       if (!darfSchreiben) {
         assert.doesNotMatch(inhalt, /X-Rolle|method:\s*['"]POST|from ['"][^'"]*aktionen\.ts['"]/, name(d));
       }
     }
     // Nur die Seiten mit Entscheidungen binden die schreibenden Aufrufe ein, nicht die reinen Ansichten.
     const binden = dateien(UI).filter((d) => /from '\.\/aktionen\.ts'|from '\.\.\/pruefung\/aktionen\.ts'/.test(lies(d))).map((d) => relative(UI, d)).sort();
-    assert.deepEqual(binden, ['pruefung/AnlageSeite.tsx', 'pruefung/LabelSeite.tsx', 'simulation/Simulation.tsx', 'simulation/aktionen.ts']);
+    assert.deepEqual(binden, [
+      'pruefung/AnlageSeite.tsx', 'pruefung/LabelSeite.tsx', 'simulation/Simulation.tsx', 'simulation/aktionen.ts',
+      'testleitung/Rueckmeldung.tsx', 'testleitung/Rueckmeldungen.tsx', 'testleitung/Zuruecksetzen.tsx',
+    ]);
   });
   test('R12: Adressen für Labels entstehen an genau einer Stelle (api.ts)', () => {
     const orte = dateien(UI).filter((d) => lies(d).includes('/api/labels/')).map((d) => relative(UI, d));

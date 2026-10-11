@@ -1,12 +1,13 @@
 // Seite „Übersicht für Marie“: lädt die Übersicht, hört auf das Signal des Servers und lädt nach jeder
 // Änderung neu (AK-44). Schreibt nie etwas (AK-46). Ändert sich die Übersicht von selbst, wird das
 // angesagt, der Fokus bleibt aber, wo er ist, auch wenn eine Anlage dabei ihren Platz wechselt.
+// Nur ein sichtbarer Tab hält die Verbindung offen; Browser erlauben nur wenige je Server.
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { EREIGNISSE, ladeMarie, type MarieUebersicht } from '../api.ts';
 import { Fehler, Laden } from '../rahmen.tsx';
 import type { MarieAuswahl } from '../route.ts';
-import { aenderungsAnsage, uhrzeit } from './logik.ts';
+import { aenderungsAnsage } from './logik.ts';
 import { MarieAnsicht } from './MarieAnsicht.tsx';
 
 const auswahlSchluessel = (a: MarieAuswahl | null) => (a === null ? '' : a.art === 'zahl' ? `zahl:${a.zahl}` : `anlage:${a.anlageId}`);
@@ -39,7 +40,6 @@ function merkeFokus(): FokusOrt | null {
 export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null; onAnsage: (text: string) => void }) {
   const [daten, setDaten] = useState<MarieUebersicht | null>(null);
   const [ladefehler, setLadefehler] = useState<string | null>(null);
-  const [aktualisiert, setAktualisiert] = useState<string | null>(null);
   const [verbunden, setVerbunden] = useState(true);
   const ueberschrift = useRef<HTMLHeadingElement>(null);
   const auswahlTitel = useRef<HTMLHeadingElement>(null);
@@ -61,7 +61,6 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
       fokus.current = merkeFokus();
       setDaten(neu);
       setLadefehler(null);
-      setAktualisiert(uhrzeit(new Date()));
     } catch (e) {
       if (nummer === anfrage.current) setLadefehler(e instanceof Error ? e.message : 'Unbekannter Fehler.');
     }
@@ -80,6 +79,8 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
     };
     const verbinde = () => {
       trenne();
+      // Ein verdeckter Tab (etwa im Hintergrund geöffnet) verbindet sich erst, wenn er sichtbar wird.
+      if (document.visibilityState === 'hidden') return;
       const neu = new EventSource(EREIGNISSE);
       quelle = neu;
       neu.onmessage = () => void laden();
@@ -135,7 +136,7 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
   return (
     <>
       {ladefehler && <Fehler text={ladefehler} />}
-      <MarieAnsicht daten={{ daten, auswahl, aktualisiert, verbunden }} ueberschriftRef={ueberschrift} auswahlRef={auswahlTitel} />
+      <MarieAnsicht daten={{ daten, auswahl, verbunden }} ueberschriftRef={ueberschrift} auswahlRef={auswahlTitel} />
     </>
   );
 }

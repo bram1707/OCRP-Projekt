@@ -3,13 +3,25 @@
 import { StrictMode, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AnlageSeite, type Navigation } from './pruefung/AnlageSeite.tsx';
+import { Anlagenliste } from './pruefung/Anlagenliste.tsx';
 import { LabelSeite } from './pruefung/LabelSeite.tsx';
 import { MarieSeite } from './marie/MarieSeite.tsx';
 import { Fehler, FENSTERTITEL, Rahmen, type MeldungDaten } from './rahmen.tsx';
-import { bereichDerAdresse, leseRoute, zuMarie, zurStartseite } from './route.ts';
+import { bereichDerAdresse, leseRoute, STARTSEITE_DES_BEREICHS, type Bereich } from './route.ts';
 import { Simulation } from './simulation/Simulation.tsx';
 import { Startseite } from './start/Startseite.tsx';
+import { Rueckmeldungen } from './testleitung/Rueckmeldungen.tsx';
+import { szenarioDerAdresse } from './testleitung/szenarien.ts';
 import './stil.css';
+
+/** Beschriftung des Verweises auf einer unbekannten Seite, je Bereich */
+const ZURUECK: Record<Bereich, string> = {
+  start: 'Zur Rollenwahl',
+  max: 'Zu den Anlagen',
+  marie: 'Zur Übersicht',
+  simulation: 'Zur Simulation',
+  testleitung: 'Zu den Rückmeldungen',
+};
 
 function App() {
   const [hash, setHash] = useState(() => window.location.hash);
@@ -45,17 +57,19 @@ function App() {
     document.title = FENSTERTITEL[bereich];
   }, [bereich]);
   return (
-    <Rahmen bereich={bereich} ansage={meldung?.text ?? null}>
-      {route.seite === 'start' && <Startseite />}
+    <Rahmen bereich={bereich} ansage={meldung?.text ?? null} szenario={szenarioDerAdresse(hash)}>
+      {route.seite === 'rollenwahl' && <Startseite />}
+      {route.seite === 'anlagen' && <Anlagenliste />}
       {route.seite === 'anlage' && <AnlageSeite key={route.anlageId} anlageId={route.anlageId} nav={nav} />}
       {route.seite === 'label' && <LabelSeite anlageId={route.anlageId} labelId={route.labelId} nav={nav} />}
       {route.seite === 'simulation' && <Simulation />}
       {route.seite === 'marie' && <MarieSeite auswahl={route.auswahl} onAnsage={(text) => setMeldung({ text })} />}
+      {route.seite === 'rueckmeldungen' && <Rueckmeldungen />}
       {route.seite === 'unbekannt' && (
         <>
           <Fehler text="Diese Seite gibt es nicht." />
-          <a href={bereich === 'marie' ? zuMarie() : zurStartseite()} className="font-semibold text-blue-800 underline">
-            {bereich === 'marie' ? 'Zur Übersicht' : 'Zur Startseite'}
+          <a href={STARTSEITE_DES_BEREICHS[bereich]} className="font-semibold text-blue-800 underline">
+            {ZURUECK[bereich]}
           </a>
         </>
       )}

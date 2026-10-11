@@ -91,11 +91,11 @@ async function hoere(s: Srv) {
 // ---------------------------------------------------------------- AK-50
 
 describe('AK-50: Demo-Daten wie im Kriterium', () => {
-  test('drei Anlagen: Presse 3 (12), Montagelinie 1 (15), Lackierung 2 (10), alle gesperrt, nichts bestätigt', () => mitDemo(async (s) => {
+  test('vier Anlagen: Presse 3 (12), Montagelinie 1 (15), Lackierung 2 (10), Abfüllung 5 (8), alle gesperrt, nichts bestätigt', () => mitDemo(async (s) => {
     const anlagen = (await ruf(s, '/api/anlagen')).daten;
-    // Dazu die Testanlage „Eigene Fotos“ (Erweiterung Foto-Upload, 11.10.2026).
+    // Dazu die Testanlage „Eigene Fotos“ (Erweiterung Foto-Upload, 11.10.2026) und Abfüllung 5 (Optimierung 2: Türkisch, Bulgarisch, Chinesisch).
     const soll: Record<string, [string, number]> = {
-      PRE3: ['Presse 3', 12], MON1: ['Montagelinie 1', 15], LAC2: ['Lackierung 2', 10], EIG1: ['Testanlage Eigene Fotos', 3],
+      PRE3: ['Presse 3', 12], MON1: ['Montagelinie 1', 15], LAC2: ['Lackierung 2', 10], ABF5: ['Abfüllung 5', 8], EIG1: ['Testanlage Eigene Fotos', 3],
     };
     assert.deepEqual(anlagen.map((a: any) => a.id).sort(), Object.keys(soll).sort());
     for (const a of anlagen) {
@@ -181,15 +181,15 @@ describe('AK-50: Demo-Daten wie im Kriterium', () => {
     assert.equal((await alsMax(s, '/api/anlagen/LAC2/freigeben')).status, 200);
   }));
 
-  test('Marie-Szenario: „Ist alles geprüft?“ mit vier Zahlen, die immer die Gesamtzahl ergeben; am Ende 37 erledigt, nur die Testanlage „Eigene Fotos“ gesperrt', () => mitDemo(async (s) => {
+  test('Marie-Szenario: „Ist alles geprüft?“ mit vier Zahlen, die immer die Gesamtzahl ergeben; am Ende 45 erledigt, nur die Testanlage „Eigene Fotos“ gesperrt', () => mitDemo(async (s) => {
     const pruefe = async (wo: string) => {
       const z = (await marie(s)).zahlen;
-      assert.equal(z.gesamt, 40, wo);
+      assert.equal(z.gesamt, 48, wo);
       assert.equal(z.offen + z.erledigt + z.fehlerhaft, z.gesamt, `${wo}: Summe (AK-40)`);
       return z;
     };
     await pruefe('Start');
-    for (const a of ['PRE3', 'MON1', 'LAC2']) {
+    for (const a of ['PRE3', 'MON1', 'LAC2', 'ABF5']) {
       for (const l of await labelsVon(s, a)) {
         const bad = (a === 'MON1' && l.sprachen.length < 2) || sprachen(l) === 'de+ru';
         if (bad) {
@@ -201,7 +201,7 @@ describe('AK-50: Demo-Daten wie im Kriterium', () => {
       }
       assert.equal((await alsMax(s, `/api/anlagen/${a}/freigeben`)).status, 200, a);
     }
-    assert.deepEqual(await pruefe('Ende'), { gesamt: 40, offen: 0, erledigt: 37, fehlerhaft: 3 });
+    assert.deepEqual(await pruefe('Ende'), { gesamt: 48, offen: 0, erledigt: 45, fehlerhaft: 3 });
     assert.deepEqual((await marie(s)).anlagen.filter((a: any) => a.gesperrt).map((a: any) => a.id), ['EIG1']);
   }));
 
@@ -412,8 +412,8 @@ describe('AK-52: Daten zurücksetzen für den nächsten Durchlauf', () => {
       assert.equal(r.status, 200);
       assert.equal(await h.warte(n0 + 1), n0 + 1, 'ein Signal');
       assert.equal(await h.warte(n0 + 2, 300), n0 + 1, 'nicht mehr als eins');
-      assert.ok(gesehen.length > 0 && gesehen.every((g) => g === 40), `Zwischenstände: ${[...new Set(gesehen)]}`);
-      assert.deepEqual((await marie(s)).zahlen, { gesamt: 40, offen: 36, erledigt: 0, fehlerhaft: 4 });
+      assert.ok(gesehen.length > 0 && gesehen.every((g) => g === 48), `Zwischenstände: ${[...new Set(gesehen)]}`);
+      assert.deepEqual((await marie(s)).zahlen, { gesamt: 48, offen: 44, erledigt: 0, fehlerhaft: 4 });
     } finally { h.zu(); }
   }));
 
@@ -484,7 +484,7 @@ describe('AK-53: README mit Start in höchstens 5 Schritten', () => {
       const html = await (await fetch(m[1]!)).text();
       assert.match(html, /<div id="root">|<script/);
       const anlagen = await (await fetch(`${m[1]}/api/anlagen`)).json();
-      assert.deepEqual(anlagen.map((a: any) => a.name).sort(), ['Lackierung 2', 'Montagelinie 1', 'Presse 3', 'Testanlage Eigene Fotos']);
+      assert.deepEqual(anlagen.map((a: any) => a.name).sort(), ['Abfüllung 5', 'Lackierung 2', 'Montagelinie 1', 'Presse 3', 'Testanlage Eigene Fotos']);
     } finally {
       // npm startet node als Kindprozess: die ganze Prozessgruppe beenden, sonst bleibt der Server offen.
       try { process.kill(-p.pid!, 'SIGTERM'); } catch { /* schon beendet */ }

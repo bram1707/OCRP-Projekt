@@ -274,6 +274,62 @@
     "ocrKonfidenz": 0.95
   },
   {
+    "id": "ABF5-01",
+    "anlageId": "ABF5",
+    "bild": "ABF5-01.svg",
+    "ocrText": "ACHTUNG! Heiße Oberfläche. Nicht berühren.\nDİKKAT! Sıcak yüzey. Dokunmayın.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "ABF5-02",
+    "anlageId": "ABF5",
+    "bild": "ABF5-02.svg",
+    "ocrText": "Schutzbrille tragen! Nur mit Schutzbrille benutzen.\nKoruyucu gözlük takın! Sadece koruyucu gözlük ile kullanın.",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "ABF5-03",
+    "anlageId": "ABF5",
+    "bild": "ABF5-03.svg",
+    "ocrText": "Zutritt für Unbefugte verboten!\nYetkisiz kişilerin girişi yasaktır!",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "ABF5-04",
+    "anlageId": "ABF5",
+    "bild": "ABF5-04.svg",
+    "ocrText": "WARNUNG! Hochspannung. Lebensgefahr.\nВНИМАНИЕ! Високо напрежение. Опасност за живота.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "ABF5-05",
+    "anlageId": "ABF5",
+    "bild": "ABF5-05.svg",
+    "ocrText": "Gehörschutz tragen! Nur mit Gehörschutz betreten.\nНосете антифони! Влизането само с антифони.",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "ABF5-06",
+    "anlageId": "ABF5",
+    "bild": "ABF5-06.svg",
+    "ocrText": "VORSICHT! Quetschgefahr. Hände fernhalten.\n小心！夹手危险。请勿将手伸入。",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "ABF5-07",
+    "anlageId": "ABF5",
+    "bild": "ABF5-07.svg",
+    "ocrText": "Rauchen und offenes Feuer verboten!\n禁止吸烟和明火！",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "ABF5-08",
+    "anlageId": "ABF5",
+    "bild": "ABF5-08.svg",
+    "ocrText": "Notausgang. Bereich nicht zustellen.\n安全出口。保持通道畅通。",
+    "ocrKonfidenz": 0.96
+  },
+  {
     "id": "EIG1-01",
     "anlageId": "EIG1",
     "bild": null,

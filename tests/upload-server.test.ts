@@ -293,15 +293,15 @@ describe('U-B7 Daten zurücksetzen löscht die eigenen Fotos', () => {
 });
 
 describe('Ganzer Weg: Kamera → Max → Marie', () => {
-  test('drei eigene Fotos, Max bestätigt und gibt frei; mit den drei Demo-Anlagen sagt Marie „Ja. Alle 40 Labels …“', async () => {
+  test('drei eigene Fotos, Max bestätigt und gibt frei; mit den vier Demo-Anlagen sagt Marie „Ja. Alle 48 Labels …“', async () => {
     await mitUpload(async ({ s }) => {
       for (const id of ['EIG1-01', 'EIG1-02', 'EIG1-03']) assert.equal((await lade(s, id, PNG)).status, 200, id);
       const labels = (await anfrage(s, '/api/marie')).daten.labels as { schluessel: string }[];
       for (const l of labels) await anfrage(s, `/api/labels/${l.schluessel}/bestaetigen`, max);
-      for (const a of ['PRE3', 'MON1', 'LAC2', 'EIG1']) assert.equal((await anfrage(s, `/api/anlagen/${a}/freigeben`, max)).status, 200, a);
+      for (const a of ['PRE3', 'MON1', 'LAC2', 'ABF5', 'EIG1']) assert.equal((await anfrage(s, `/api/anlagen/${a}/freigeben`, max)).status, 200, a);
       const m = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-      assert.deepEqual(m.zahlen, { gesamt: 40, offen: 0, erledigt: 40, fehlerhaft: 0 });
-      assert.equal(antwort(m), 'Ja. Alle 40 Labels sind bestätigt und alle Anlagen freigegeben.');
+      assert.deepEqual(m.zahlen, { gesamt: 48, offen: 0, erledigt: 48, fehlerhaft: 0 });
+      assert.equal(antwort(m), 'Ja. Alle 48 Labels sind bestätigt und alle Anlagen freigegeben.');
     });
   });
 

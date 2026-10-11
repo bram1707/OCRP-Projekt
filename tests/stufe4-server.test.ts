@@ -243,7 +243,7 @@ describe('B8 Daten zurücksetzen (AK-52)', () => {
     });
   });
 
-  test('mit den Demo-Daten: alle Anlagen stehen wieder am Anfang, Marie sieht 40/36/0/4', async () => {
+  test('mit den Demo-Daten: alle Anlagen stehen wieder am Anfang, Marie sieht 48/44/0/4', async () => {
     const db = oeffneDatenbank(':memory:');
     await spieleTestdatenEin(db, demoDaten());
     try {
@@ -252,7 +252,7 @@ describe('B8 Daten zurücksetzen (AK-52)', () => {
         assert.equal((await anfrage(s, '/api/anlagen/PRE3/freigeben', max)).status, 200);
         assert.equal((await anfrage(s, '/api/demo/zuruecksetzen', { methode: 'POST', ...testleitung })).status, 200);
         const m = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-        assert.deepEqual(m.zahlen, { gesamt: 40, offen: 36, erledigt: 0, fehlerhaft: 4 });
+        assert.deepEqual(m.zahlen, { gesamt: 48, offen: 44, erledigt: 0, fehlerhaft: 4 });
         assert.ok(m.anlagen.every((a) => a.gesperrt));
       }, { db, bilderOrdner: DEMO_BILDER, datenOrdner: DEMO });
     } finally {

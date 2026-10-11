@@ -173,8 +173,9 @@ describe('B6 „Rückmeldung geben“ auf jeder Seite (AK-51)', () => {
 
   test('dieselben Szenarien wie der Server; die Anlagen der Vorauswahl sind genau die Demo-Anlagen', () => {
     assert.deepEqual([...M.szenarien!.SZENARIEN], [...SZENARIEN_SERVER]);
-    // Die Testanlage „Eigene Fotos“ hat kein eigenes Szenario (dort gilt „allgemein“).
-    assert.deepEqual(Object.keys(M.szenarien!.SZENARIO_DER_ANLAGE).sort(), demoDaten().anlagen.map((a) => a.id).filter((id) => id !== 'EIG1').sort());
+    // Die Testanlage „Eigene Fotos“ und Abfüllung 5 (Optimierung 2) haben kein eigenes Szenario (dort gilt „allgemein“).
+    assert.deepEqual(Object.keys(M.szenarien!.SZENARIO_DER_ANLAGE).sort(), demoDaten().anlagen.map((a) => a.id).filter((id) => id !== 'EIG1' && id !== 'ABF5').sort());
+    assert.equal(M.szenarien!.szenarioDerAdresse('#/anlage/ABF5'), 'allgemein');
     assert.equal(M.szenarien!.szenarioDerAdresse('#/anlage/EIG1'), 'allgemein');
     for (const a of testdaten().anlagen) assert.equal(M.szenarien!.szenarioDerAdresse(`#/anlage/${a.id}`), 'allgemein', a.id);
   });

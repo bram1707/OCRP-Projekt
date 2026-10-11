@@ -70,7 +70,7 @@ describe('B2 Datensatz wählbar', () => {
     assert.equal(datenbankPfad('/w', 'demo', { DB_PFAD: '/x/y.sqlite' }), '/x/y.sqlite');
   });
 
-  test('mit DATENSATZ=demo: 3 Anlagen und die Testanlage „Eigene Fotos“, 40 Labels, Fotos aus testdaten/demo, simulierte Erkennung erzwungen', async () => {
+  test('mit DATENSATZ=demo: 4 Anlagen und die Testanlage „Eigene Fotos“, 48 Labels, Fotos aus testdaten/demo, simulierte Erkennung erzwungen', async () => {
     const ordner = mkdtempSync(join(tmpdir(), 'pruefsystem-demo-'));
     try {
       const system = await mitUmgebung(
@@ -83,8 +83,8 @@ describe('B2 Datensatz wählbar', () => {
         assert.equal(system.datenOrdner, DEMO);
         assert.equal(system.bilderOrdner, DEMO_BILDER);
         const anlagen = system.db.prepare('SELECT id FROM anlagen ORDER BY id').all().map((z) => z.id);
-        assert.deepEqual(anlagen, ['EIG1', 'LAC2', 'MON1', 'PRE3']);
-        assert.equal((system.db.prepare('SELECT COUNT(*) AS n FROM labels').get() as { n: number }).n, 40);
+        assert.deepEqual(anlagen, ['ABF5', 'EIG1', 'LAC2', 'MON1', 'PRE3']);
+        assert.equal((system.db.prepare('SELECT COUNT(*) AS n FROM labels').get() as { n: number }).n, 48);
       } finally {
         system.db.close();
       }
@@ -142,7 +142,7 @@ describe('B2 Datensatz wählbar', () => {
       });
       assert.match(ausgabe, /Spracherkennung: mock, Texterkennung für eigene Fotos: (tesseract|aus), Demo-Daten/);
       const anlagen = (await (await fetch(`${url}/api/anlagen`)).json()) as { name: string }[];
-      assert.deepEqual(anlagen.map((a) => a.name).sort(), ['Lackierung 2', 'Montagelinie 1', 'Presse 3', 'Testanlage Eigene Fotos']);
+      assert.deepEqual(anlagen.map((a) => a.name).sort(), ['Abfüllung 5', 'Lackierung 2', 'Montagelinie 1', 'Presse 3', 'Testanlage Eigene Fotos']);
     } finally {
       kind.kill();
       rmSync(ordner, { recursive: true, force: true });
@@ -151,10 +151,10 @@ describe('B2 Datensatz wählbar', () => {
 });
 
 describe('B3 Demo-Daten (AK-50)', () => {
-  test('Presse 3 mit 12, Montagelinie 1 mit 15, Lackierung 2 mit 10 Labels, jedes mit Foto; dazu 3 leere Plätze für eigene Fotos', () => {
+  test('Presse 3 mit 12, Montagelinie 1 mit 15, Lackierung 2 mit 10, Abfüllung 5 mit 8 Labels, jedes mit Foto; dazu 3 leere Plätze für eigene Fotos', () => {
     assert.deepEqual(
       daten.anlagen.map((a) => [a.id, a.name, a.sollAnzahl]),
-      [['PRE3', 'Presse 3', 12], ['MON1', 'Montagelinie 1', 15], ['LAC2', 'Lackierung 2', 10], ['EIG1', 'Testanlage Eigene Fotos', 3]],
+      [['PRE3', 'Presse 3', 12], ['MON1', 'Montagelinie 1', 15], ['LAC2', 'Lackierung 2', 10], ['ABF5', 'Abfüllung 5', 8], ['EIG1', 'Testanlage Eigene Fotos', 3]],
     );
     for (const a of daten.anlagen) assert.equal(labelsVon(a.id).length, a.sollAnzahl, a.id);
     const demo = daten.labels.filter((l) => l.anlageId !== 'EIG1');
@@ -177,7 +177,7 @@ describe('B3 Demo-Daten (AK-50)', () => {
 
   test('alle Fotos sind Platzhalter-SVGs ohne Skript', () => {
     const fotos = daten.labels.flatMap((l) => [l.bild, l.nachKorrektur?.bild]).filter((b): b is string => typeof b === 'string');
-    assert.equal(fotos.length, 40);
+    assert.equal(fotos.length, 48);
     for (const bild of fotos) {
       const svg = readFileSync(join(DEMO_BILDER, bild), 'utf8');
       assert.ok(svg.startsWith('<svg') && svg.includes('Platzhalterfoto'), bild);
@@ -215,12 +215,12 @@ describe('B3 Demo-Daten (AK-50)', () => {
     }
   });
 
-  test('Marie sieht zu Beginn 40 gesamt, 36 offen, 0 erledigt, 4 fehlerhaft (das unsicher erkannte Label und die 3 leeren Plätze)', async () => {
+  test('Marie sieht zu Beginn 48 gesamt, 44 offen, 0 erledigt, 4 fehlerhaft (das unsicher erkannte Label und die 3 leeren Plätze)', async () => {
     await mitDemoServer(async (s) => {
       const uebersicht = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-      assert.deepEqual(uebersicht.zahlen, { gesamt: 40, offen: 36, erledigt: 0, fehlerhaft: 4 });
+      assert.deepEqual(uebersicht.zahlen, { gesamt: 48, offen: 44, erledigt: 0, fehlerhaft: 4 });
       assert.deepEqual(uebersicht.labels.filter((l) => l.gruppe === 'fehlerhaft').map((l) => l.schluessel), ['EIG1-01', 'EIG1-02', 'EIG1-03', 'LAC2-04']);
-      assert.match(antwort(uebersicht), /^Nein\. 40 von 40 Labels sind noch nicht erledigt\.$/);
+      assert.match(antwort(uebersicht), /^Nein\. 48 von 48 Labels sind noch nicht erledigt\.$/);
     });
   });
 
@@ -290,14 +290,14 @@ describe('B3 Demo-Daten (AK-50)', () => {
     });
 
     // „Ja“ gibt es erst mit drei eigenen Fotos; das prüft tests/upload-server.test.ts.
-    test('nach allen drei Durchläufen fehlen nur noch die 3 Plätze der Testanlage „Eigene Fotos“', async () => {
+    test('nach allen vier Demo-Anlagen fehlen nur noch die 3 Plätze der Testanlage „Eigene Fotos“', async () => {
       await mitDemoServer(async (s) => {
-        await bestaetige(s, [...labelsVon('PRE3'), ...labelsVon('MON1'), ...labelsVon('LAC2')]);
-        for (const a of ['PRE3', 'MON1', 'LAC2']) assert.equal((await anfrage(s, `/api/anlagen/${a}/freigeben`, max)).status, 200, a);
+        await bestaetige(s, [...labelsVon('PRE3'), ...labelsVon('MON1'), ...labelsVon('LAC2'), ...labelsVon('ABF5')]);
+        for (const a of ['PRE3', 'MON1', 'LAC2', 'ABF5']) assert.equal((await anfrage(s, `/api/anlagen/${a}/freigeben`, max)).status, 200, a);
         assert.equal((await anfrage(s, '/api/anlagen/EIG1/freigeben', max)).status, 409);
         const uebersicht = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-        assert.deepEqual(uebersicht.zahlen, { gesamt: 40, offen: 0, erledigt: 37, fehlerhaft: 3 });
-        assert.equal(antwort(uebersicht), 'Nein. 3 von 40 Labels sind noch nicht erledigt.');
+        assert.deepEqual(uebersicht.zahlen, { gesamt: 48, offen: 0, erledigt: 45, fehlerhaft: 3 });
+        assert.equal(antwort(uebersicht), 'Nein. 3 von 48 Labels sind noch nicht erledigt.');
       });
     });
   });

@@ -25,7 +25,7 @@ Die Datei `labyrinth.py` ist ein eigenständiges Spiel und gehört nicht zum Pro
 ## Für Entwickler
 
 - `npm test` führt alle Tests aus, `npm run typecheck` prüft die Typen.
-- `npm start` startet mit den 20 Basis-Testlabels aus `testdaten/` (Datenbank `daten/pruefsystem.sqlite`), `npm run demo` mit den 37 Demo-Labels und den 3 Plätzen für eigene Fotos aus `testdaten/demo/` (Datenbank `daten/demo.sqlite`, eigene Fotos in `daten/uploads-demo/`). Wer von vorn beginnen will, löscht die jeweilige Datei.
+- `npm start` startet mit den 20 Basis-Testlabels aus `testdaten/` (Datenbank `daten/pruefsystem.sqlite`), `npm run demo` mit den 45 Demo-Labels (vier Anlagen, darunter Abfüllung 5 mit Türkisch, Bulgarisch und Chinesisch) und den 3 Plätzen für eigene Fotos aus `testdaten/demo/` (Datenbank `daten/demo.sqlite`, eigene Fotos in `daten/uploads-demo/`). Wer von vorn beginnen will, löscht die jeweilige Datei.
 - `npm run dev` startet den Entwicklungsserver unter `http://127.0.0.1:5173`.
 - `npm run bilder` erzeugt die Bilder der Basisdaten neu, `npm run bilder -- testdaten/demo` die der Demo-Daten.
 - `OCR_MODUS=aus` in `.env` schaltet die Texterkennung für eigene Fotos ab; dann wird der Text auf der Kamera-Seite eingetippt.

@@ -43,6 +43,8 @@ Danach als **Instandhaltung** (über „Rolle wechseln“): „Nachbesserung sim
 
 Danach wie bei Montagelinie 1: Instandhaltung bessert LAC2-07 nach (jetzt Deutsch und Französisch), Max bestätigt es und gibt die Anlage frei.
 
+Bestätigt die Testperson LAC2-07 gleich, lässt sich die Anlage auch freigeben. Das ist dann ein Befund für den Test, kein Fehler des Prototyps: Max entscheidet, die Software schlägt nur vor.
+
 **Beobachten:**
 - Verlässt sich die Testperson bei LAC2-04 auf den Vorschlag, oder schaut sie selbst aufs Bild?
 - Fällt Russisch auf? Der Prototyp weist auf die abweichenden Sprachen hin; zweisprachige Labels sind normal, auffällig ist hier nur die zweite Sprache. Achtet die Testperson auf den Hinweis oder auf das Bild?

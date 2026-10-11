@@ -4,7 +4,9 @@
 import assert from 'node:assert/strict';
 import { describe, test } from 'node:test';
 import { findeBelege, teileInAbschnitte } from '../src/ai/belege.ts';
+import { bedeutungen, GLOSSAR_WOERTER } from '../src/ai/glossar.ts';
 import { mockAntwort } from '../src/ai/mock.ts';
+import { SPRACHEN } from '../src/ai/sprachen.ts';
 
 const sprachen = (text: string) => [...mockAntwort(text).sprachen].sort();
 
@@ -42,5 +44,18 @@ describe('Optimierung 2, Punkt 8: Sprache je Abschnitt', () => {
     for (const b of zh.belege) assert.equal(text.slice(b.start, b.ende), b.text);
     assert.ok(zh.woerter.includes('护目镜'));
     assert.equal(zh.belege.filter((b) => b.art === 'zeichen').length, 0);
+  });
+});
+
+describe('Optimierung 2, Punkt 3: kleines Wörterbuch', () => {
+  const form = (w: string) => w.toLowerCase().replace(/ı/g, 'i');
+  test('jeder Eintrag ist ein Wort aus den Sprachlisten, kein deutsches', () => {
+    const fremd = new Set(SPRACHEN.filter((s) => s.code !== 'de').flatMap((s) => s.woerter.map(form)));
+    for (const w of GLOSSAR_WOERTER) assert.ok(fremd.has(w), w);
+  });
+  test('türkisches Label: DİKKAT = Achtung, deutsche Wörter bekommen keine Übersetzung', () => {
+    const text = 'ACHTUNG! Heiße Oberfläche.\nDİKKAT! Sıcak yüzey. Dokunmayın.';
+    const b = bedeutungen(findeBelege(text).flatMap((t) => t.belege).sort((x, y) => x.start - y.start));
+    assert.deepEqual(b.map((x) => `${x.wort}=${x.deutsch}`), ['DİKKAT=Achtung', 'Sıcak=heiß', 'yüzey=Oberfläche', 'Dokunmayın=nicht berühren']);
   });
 });

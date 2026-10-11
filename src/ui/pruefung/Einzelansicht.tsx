@@ -8,6 +8,7 @@ import { Balken, Fehler, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type
 import { zurAnlage } from '../route.ts';
 import { istPruefbar, STATUS_ANZEIGE } from '../status.ts';
 import { FEHLERGRUENDE, fortschritt, sichereBildUrl, sprachZeile, type Ablauf } from './logik.ts';
+import { Bedeutungen } from './Bedeutungen.tsx';
 import { Legende, MarkierterText, Warum } from './Warum.tsx';
 
 export type EinzelEreignis =
@@ -58,7 +59,7 @@ export function Einzelansicht({
     <>
       <nav className="mb-3">
         <a href={zurAnlage(anlage.id)} className={VERWEIS}>
-          Zur Übersicht {anlage.name}
+          ← Zurück zur Liste {anlage.name}
         </a>
       </nav>
       <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3">
@@ -127,6 +128,7 @@ export function Einzelansicht({
               ))
             )}
           </ul>
+          <Bedeutungen label={label} />
           {label.hinweis && <p className="mt-3 rounded-lg border border-amber-200 border-l-4 border-l-amber-600 bg-amber-50 px-3 py-2 text-amber-950">{label.hinweis}</p>}
 
           {label.letzterFehlergrundText && (label.status === 'nachgebessert' || label.status === 'fehlerhaft') && (

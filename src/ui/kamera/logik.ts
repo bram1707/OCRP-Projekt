@@ -45,3 +45,32 @@ export function dateiFehler(datei: { size: number; type: string } | null): strin
 export function groesseText(bytes: number): string {
   return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} KB` : `${(bytes / 1024 / 1024).toFixed(1).replace('.', ',')} MB`;
 }
+
+/** Namen der Plätze der Testanlage (Optimierung 2, Punkt 5), damit klar ist, welches Label wohin gehört. */
+const PLATZ_NAME: Readonly<Record<string, string>> = {
+  'EIG1-01': 'Label 1: vorne an der Anlage',
+  'EIG1-02': 'Label 2: links an der Anlage',
+  'EIG1-03': 'Label 3: hinten an der Anlage',
+};
+
+export function platzName(id: string): string {
+  return PLATZ_NAME[id] ?? `Platz ${id}`;
+}
+
+/** Teilt den Text so, dass schlecht gelesene Wörter markiert werden können (Optimierung 2, Punkt 4). */
+export function markiereWoerter(text: string, woerter: readonly string[]): { text: string; unsicher: boolean }[] {
+  const gesucht = [...new Set(woerter.filter((w) => w.trim() !== ''))].sort((a, b) => b.length - a.length);
+  if (gesucht.length === 0) return [{ text, unsicher: false }];
+  // Ganze Wörter, damit ein unsicheres „A“ nicht jedes A im Text markiert; chinesische Zeichen haben keine Wortgrenzen.
+  const teil = (w: string) => {
+    const roh = w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return /\p{Script=Han}/u.test(w) ? roh : `(?<![\\p{L}\\p{N}])${roh}(?![\\p{L}\\p{N}])`;
+  };
+  const muster = new RegExp(`(${gesucht.map(teil).join('|')})`, 'gu');
+  return text.split(muster).filter((t) => t !== '').map((t) => ({ text: t, unsicher: gesucht.includes(t) }));
+}
+
+/** Gründe, die das Hochladen betreffen: Text schlecht lesbar, Sprache unsicher, Text leer oder kurz. */
+export function unsicherGruende(ergebnis: Pick<LabelAnsicht, 'gruende'>): string[] {
+  return ergebnis.gruende.filter((g) => g.code === 'unsicher_ocr' || g.code === 'unsicher_sprache' || g.code === 'text_unleserlich').map((g) => g.text);
+}

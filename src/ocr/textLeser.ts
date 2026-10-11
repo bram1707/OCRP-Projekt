@@ -8,6 +8,8 @@ export interface Gelesen {
   text: string;
   /** 0 bis 1 */
   konfidenz: number;
+  /** Wörter, die die Texterkennung nur unsicher gelesen hat (Optimierung 2, Punkt 4) */
+  unsichereWoerter?: string[];
 }
 
 export type TextLeser = (bild: Buffer, typ: BildTyp) => Promise<Gelesen>;

@@ -9,6 +9,7 @@ export type { MarieAnlage, MarieLabel, MarieUebersicht } from '../server/marie.t
 export type { GruppeMarie } from '../db/status.ts';
 export type { Grund } from '../ai/auffaelligkeit.ts';
 export type { Beleg } from '../ai/belege.ts';
+export type { Bedeutung } from '../ai/glossar.ts';
 export type { Hinderungsgrund, Status } from '../db/status.ts';
 export type { Rueckmeldung } from '../db/feedback.ts';
 

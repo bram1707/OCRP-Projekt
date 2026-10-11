@@ -6,6 +6,8 @@ Dieser Ablauf gehört zum Prototyp der Label-Prüfung. Er beschreibt, was in jed
 
 1. Prototyp nach der README starten (`npm run demo`, `http://127.0.0.1:3000`).
 2. Auf der Startseite unten „Daten zurücksetzen“ wählen und bestätigen. Alle drei Anlagen stehen dann auf „Gesperrt“, nichts ist geprüft.
+   **Vorher alle anderen Fenster mit Max' Seiten schließen.** Eine offene Seite vom letzten Durchlauf merkt das Zurücksetzen nicht und könnte sonst ein Label bestätigen, dessen neues Foto niemand angesehen hat (Review R18).
+   „Daten zurücksetzen“ und „Rückmeldungen ansehen“ stehen auf der Rollenwahl, die auch die Testperson sieht. Sagen Sie ihr, dass dieser Bereich nur für die Testleitung ist (Review R19).
 3. Für das Marie-Szenario ein zweites Browserfenster öffnen und dort „Marie · Übersicht ansehen“ wählen. Die Übersicht aktualisiert sich von selbst.
 4. Der Testperson sagen: Sie dürfen laut denken, es gibt keine falschen Antworten, unten auf jeder Seite können Sie „Rückmeldung geben“.
 
@@ -26,7 +28,7 @@ Dieser Ablauf gehört zum Prototyp der Label-Prüfung. Er beschreibt, was in jed
 
 **Was geschehen soll:** 15 Labels. MON1-11 steht vorn und hat nur Deutsch, alle anderen haben Deutsch und Englisch. Die Testperson meldet MON1-11 mit „Nein, Fehler melden“ und dem Grund „Sprache falsch“ und bestätigt die übrigen 14. Die Freigabe geht dann nicht („14 von 15 bestätigt“).
 
-Danach als **Instandhaltung** (über „Rolle wechseln“): „Nachbesserung simulieren“ für MON1-11. Dann wieder als Max: MON1-11 erscheint mit dem neuen Bild (Deutsch und Englisch) und dem Hinweis „Nachgebessert“, Max bestätigt es und gibt die Anlage frei.
+Danach die **Instandhaltung** simulieren: unten auf Max' Seite „Simulation: Instandhaltung (nur im Prototyp)“ öffnen und „Nachbesserung simulieren“ für MON1-11 wählen. Dann wieder als Max: MON1-11 erscheint mit dem neuen Bild (Deutsch und Englisch) und dem Hinweis „Nachgebessert“, Max bestätigt es und gibt die Anlage frei.
 
 **Beobachten:**
 - Bemerkt die Testperson den Hinweis auf die abweichenden Sprachen, bevor sie bestätigt?

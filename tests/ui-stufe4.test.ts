@@ -41,14 +41,13 @@ function ohneFachwoerter(html: string, name: string): void {
 }
 
 describe('B5 Rollenwahl als Startseite', () => {
-  test('„Wer sind Sie?“ mit drei Rollen, dem Satz zur Anmeldung und dem Bereich für die Testleitung', () => {
+  test('„Wer sind Sie?“ mit zwei Rollen (ohne Karte „Instandhaltung“, Bram 11.10.2026), dem Satz zur Anmeldung und dem Bereich für die Testleitung', () => {
     const html = rendere(M.start!.Startseite, {});
     assert.match(html, /<h1[^>]*>Wer sind Sie\?<\/h1>/);
     assert.match(text(html), /Im Prototyp gibt es keine Anmeldung; die Rolle wählen Sie selbst\./);
     assert.deepEqual(verweise(html), [
       ['#/anlagen', 'Max · Labels prüfen (Qualitätsmanagement)'],
       ['#/marie', 'Marie · Übersicht ansehen (Fertigungsleitung)'],
-      ['#/simulation', 'Instandhaltung · Nachbesserung simulieren (nur im Prototyp)'],
       ['#/rueckmeldungen', 'Rückmeldungen ansehen'],
     ]);
     assert.match(html, /<h2[^>]*>Für die Testleitung<\/h2>/);
@@ -80,11 +79,14 @@ describe('B5 Rollenwahl als Startseite', () => {
     }
   });
 
-  test('R16a: kein Rahmen führt direkt zu den Seiten einer anderen Rolle, nur über die Rollenwahl', () => {
+  test('R16a: kein Rahmen führt direkt zu den Seiten einer anderen Rolle, nur über die Rollenwahl; Max\' Rahmen zusätzlich zur Simulation', () => {
     for (const bereich of BEREICHE) {
       const ziele = verweise(rahmen(bereich)).map(([ziel]) => ziel);
-      assert.deepEqual([...new Set(ziele)].sort(), [...new Set([M.route!.STARTSEITE_DES_BEREICHS[bereich], '#/'])].sort(), bereich);
+      // Die Instandhaltung hat keine Karte in der Rollenwahl; sie nutzt Max' Rolle (R9) und ist von seinen Seiten aus erreichbar.
+      const extra = bereich === 'max' ? ['#/simulation'] : [];
+      assert.deepEqual([...new Set(ziele)].sort(), [...new Set([M.route!.STARTSEITE_DES_BEREICHS[bereich], '#/', ...extra])].sort(), bereich);
     }
+    assert.deepEqual(verweise(rahmen('max')).find(([z]) => z === '#/simulation'), ['#/simulation', 'Simulation: Instandhaltung (nur im Prototyp)']);
   });
 
   test('eigener Fenstertitel je Rolle', () => {

@@ -8,7 +8,7 @@ Prototyp zur Vorprüfung von Sicherheits- und Warnlabels an Anlagen. Max (Qualit
 2. `npm ci` installiert die Pakete (einmalig).
 3. `npm run demo` baut die Oberfläche und startet den Prototyp mit den Demo-Daten.
 4. Im Browser `http://127.0.0.1:3000` öffnen.
-5. Auf der Startseite die Rolle wählen: Max, Instandhaltung oder Marie.
+5. Auf der Startseite die Rolle wählen: Max oder Marie.
 
 Was in einem Test zu tun ist und worauf die Testleitung achtet, steht in [`docs/testablauf.md`](docs/testablauf.md). „Daten zurücksetzen“ unten auf der Startseite stellt die Demo-Daten für den nächsten Durchlauf wieder her; die Rückmeldungen bleiben dabei erhalten.
 

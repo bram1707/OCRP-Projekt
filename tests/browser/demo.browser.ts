@@ -131,9 +131,11 @@ async function gebeFrei(name: string): Promise<void> {
   await page.locator('main [data-marke]:has-text("Freigegeben")').first().waitFor({ timeout: 10000 });
 }
 
-/** Instandhaltung: das gemeldete Label nachbessern. */
+/** Instandhaltung: das gemeldete Label nachbessern. Erreichbar über den Verweis unten auf Max' Seiten (keine eigene Karte). */
 async function bessereNach(labelId: string): Promise<void> {
-  await wechsleRolle('Instandhaltung');
+  await tabZu('Simulation: Instandhaltung');
+  await page.keyboard.press('Enter');
+  await page.locator('main h1').first().waitFor();
   await page.locator(`[data-wartend="${labelId}"]`).waitFor();
   await merkeText();
   await tabZu('Nachbesserung simulieren');

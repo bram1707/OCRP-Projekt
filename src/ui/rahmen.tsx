@@ -4,7 +4,7 @@
 
 import type { ReactNode } from 'react';
 import type { Hinderungsgrund } from './api.ts';
-import { STARTSEITE_DES_BEREICHS, zurRollenwahl, type Bereich } from './route.ts';
+import { STARTSEITE_DES_BEREICHS, zurRollenwahl, zurSimulation, type Bereich } from './route.ts';
 import type { StatusAnzeige } from './status.ts';
 import { KNOPF_NEBEN, VERWEIS } from './stile.ts';
 import { Rueckmeldung } from './testleitung/Rueckmeldung.tsx';
@@ -67,6 +67,12 @@ export function Rahmen({
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
       <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-8 gap-y-2 border-t border-slate-300 px-4 py-6 text-slate-700">
+        {/* Die Instandhaltung hat keine eigene Karte in der Rollenwahl; sie nutzt Max' Rolle (R9) und ist nur von seinen Seiten aus erreichbar. */}
+        {bereich === 'max' && (
+          <a href={zurSimulation()} className={`${VERWEIS} inline-flex min-h-12 items-center`}>
+            Simulation: Instandhaltung (nur im Prototyp)
+          </a>
+        )}
         <Rueckmeldung bereich={bereich} szenario={szenario} />
       </footer>
     </div>

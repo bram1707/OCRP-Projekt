@@ -8,10 +8,9 @@
     <text x="64" y="94" font-size="38" font-weight="bold">!</text>
     <text x="130" y="80" font-size="16">Platzhalterfoto · LAC2-04</text>
     <g fill="#111">
-    <text x="40" y="130" font-size="19">VORSICHT! Heiße Oberfläche. Nicht</text>
-    <text x="40" y="154" font-size="19">berühren.</text>
-    <text x="40" y="178" font-size="19"></text>
-    <text x="40" y="202" font-size="19">ATTENTION ! Surface chaude.</text>
+    <text x="40" y="130" font-size="19">VORSICHT! Heiße Oberfläche.</text>
+    <text x="40" y="154" font-size="19"></text>
+    <text x="40" y="178" font-size="19">ATTENTION ! Surface chaude.</text>
     </g>
   </g>
 </svg>

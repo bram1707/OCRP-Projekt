@@ -218,7 +218,7 @@
     "id": "LAC2-04",
     "anlageId": "LAC2",
     "bild": "LAC2-04.svg",
-    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nATTENTION ! Surface chaude.",
+    "ocrText": "VORSICHT! Heiße Oberfläche.\nATTENTION ! Surface chaude.",
     "ocrKonfidenz": 0.93,
     "nachKorrektur": {
       "bild": "LAC2-04-neu.svg",

@@ -79,7 +79,8 @@ async function wechsleRolle(rolle: string): Promise<void> {
 /** In Max' Anlagen eine Anlage öffnen und „Prüfung starten“. */
 async function starteAnlage(name: string): Promise<void> {
   if (!page.url().endsWith('#/anlagen')) {
-    await tabZu('Alle Anlagen', { rueckwaerts: true });
+    // „Alle Anlagen“ gibt es nicht mehr (Optimierung 2, Punkt 1); der Titel oben führt zu Max' Anlagen.
+    await tabZu(/Label-Prüfung · Max/, { rueckwaerts: true });
     await page.keyboard.press('Enter');
   }
   await page.getByRole('heading', { name: 'Anlagen' }).waitFor();
@@ -172,7 +173,7 @@ after(async () => {
 });
 
 describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
-  test('Schritt 4 und 5: Adresse öffnen, Rolle wählen; Marie öffnet ihre Übersicht im zweiten Fenster (37/36/0/1)', async () => {
+  test('Schritt 4 und 5: Adresse öffnen, Rolle wählen; Marie öffnet ihre Übersicht im zweiten Fenster (48/44/0/4)', async () => {
     await marie.goto(url);
     await marie.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
     assert.equal(await marie.title(), 'Rolle wählen · Label-Prüfung');
@@ -180,8 +181,8 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await tabZu('Marie · Übersicht ansehen', { seite: marie });
     await marie.keyboard.press('Enter');
     await marie.locator('[data-aktualisiert]').waitFor();
-    assert.equal(await zahlen(), '40/36/0/4');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 40 von 40 Labels sind noch nicht erledigt.');
+    assert.equal(await zahlen(), '48/44/0/4');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 48 von 48 Labels sind noch nicht erledigt.');
     await bild(marie, 'd01-marie-start');
 
     await page.goto(url);
@@ -204,7 +205,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     const gesehen = await pruefeAlle();
     assert.equal(gesehen.length, 12);
     await gebeFrei('Presse 3');
-    await warteAufZahlen('40/24/12/4');
+    await warteAufZahlen('48/32/12/4');
     await bild(page, 'd03-presse3-freigegeben');
   });
 
@@ -218,10 +219,10 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await page.getByRole('heading', { name: 'Montagelinie 1', level: 1 }).waitFor();
     assert.match(await page.locator('main').innerText(), /14 von 15 bestätigt/);
     // „fehlerhaft“ zählt bei Marie auch das unsichere LAC2-04 mit.
-    await warteAufZahlen('40/9/26/5');
+    await warteAufZahlen('48/17/26/5');
 
     await bessereNach('MON1-11');
-    await warteAufZahlen('40/10/26/4');
+    await warteAufZahlen('48/18/26/4');
     await wechsleRolle('Max');
     await starteAnlage('Montagelinie 1');
     assert.equal((await ueberschrift()).trim(), 'Label MON1-11');
@@ -230,7 +231,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await bild(page, 'd05-mon1-11-nachgebessert');
     assert.deepEqual(await pruefeAlle(), ['MON1-11']);
     await gebeFrei('Montagelinie 1');
-    await warteAufZahlen('40/9/27/4');
+    await warteAufZahlen('48/17/27/4');
   });
 
   test('Lackierung 2: das unsichere Label bestätigen, Deutsch/Russisch melden, nachbessern lassen, bestätigen, freigeben', async () => {
@@ -246,9 +247,9 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await bild(page, 'd06-lac2-freigegeben');
   });
 
-  test('Marie nach den drei Demo-Anlagen: „Nein. 3 von 40 Labels …“ (nur die Testanlage „Eigene Fotos“ fehlt), ohne Neuladen', async () => {
-    await warteAufZahlen('40/0/37/3');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 3 von 40 Labels sind noch nicht erledigt.');
+  test('Marie nach den drei Demo-Anlagen: „Nein. 11 von 48 Labels …“ (nur die Testanlage „Eigene Fotos“ fehlt), ohne Neuladen', async () => {
+    await warteAufZahlen('48/8/37/3');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 11 von 48 Labels sind noch nicht erledigt.');
     await merkeText(marie);
     await bild(marie, 'd07-marie-fertig');
   });
@@ -280,7 +281,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await page.getByText('Danke! Ihre Rückmeldung ist gespeichert.').waitFor();
   });
 
-  test('Daten zurücksetzen: Rückfrage mit Fokus auf „Abbrechen“; danach springt Maries Übersicht von selbst auf 37/36/0/1', async () => {
+  test('Daten zurücksetzen: Rückfrage mit Fokus auf „Abbrechen“; danach springt Maries Übersicht von selbst auf 48/44/0/4', async () => {
     await wechsleRolle('Max');
     await tabZu('Startseite', { rueckwaerts: true });
     await page.keyboard.press('Enter');
@@ -298,10 +299,10 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     marie.on('framenavigated', merke);
     await page.keyboard.press('Enter');
     await page.getByText('Die Daten sind zurückgesetzt. Alle Anlagen stehen wieder am Anfang.').waitFor();
-    await warteAufZahlen('40/36/0/4');
+    await warteAufZahlen('48/44/0/4');
     marie.off('framenavigated', merke);
     assert.deepEqual(navigationen, [], 'Maries Seite lädt nicht neu');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 40 von 40 Labels sind noch nicht erledigt.');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 48 von 48 Labels sind noch nicht erledigt.');
   });
 
   test('Rückmeldungen ansehen: beide sind noch da; „Alle Rückmeldungen löschen“ mit Rückfrage', async () => {

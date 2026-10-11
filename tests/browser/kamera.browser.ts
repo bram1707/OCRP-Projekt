@@ -56,7 +56,7 @@ describe('Eigenes Foto: Kamera → Max → Kamera → Max', () => {
     await page.getByRole('link', { name: /Kamera · Eigenes Foto hochladen/ }).click();
     await page.getByRole('heading', { name: 'Eigenes Foto hochladen', level: 1 }).waitFor();
     assert.match(await page.locator('main').innerText(), /Bitte nur Labels fotografieren, keine Personen\./);
-    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'EIG1-01');
+    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'Label 1: vorne an der Anlage');
     await page.setInputFiles('#foto-datei', FOTO);
     await page.getByRole('button', { name: 'Foto hochladen und lesen lassen' }).click();
     const ergebnis = page.locator('[data-ergebnis="EIG1-01"]');
@@ -66,7 +66,7 @@ describe('Eigenes Foto: Kamera → Max → Kamera → Max', () => {
     assert.match(t, /UWAGA/);
     assert.match(t, /Sprachvorschlag: Deutsch/);
     // Nach dem Lesen ist der nächste leere Platz gewählt.
-    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'EIG1-02');
+    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'Label 2: links an der Anlage');
     await foto('kamera-01-gelesen');
   });
 
@@ -88,7 +88,7 @@ describe('Eigenes Foto: Kamera → Max → Kamera → Max', () => {
     const platz = page.locator('[data-platz="EIG1-01"]');
     await platz.waitFor();
     assert.match(await platz.innerText(), /Max hat einen Fehler gemeldet \(Unleserlich\)/);
-    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'EIG1-01');
+    assert.equal(await page.locator('[aria-pressed="true"]').innerText(), 'Label 1: vorne an der Anlage');
     await page.locator('label:has-text("Text selbst eintippen")').click();
     await page.fill('#foto-text', 'ACHTUNG: Heiße Oberfläche. Nicht berühren!\nUWAGA: Gorąca powierzchnia. Nie dotykać!');
     await page.setInputFiles('#foto-datei', FOTO);

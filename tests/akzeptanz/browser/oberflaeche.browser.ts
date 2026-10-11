@@ -92,7 +92,9 @@ describe('Stanzanlage 4: Übersicht', () => {
     assert.equal(await page.locator('[data-zaehlzeile]').innerText(), '10 Labels: 3 auffällig, 6 unauffällig, 1 bestätigt');
     assert.ok(await page.locator('[role=progressbar]').count() >= 1);
     assert.match(await page.locator('body').innerText(), /1 von 10 bestätigt/);
-    assert.equal(await kacheln().count(), 10);
+    // Optimierung 2: Das bestätigte Label steht nicht mehr als Kachel da, sondern in der Zeile „1 Label bestätigt“.
+    assert.equal(await kacheln().count(), 9);
+    assert.match(await page.locator('[data-bestaetigt] summary').innerText(), /1 Label bestätigt/);
     for (const id of await kachelIds()) {
       const k = page.locator(`[data-kachel="${id}"]`);
       const t = await k.innerText();
@@ -106,7 +108,8 @@ describe('Stanzanlage 4: Übersicht', () => {
     const ids = await kachelIds();
     assert.deepEqual(ids.slice(0, 3).sort(), ['STA4-07', 'STA4-08', 'STA4-09']);
     assert.deepEqual(ids.slice(0, 2).sort(), ['STA4-08', 'STA4-09'], 'Unsicher vor Offen');
-    assert.equal(ids.at(-1), 'STA4-10');
+    assert.ok(!ids.includes('STA4-10'), 'Bestätigtes steht nicht zwischen den offenen Kacheln');
+    assert.equal(await page.locator('[data-bestaetigt-zeile="STA4-10"]').count(), 1, 'sondern in der Zeile „bestätigt“');
     const text = await page.locator('main, body').first().innerText();
     assert.ok(!/\bFehlerhaft\b/.test(await kacheln().allInnerTexts().then((t: string[]) => t.join(' '))));
     assert.ok(text.length > 0);
@@ -135,21 +138,22 @@ describe('Stanzanlage 4: Übersicht', () => {
     });
     const jeWort = new Map<string, Set<string>>();
     for (const m of marken) jeWort.set(m.wort, (jeWort.get(m.wort) ?? new Set()).add(m.farbe));
-    assert.ok(jeWort.size >= 3, `mindestens drei Status sichtbar: ${[...jeWort.keys()]}`);
+    // Bestätigte Labels haben keine Kachel mehr (Optimierung 2); sichtbar sind Unsicher und Offen.
+    assert.ok(jeWort.size >= 2, `mindestens zwei Status sichtbar: ${[...jeWort.keys()]}`);
     for (const [w, f] of jeWort) assert.equal(f.size, 1, `${w} hat genau eine Farbe`);
     const farben = [...jeWort.values()].map((f) => [...f][0]);
     assert.equal(new Set(farben).size, farben.length, 'verschiedene Status, verschiedene Farben');
     assert.ok(farben.every((f) => f !== 'rgba(0, 0, 0, 0)'));
   });
 
-  test('AK-18: „Nur auffällige“ zeigt 3 Kacheln und „7 Labels ausgeblendet“, „Alle“ wieder 10', async () => {
+  test('AK-18: „Nur auffällige“ zeigt 3 Kacheln und „6 Labels ausgeblendet“, „Alle“ wieder 9 (das bestätigte steht unter „bestätigt“)', async () => {
     schritt = 'filter';
     await page.getByRole('button', { name: /Nur auffällige/ }).click();
     assert.equal(await kacheln().count(), 3);
-    assert.equal(await page.locator('[data-ausgeblendet]').innerText(), '7 Labels ausgeblendet');
+    assert.equal(await page.locator('[data-ausgeblendet]').innerText(), '6 Labels ausgeblendet');
     await bild('sta4-nur-auffaellige');
     await page.getByRole('button', { name: /^Alle/ }).click();
-    assert.equal(await kacheln().count(), 10);
+    assert.equal(await kacheln().count(), 9);
     assert.equal(aufrufeIn('filter').length, 0, 'AK-03: Filtern schreibt nicht');
   });
 
@@ -165,6 +169,7 @@ describe('Stanzanlage 4: Übersicht', () => {
     assert.equal((await api('/api/labels/STA4-01')).status, 'bestaetigt');
     assert.equal((await api('/api/labels/STA4-02')).status, 'offen');
     assert.equal((await kachelIds())[0], 'STA4-08', 'Kacheln bleiben an ihrem Platz');
+    assert.equal(await page.locator('[data-bestaetigt-zeile="STA4-01"]').count(), 1, 'STA4-01 steht jetzt unter „bestätigt“');
   });
 });
 

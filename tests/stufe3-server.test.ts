@@ -374,7 +374,7 @@ async function hoere(url: string, kopf: Record<string, string> = {}) {
 const kurz = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
-  test('Bestätigen, Melden, Nachbessern und Foto nachreichen senden je ein Signal; danach zeigt Marie den neuen Stand', async () => {
+  test('Bestätigen, Melden, Nachbessern, Foto nachreichen und Zurücknehmen senden je ein Signal; danach zeigt Marie den neuen Stand', async () => {
     await mitServer(async (s) => {
       const h = await hoere(`${s.url}/api/ereignisse`);
       try {
@@ -447,7 +447,7 @@ describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
     });
   });
 
-  test('Host-Prüfung gilt auch hier; zu viele Verbindungen → 503; der Server schließt trotz offener Verbindung', async () => {
+  test('Host-Prüfung gilt auch hier; zu viele Verbindungen → 503, der Platz wird wieder frei; der Server schließt trotz offener Verbindung', async () => {
     const db = await neueDatenbank();
     const server = erstelleServer({ db, bilderOrdner: BILDER, ereignisse: new Ereignisse(1) });
     await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));

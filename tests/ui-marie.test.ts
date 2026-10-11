@@ -270,7 +270,7 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
 });
 
 describe('AK-44 sofort aktuell', () => {
-  test('die Seite hört auf das Signal des Servers und lädt nach jeder Nachricht neu; beim Zurückkommen ebenfalls', () => {
+  test('die Seite hört auf das Signal des Servers und lädt nach jeder Nachricht neu; verbindet sich selbst neu; verdeckt ohne Verbindung', () => {
     const quelle = readFileSync(join(UI, 'marie', 'MarieSeite.tsx'), 'utf8');
     assert.match(quelle, /new EventSource\(EREIGNISSE\)/);
     assert.match(quelle, /onmessage = \(\) => void laden\(\)/);

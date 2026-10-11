@@ -66,7 +66,7 @@ async function warteAufZahlen(soll: string, ms = 8000): Promise<void> {
 /** Über „Rolle wechseln“ zur Rollenwahl und dort eine Rolle wählen. */
 async function wechsleRolle(rolle: string): Promise<void> {
   if (!page.url().endsWith('#/')) {
-    await tabZu('Rolle wechseln', { rueckwaerts: true });
+    await tabZu('Startseite', { rueckwaerts: true });
     await page.keyboard.press('Enter');
   }
   await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
@@ -282,7 +282,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
 
   test('Daten zurücksetzen: Rückfrage mit Fokus auf „Abbrechen“; danach springt Maries Übersicht von selbst auf 37/36/0/1', async () => {
     await wechsleRolle('Max');
-    await tabZu('Rolle wechseln', { rueckwaerts: true });
+    await tabZu('Startseite', { rueckwaerts: true });
     await page.keyboard.press('Enter');
     await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
     await tabZu('Daten zurücksetzen');

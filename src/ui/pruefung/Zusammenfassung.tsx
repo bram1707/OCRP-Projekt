@@ -27,8 +27,8 @@ export function Zusammenfassung({
 }) {
   const sprachen = daten.sprachen.map((s) => s.name).join(', ') || 'keine sicher erkannt';
   return (
-    <section className="mt-6 rounded-xl border-2 border-green-700 bg-white p-5" aria-labelledby="zusammenfassung-titel">
-      <h2 id="zusammenfassung-titel" className="text-2xl font-bold">
+    <section className="mt-6 rounded-xl border border-green-300 border-l-4 border-l-green-600 bg-white shadow-sm p-5" aria-labelledby="zusammenfassung-titel">
+      <h2 id="zusammenfassung-titel" className="text-xl font-semibold tracking-tight">
         Zusammenfassung: alle Labels bestätigt
       </h2>
       <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-6 gap-y-1">
@@ -50,8 +50,8 @@ export function Zusammenfassung({
           Anlage freigeben
         </button>
       ) : (
-        <div role="group" aria-labelledby="rueckfrage-titel" aria-describedby="rueckfrage-text" data-rueckfrage="" className="mt-5 rounded-lg border-2 border-blue-800 bg-blue-50 p-4">
-          <h3 id="rueckfrage-titel" className="text-xl font-bold">
+        <div role="group" aria-labelledby="rueckfrage-titel" aria-describedby="rueckfrage-text" data-rueckfrage="" className="mt-5 rounded-lg border border-blue-200 border-l-4 border-l-blue-700 bg-blue-50 p-4">
+          <h3 id="rueckfrage-titel" className="text-lg font-semibold">
             {daten.name} jetzt freigeben?
           </h3>
           <p id="rueckfrage-text" className="mt-1">

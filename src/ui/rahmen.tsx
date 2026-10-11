@@ -51,27 +51,38 @@ export function Rahmen({
       <div role="status" aria-live="polite" className="sr-only">
         {ansage}
       </div>
-      <header className="border-b-2 border-slate-300 bg-white">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-4 py-3">
-          <a href={STARTSEITE_DES_BEREICHS[bereich]} className="text-xl font-bold text-slate-900 no-underline">
-            {TITEL[bereich]}
-          </a>
-          {/* Der einzige Weg zu den Seiten einer anderen Rolle führt über die Rollenwahl (R16a). */}
+      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
+          {/* Oben links immer der Weg zur Startseite (Optimierung 11.10.2026). Andere Rollen erreicht man nur über sie (R16a). */}
           {bereich !== 'start' && (
-            <a href={zurRollenwahl()} className={`${VERWEIS} inline-flex min-h-12 items-center`}>
-              Rolle wechseln
+            <a
+              href={zurRollenwahl()}
+              className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 font-semibold text-slate-800 no-underline shadow-sm hover:border-slate-400 hover:bg-slate-50"
+              data-startseite=""
+            >
+              <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 10.5 12 3l9 7.5" />
+                <path d="M5 9.5V20h5v-6h4v6h5V9.5" />
+              </svg>
+              Startseite
             </a>
           )}
+          <a href={STARTSEITE_DES_BEREICHS[bereich]} className="inline-flex items-center gap-2.5 text-lg font-semibold tracking-tight text-slate-900 no-underline">
+            <span aria-hidden="true" className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-blue-700 text-sm font-bold text-white">
+              LP
+            </span>
+            {TITEL[bereich]}
+          </a>
         </div>
-        <p className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-center text-amber-950">
+        <p className="border-t border-amber-200 bg-amber-50 px-4 py-1.5 text-center text-sm text-amber-900">
           Testversion: Spracherkennung simuliert. Texterkennung echt nur bei eigenen Fotos, sonst simuliert.
         </p>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>
-      <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-8 gap-y-2 border-t border-slate-300 px-4 py-6 text-slate-700">
+      <main className="mx-auto max-w-6xl px-4 py-8">{children}</main>
+      <footer className="mx-auto flex max-w-6xl flex-wrap gap-x-8 gap-y-2 border-t border-slate-200 px-4 py-6 text-sm text-slate-700">
         {/* Die Instandhaltung hat keine eigene Karte in der Rollenwahl; sie nutzt Max' Rolle (R9) und ist nur von seinen Seiten aus erreichbar. */}
         {bereich === 'max' && (
-          <a href={zurSimulation()} className={`${VERWEIS} inline-flex min-h-12 items-center`}>
+          <a href={zurSimulation()} className={`${VERWEIS} inline-flex min-h-11 items-center`}>
             Simulation: Instandhaltung (nur im Prototyp)
           </a>
         )}
@@ -84,7 +95,7 @@ export function Rahmen({
 /** Status als Wort mit eigener Farbe (AK-14). */
 export function Marke({ anzeige }: { anzeige: StatusAnzeige }) {
   return (
-    <span className={`inline-block rounded-md border-2 px-2 py-0.5 font-semibold ${anzeige.klasse}`} data-marke="">
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-sm font-semibold ${anzeige.klasse}`} data-marke="">
       {anzeige.wort}
     </span>
   );
@@ -94,14 +105,14 @@ export function Balken({ prozent, beschriftung }: { prozent: number; beschriftun
   const wert = Math.max(0, Math.min(100, prozent));
   return (
     <div
-      className="h-4 w-full overflow-hidden rounded-full border border-slate-500 bg-white"
+      className="h-2.5 w-full overflow-hidden rounded-full bg-slate-200"
       role="progressbar"
       aria-label={beschriftung}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={wert}
     >
-      <div className="h-full bg-green-700" style={{ width: `${wert}%` }} />
+      <div className="h-full rounded-full bg-green-600" style={{ width: `${wert}%` }} />
     </div>
   );
 }
@@ -124,7 +135,7 @@ export function Meldung({
   return (
     <div className="min-h-0" data-meldung="">
       {meldung && (
-        <p className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">
+        <p className="mb-4 flex flex-wrap items-center gap-3 rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950">
           <span>{meldung.text}</span>
           {meldung.rueckgaengig && onRueckgaengig && (
             <button type="button" className={KNOPF_NEBEN} disabled={gesperrt} onClick={() => onRueckgaengig(meldung.rueckgaengig!)}>
@@ -140,7 +151,7 @@ export function Meldung({
 /** Meldung des Servers, bei abgelehnter Freigabe mit seinen Gründen. */
 export function Fehler({ text, gruende = [] }: { text: string; gruende?: readonly Hinderungsgrund[] }) {
   return (
-    <div role="alert" className="mb-4 rounded-lg border-2 border-red-700 bg-red-50 px-4 py-3 text-red-950">
+    <div role="alert" className="mb-4 rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-red-50 px-4 py-3 text-red-950">
       <p className="font-semibold">{text}</p>
       {gruende.length > 0 && (
         <ul className="mt-2 list-disc pl-6">

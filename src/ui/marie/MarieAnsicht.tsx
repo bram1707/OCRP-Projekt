@@ -25,10 +25,10 @@ const SUMMARY = `${VERWEIS} inline-flex min-h-12 cursor-pointer items-center`;
 
 /** Rahmenfarbe je Zahl; Wort und Zahl stehen immer dabei, die Farbe ist nur Zugabe (AK-14). */
 const ZAHL_RAHMEN: Record<MarieZahl, string> = {
-  gesamt: 'border-slate-500',
-  offen: 'border-sky-700',
-  erledigt: 'border-green-700',
-  fehlerhaft: 'border-red-700',
+  gesamt: 'border-slate-200 border-t-4 border-t-slate-500',
+  offen: 'border-slate-200 border-t-4 border-t-sky-600',
+  erledigt: 'border-slate-200 border-t-4 border-t-green-600',
+  fehlerhaft: 'border-slate-200 border-t-4 border-t-red-600',
 };
 
 function Zahl({ daten, zahl, gewaehlt }: { daten: MarieUebersicht; zahl: MarieZahl; gewaehlt: boolean }) {
@@ -36,7 +36,7 @@ function Zahl({ daten, zahl, gewaehlt }: { daten: MarieUebersicht; zahl: MarieZa
   const gezaehlt = zahl === 'gesamt' ? [] : daten.labels.filter((l) => l.gruppe === zahl);
   const teile = aufteilung(daten, zahl);
   return (
-    <li className={`flex flex-col rounded-xl border-2 p-4 ${ZAHL_RAHMEN[zahl]} ${gewaehlt ? 'bg-blue-50' : 'bg-white'}`} data-zahl={zahl}>
+    <li className={`flex flex-col rounded-xl border shadow-sm p-4 ${ZAHL_RAHMEN[zahl]} ${gewaehlt ? 'bg-blue-50' : 'bg-white'}`} data-zahl={zahl}>
       <a href={zurMarieZahl(zahl)} className="block text-slate-900 no-underline" aria-current={gewaehlt ? 'true' : undefined}>
         <span className="block text-lg font-semibold">{ZAHL_TITEL[zahl]}</span>
         <span className="block text-5xl font-bold">{wert}</span>
@@ -61,9 +61,9 @@ function Zahl({ daten, zahl, gewaehlt }: { daten: MarieUebersicht; zahl: MarieZa
 
 function AnlageKarte({ a, gewaehlt }: { a: MarieAnlage; gewaehlt: boolean }) {
   return (
-    <li className={`relative flex flex-col rounded-xl border-2 p-5 ${gewaehlt ? 'border-blue-800 bg-blue-50' : 'border-slate-400 bg-white'}`} data-marie-anlage={a.id}>
+    <li className={`relative flex flex-col rounded-xl border shadow-sm p-5 ${gewaehlt ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-slate-200 bg-white'}`} data-marie-anlage={a.id}>
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-2xl font-bold">
+        <h3 className="text-xl font-semibold tracking-tight">
           {/* Der Verweis deckt die ganze Karte ab; „Warum?“ liegt darüber. */}
           <a
             href={zurMarieAnlage(a.id)}
@@ -100,7 +100,7 @@ function LabelZeile({ l }: { l: MarieLabel }) {
   // Eindeutiger Name für „Warum?“, auch bei mehreren nicht erfassten Labels einer Anlage.
   const name = l.label ? `Label ${l.label.id}` : `nicht erfasstes Label ${l.schluessel.split('-').pop()} von ${l.anlageName}`;
   return (
-    <li className="rounded-xl border-2 border-slate-400 bg-white p-4" data-marie-label={l.schluessel}>
+    <li className="rounded-xl border border-slate-200 bg-white shadow-sm p-4" data-marie-label={l.schluessel}>
       <div className="flex flex-wrap gap-4">
         {bild ? (
           <img src={bild} alt={`Foto von Label ${l.schluessel}`} className="h-28 w-40 rounded border border-slate-300 object-contain" />
@@ -109,7 +109,7 @@ function LabelZeile({ l }: { l: MarieLabel }) {
         )}
         {/* Mindestbreite: auf schmalen Bildschirmen rutscht der Text unter das Foto statt neben ihm zu quetschen. */}
         <div className="min-w-48 flex-1">
-          <h3 className="text-xl font-bold">{l.label ? `Label ${l.label.id}` : 'Label nicht erfasst'}</h3>
+          <h3 className="text-lg font-semibold">{l.label ? `Label ${l.label.id}` : 'Label nicht erfasst'}</h3>
           <p className="text-slate-700">{l.anlageName}</p>
           <div className="mt-2">
             <Marke anzeige={STATUS_ANZEIGE[l.status]} />
@@ -138,7 +138,7 @@ function Auswahl({ daten, auswahl, auswahlRef }: { daten: MarieUebersicht; auswa
   const labels = auswahlLabels(daten, auswahl);
   return (
     <section className="mt-8" aria-labelledby="auswahl-titel" data-auswahl="">
-      <h2 id="auswahl-titel" ref={auswahlRef} tabIndex={-1} className="text-2xl font-bold">
+      <h2 id="auswahl-titel" ref={auswahlRef} tabIndex={-1} className="text-xl font-semibold tracking-tight">
         {titel ?? 'Anlage nicht gefunden'}
       </h2>
       {titel === null ? (
@@ -177,7 +177,7 @@ export function MarieAnsicht({
   const gewaehlteAnlage = auswahl?.art === 'anlage' ? auswahl.anlageId : null;
   return (
     <>
-      <h1 ref={ueberschriftRef} tabIndex={-1} className="text-3xl font-bold">
+      <h1 ref={ueberschriftRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
         Ist alles geprüft?
       </h1>
       <p className="mt-2 text-xl font-semibold" data-antwort="">
@@ -189,7 +189,7 @@ export function MarieAnsicht({
           Die Übersicht ist aktuell und aktualisiert sich von selbst.
         </p>
       ) : (
-        <p className="mt-1 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-amber-950" data-aktualisiert="" role="alert">
+        <p className="mt-1 rounded-lg border border-amber-200 border-l-4 border-l-amber-600 bg-amber-50 px-3 py-2 text-amber-950" data-aktualisiert="" role="alert">
           Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell. Die Seite
           versucht es von selbst weiter.
         </p>
@@ -209,7 +209,7 @@ export function MarieAnsicht({
       {auswahl && <Auswahl daten={daten} auswahl={auswahl} auswahlRef={auswahlRef} />}
 
       <section className="mt-8" aria-labelledby="anlagen-titel">
-        <h2 id="anlagen-titel" className="text-2xl font-bold">
+        <h2 id="anlagen-titel" className="text-xl font-semibold tracking-tight">
           Anlagen
         </h2>
         <p className="mt-1 text-slate-700">Die dringendste steht oben. Ein Klick zeigt ihre Labels.</p>

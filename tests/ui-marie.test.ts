@@ -409,17 +409,17 @@ describe('Querschnitt (AK-14, AK-21, AK-61)', () => {
     }
   });
 
-  test('Rahmen für Marie: eigene Kopfzeile, Hinweis „Testversion“, nur „Rolle wechseln“ zur Rollenwahl (R16a)', () => {
+  test('Rahmen für Marie: eigene Kopfzeile, Hinweis „Testversion“, oben links nur „Startseite“ zur Rollenwahl (R16a)', () => {
     const html = rendere(M.rahmen!.Rahmen, { bereich: 'marie', children: 'x' });
     assert.match(text(html), /Übersicht · Marie \(Fertigungsleitung\)/);
     assert.match(text(html), /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos, sonst simuliert\./);
-    assert.match(html, /<a href="#\/"[^>]*>Rolle wechseln<\/a>/);
-    assert.deepEqual([...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/marie', '#/'], 'kein Weg direkt zu Max oder zur Simulation');
+    assert.match(text(/<a href="#\/"[^>]*>[\s\S]*?<\/a>/.exec(html)![0]), /^Startseite$/);
+    assert.deepEqual([...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/', '#/marie'], 'kein Weg direkt zu Max oder zur Simulation');
     assert.doesNotMatch(html, /Simulation|Label-Prüfung/, 'Max und die Simulation stehen nicht in Maries Rahmen');
     // Der einzige Knopf im Rahmen ist „Rückmeldung geben“ (AK-51, Zusatz zu AK-46); Maries Inhalt hat keinen.
     assert.deepEqual([...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => text(m[1]!)), ['Rückmeldung geben']);
     // Auch Max' Rahmen führt nicht mehr direkt zu Marie, sondern über die Rollenwahl; dazu die Simulation der Instandhaltung.
-    assert.deepEqual([...rendere(M.rahmen!.Rahmen, { children: 'x' }).matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/anlagen', '#/', '#/simulation']);
+    assert.deepEqual([...rendere(M.rahmen!.Rahmen, { children: 'x' }).matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/', '#/anlagen', '#/simulation']);
   });
 
   test('„Warum?“-Schalter sind groß genug zum Antippen', () => {

@@ -46,7 +46,7 @@ export function KachelAnsicht({
   const direktBestaetigen = !label.auffaellig && istPruefbar(label.status);
   return (
     <li
-      className={`relative flex flex-col rounded-xl border-2 bg-white p-4 ${label.auffaellig && istPruefbar(label.status) ? 'border-amber-700' : 'border-slate-400'}`}
+      className={`relative flex flex-col rounded-xl border shadow-sm bg-white p-4 ${label.auffaellig && istPruefbar(label.status) ? 'border-amber-500 ring-1 ring-amber-500' : 'border-slate-200'}`}
       data-kachel={label.id}
     >
       {bild ? (
@@ -61,7 +61,7 @@ export function KachelAnsicht({
       ) : (
         <div className="mb-3 flex aspect-[48/34] w-full items-center justify-center rounded border border-slate-300 bg-slate-100">Kein Foto</div>
       )}
-      <h3 className="text-xl font-bold">
+      <h3 className="text-lg font-semibold">
         {/* Der Verweis deckt die ganze Kachel ab; der Knopf liegt darüber. */}
         <a href={zumLabel(label.anlageId, label.id)} className="text-slate-900 no-underline after:absolute after:inset-0 after:content-['']">
           Label {label.id}
@@ -72,7 +72,7 @@ export function KachelAnsicht({
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <Marke anzeige={STATUS_ANZEIGE[label.status]} />
         {label.auffaellig && istPruefbar(label.status) && (
-          <span className="rounded-md border-2 border-amber-700 bg-amber-50 px-2 py-0.5 font-semibold text-amber-950">Auffällig</span>
+          <span className="rounded-full border border-amber-600 bg-amber-50 px-2.5 py-0.5 text-sm font-semibold text-amber-950">Auffällig</span>
         )}
       </div>
       {grund && istPruefbar(label.status) && (

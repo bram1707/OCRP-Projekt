@@ -46,14 +46,14 @@ export function RueckmeldungenAnsicht({
   const { liste } = daten;
   return (
     <>
-      <h1 ref={ueberschriftRef} tabIndex={-1} className="text-3xl font-bold">
+      <h1 ref={ueberschriftRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
         Rückmeldungen
       </h1>
       <p className="mt-2 max-w-3xl text-slate-800">
         Rückmeldungen aus den Tests, die neueste zuerst. Sie bleiben erhalten, wenn die Daten zurückgesetzt werden.
       </p>
       <div role="status" aria-live="polite">
-        {daten.meldung && <p className="mt-4 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">{daten.meldung}</p>}
+        {daten.meldung && <p className="mt-4 rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950">{daten.meldung}</p>}
       </div>
       {daten.fehler && (
         <div className="mt-4">
@@ -64,10 +64,10 @@ export function RueckmeldungenAnsicht({
         <p className="mt-6">Es gibt keine Rückmeldungen.</p>
       ) : (
         <>
-          <h2 className="mt-6 text-2xl font-bold">{liste.length === 1 ? '1 Rückmeldung' : `${liste.length} Rückmeldungen`}</h2>
+          <h2 className="mt-6 text-xl font-semibold tracking-tight">{liste.length === 1 ? '1 Rückmeldung' : `${liste.length} Rückmeldungen`}</h2>
           <ul className="mt-3 grid gap-3">
             {liste.map((r) => (
-              <li key={r.id} className="rounded-xl border-2 border-slate-400 bg-white p-4" data-rueckmeldung-eintrag="">
+              <li key={r.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4" data-rueckmeldung-eintrag="">
                 <p className="font-semibold">
                   {istSzenario(r.szenario) ? SZENARIO_TEXT[r.szenario] : r.szenario} · {zeitText(r.zeitpunkt)}
                 </p>

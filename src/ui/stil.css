@@ -1,13 +1,62 @@
 /* Tailwind durchsucht nur die Oberfläche selbst nach Klassen. */
 @import "tailwindcss" source(".");
 
-/* Grundschrift 18 px; alle Größen der Oberfläche bauen darauf auf. */
+/*
+ * Farbwelt (Optimierung 11.10.2026): warme Grautöne statt kühlem Blaugrau, Petrol als Hauptfarbe.
+ * Die Oberfläche nutzt weiter die Namen „slate“ und „blue“; hier bekommen sie die neuen Werte.
+ * Kontraste bleiben mindestens 4,5 : 1 (Text auf Weiß ab Stufe 600, weiße Schrift auf Stufe 700 und dunkler).
+ */
+@theme {
+  --font-sans: "Segoe UI", "Inter", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+
+  --color-slate-50: #faf8f5;
+  --color-slate-100: #f3f0eb;
+  --color-slate-200: #e7e2db;
+  --color-slate-300: #d6cfc5;
+  --color-slate-400: #b3aa9e;
+  --color-slate-500: #8a8075;
+  --color-slate-600: #6b625a;
+  --color-slate-700: #554d46;
+  --color-slate-800: #3d3732;
+  --color-slate-900: #29241f;
+  --color-slate-950: #1a1613;
+
+  --color-blue-50: #eef7f7;
+  --color-blue-100: #d5ecec;
+  --color-blue-200: #aed9da;
+  --color-blue-300: #7dbfc1;
+  --color-blue-400: #4a9fa3;
+  --color-blue-500: #2f8489;
+  --color-blue-600: #1f6b71;
+  --color-blue-700: #1a5a60;
+  --color-blue-800: #154a50;
+  --color-blue-900: #113c41;
+  --color-blue-950: #0a2629;
+}
+
+/* Grundschrift 16 px; alle Größen der Oberfläche bauen darauf auf. */
 html {
-  font-size: 112.5%;
+  font-size: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  line-height: 1.55;
 }
 
 /* Deutlich sichtbarer Fokusrahmen für die Bedienung mit der Tastatur. */
 :focus-visible {
-  outline: 4px solid #1e3a8a;
+  outline: 3px solid #1f6b71;
   outline-offset: 3px;
+  border-radius: 6px;
+}
+
+a,
+button {
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+/* Überschriften bekommen den Fokus nur für Bildschirmleser beim Seitenwechsel; dort kein Rahmen. */
+[tabindex="-1"]:focus {
+  outline: none;
 }

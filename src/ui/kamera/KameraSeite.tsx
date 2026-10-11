@@ -51,14 +51,14 @@ export function KameraAnsicht({
 
   return (
     <>
-      <h1 ref={ueberschrift} tabIndex={-1} className="text-3xl font-bold">
+      <h1 ref={ueberschrift} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
         Eigenes Foto hochladen
       </h1>
       <p className="mt-2 max-w-3xl text-slate-800">
         Diese Seite gibt es nur im Prototyp. Sie ersetzt die Kamera an der Anlage: Sie laden das Foto eines Labels hoch, das System
         liest den Text und schätzt die Sprachen. Danach prüft Max das Label wie jedes andere.
       </p>
-      <p className="mt-4 max-w-3xl rounded-lg border-2 border-amber-700 bg-amber-50 px-4 py-3 text-amber-950" data-hinweis-personen="">
+      <p className="mt-4 max-w-3xl rounded-lg border border-amber-200 border-l-4 border-l-amber-600 bg-amber-50 px-4 py-3 text-amber-950" data-hinweis-personen="">
         Bitte nur Labels fotografieren, keine Personen. Die Fotos bleiben auf diesem Rechner und werden bei „Daten zurücksetzen“
         gelöscht.
       </p>
@@ -70,7 +70,7 @@ export function KameraAnsicht({
 
       {stand.upload && stand.anlage && (
         <>
-          <h2 className="mt-8 text-2xl font-bold">{stand.anlage.name}</h2>
+          <h2 className="mt-8 text-xl font-semibold tracking-tight">{stand.anlage.name}</h2>
           <p className="mt-1 text-slate-700">
             {freigegeben
               ? 'Von Max freigegeben. Neue Fotos gibt es erst nach „Daten zurücksetzen“.'
@@ -78,8 +78,8 @@ export function KameraAnsicht({
           </p>
           <ul className="mt-4 grid gap-3 md:grid-cols-3">
             {stand.plaetze.map((p) => (
-              <li key={p.id} className="rounded-xl border-2 border-slate-400 bg-white p-4" data-platz={p.id}>
-                <p className="text-xl font-bold">Platz {p.id}</p>
+              <li key={p.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4" data-platz={p.id}>
+                <p className="text-lg font-semibold">Platz {p.id}</p>
                 <div className="mt-1">
                   <Marke anzeige={STATUS_ANZEIGE[p.status]} />
                 </div>
@@ -89,8 +89,8 @@ export function KameraAnsicht({
           </ul>
 
           {moeglich.length > 0 && (
-            <section aria-labelledby="hochladen-titel" className="mt-8 max-w-3xl rounded-xl border-2 border-slate-400 bg-white p-5">
-              <h2 id="hochladen-titel" className="text-2xl font-bold">
+            <section aria-labelledby="hochladen-titel" className="mt-8 max-w-3xl rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+              <h2 id="hochladen-titel" className="text-xl font-semibold tracking-tight">
                 Foto hochladen
               </h2>
 
@@ -121,7 +121,7 @@ export function KameraAnsicht({
                   type="file"
                   accept="image/png,image/jpeg"
                   disabled={sendet}
-                  className="mt-2 block w-full rounded-lg border-2 border-slate-500 bg-white p-2"
+                  className="mt-2 block w-full rounded-lg border border-slate-300 shadow-sm bg-white p-2"
                   onChange={(e) => onDatei(e.target.files?.[0] ?? null)}
                 />
                 {datei && (
@@ -152,7 +152,7 @@ export function KameraAnsicht({
                       maxLength={MAX_TEXT}
                       value={text}
                       disabled={sendet}
-                      className="mt-2 block w-full rounded-lg border-2 border-slate-500 p-2"
+                      className="mt-2 block w-full rounded-lg border border-slate-300 shadow-sm p-2"
                       onChange={(e) => onText(e.target.value)}
                     />
                   </>
@@ -171,12 +171,12 @@ export function KameraAnsicht({
 
       <div role="status" aria-live="polite" className="mt-6 max-w-3xl">
         {sendet && (
-          <p className="rounded-lg border-2 border-sky-700 bg-sky-50 px-4 py-3 text-sky-950" data-liest="">
+          <p className="rounded-lg border border-sky-200 border-l-4 border-l-sky-600 bg-sky-50 px-4 py-3 text-sky-950" data-liest="">
             {mussTippen ? 'Das Foto wird gespeichert …' : 'Das Foto wird gelesen … Das dauert einige Sekunden.'}
           </p>
         )}
         {!sendet && ergebnis && (
-          <div className="rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950" data-ergebnis={ergebnis.id}>
+          <div className="rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950" data-ergebnis={ergebnis.id}>
             <p className="font-semibold">
               Foto für Platz {ergebnis.id} gespeichert. Das Label ist jetzt in Max&#39; Prüfung („{ergebnis.statusText}“).
             </p>
@@ -194,7 +194,7 @@ export function KameraAnsicht({
                 Foto für denselben Platz noch einmal senden.
               </p>
             )}
-            {bild && <img src={bild} alt={`Hochgeladenes Foto für Platz ${ergebnis.id}`} className="mt-3 max-h-64 rounded border-2 border-slate-400 bg-white object-contain" />}
+            {bild && <img src={bild} alt={`Hochgeladenes Foto für Platz ${ergebnis.id}`} className="mt-3 max-h-64 rounded border border-slate-300 bg-white object-contain" />}
           </div>
         )}
       </div>

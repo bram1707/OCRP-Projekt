@@ -45,7 +45,7 @@ export function Zuruecksetzen() {
   return (
     <div>
       <div role="status" aria-live="polite">
-        {meldung && <p className="mb-3 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">{meldung}</p>}
+        {meldung && <p className="mb-3 rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950">{meldung}</p>}
       </div>
       {fehler && <Fehler text={fehler} />}
       {rueckfrage ? (

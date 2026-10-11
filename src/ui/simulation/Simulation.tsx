@@ -31,7 +31,7 @@ export function SimulationAnsicht({
   useEffect(() => ueberschrift.current?.focus(), []);
   return (
     <>
-      <h1 ref={ueberschrift} tabIndex={-1} className="text-3xl font-bold">
+      <h1 ref={ueberschrift} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
         Instandhaltung simulieren
       </h1>
       <p className="mt-2 max-w-3xl text-slate-800">
@@ -39,7 +39,7 @@ export function SimulationAnsicht({
         nachreicht. Max nutzt sie nicht; die Labels kommen danach wieder in seine Prüfung.
       </p>
       <div role="status" aria-live="polite">
-        {meldung && <p className="mt-4 rounded-lg border-2 border-green-700 bg-green-50 px-4 py-3 text-green-950">{meldung}</p>}
+        {meldung && <p className="mt-4 rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950">{meldung}</p>}
       </div>
       {fehler && (
         <div className="mt-4">
@@ -51,9 +51,9 @@ export function SimulationAnsicht({
       ) : (
         <ul className="mt-6 grid gap-4">
           {wartend.map(({ anlageName, label }) => (
-            <li key={label.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-2 border-slate-400 bg-white p-4" data-wartend={label.id}>
+            <li key={label.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white shadow-sm p-4" data-wartend={label.id}>
               <div>
-                <p className="text-xl font-bold">
+                <p className="text-lg font-semibold">
                   {anlageName} · Label {label.id}
                 </p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">

@@ -14,7 +14,7 @@ export function AnlagenlisteAnsicht({ anlagen }: { anlagen: readonly AnlageAnsic
   useEffect(() => ueberschrift.current?.focus(), []);
   return (
     <>
-      <h1 ref={ueberschrift} tabIndex={-1} className="mb-2 text-3xl font-bold">
+      <h1 ref={ueberschrift} tabIndex={-1} className="mb-2 text-2xl font-semibold tracking-tight">
         Anlagen
       </h1>
       <p className="mb-6 text-slate-700">Wählen Sie eine Anlage. Gesperrte Anlagen stehen oben.</p>
@@ -25,11 +25,11 @@ export function AnlagenlisteAnsicht({ anlagen }: { anlagen: readonly AnlageAnsic
             <li key={a.id}>
               <a
                 href={zurAnlage(a.id)}
-                className="block rounded-xl border-2 border-slate-400 bg-white p-5 text-slate-900 no-underline hover:border-blue-800"
+                className="block rounded-xl border border-slate-200 bg-white shadow-sm p-5 text-slate-900 no-underline transition hover:-translate-y-0.5 hover:border-blue-400 hover:shadow-md"
                 data-anlage={a.id}
               >
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-2xl font-bold">{a.name}</span>
+                  <span className="text-xl font-semibold tracking-tight">{a.name}</span>
                   <Marke anzeige={sperreAnzeige(a.gesperrt)} />
                 </div>
                 <div className="mt-3">{f.text}</div>

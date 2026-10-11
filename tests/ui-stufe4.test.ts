@@ -70,7 +70,7 @@ describe('B5 Rollenwahl als Startseite', () => {
     assert.equal(bereichDerAdresse('#/kamera'), 'kamera');
   });
 
-  test('jede Seite zeigt oben die Rolle und „Rolle wechseln“, außer der Rollenwahl selbst', () => {
+  test('jede Seite zeigt oben links „Startseite“ (Optimierung 11.10.2026) und daneben die Rolle, außer der Rollenwahl selbst', () => {
     const titel = { start: 'Label-Prüfung · Prototyp', max: 'Label-Prüfung · Max (Qualitätsmanagement)', marie: 'Übersicht · Marie (Fertigungsleitung)',
       simulation: 'Simulation: Instandhaltung (nur im Prototyp)', testleitung: 'Testleitung (nur im Prototyp)',
       kamera: 'Kamera · Eigenes Foto (nur im Prototyp)' };
@@ -78,9 +78,9 @@ describe('B5 Rollenwahl als Startseite', () => {
       const html = rahmen(bereich);
       const kopf = /<header\b[\s\S]*?<\/header>/.exec(html)![0];
       const links = verweise(kopf);
-      assert.deepEqual(links[0], [M.route!.STARTSEITE_DES_BEREICHS[bereich], titel[bereich]], bereich);
-      if (bereich === 'start') assert.equal(links.length, 1, 'auf der Rollenwahl kein „Rolle wechseln“');
-      else assert.deepEqual(links.slice(1), [['#/', 'Rolle wechseln']], bereich);
+      const rolle = [M.route!.STARTSEITE_DES_BEREICHS[bereich], `LP ${titel[bereich]}`];
+      if (bereich === 'start') assert.deepEqual(links, [rolle], 'auf der Rollenwahl kein Verweis auf sich selbst');
+      else assert.deepEqual(links, [['#/', 'Startseite'], rolle], bereich);
       assert.match(text(html), /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos, sonst simuliert\./, bereich);
     }
   });

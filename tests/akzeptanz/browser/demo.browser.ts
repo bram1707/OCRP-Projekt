@@ -49,7 +49,7 @@ const klick = (text: string | RegExp, seite = page) => seite.getByRole('button',
 const link = (text: string | RegExp, seite = page) => seite.getByRole('link', { name: text }).first().click();
 
 async function rolle(name: RegExp): Promise<void> {
-  await link('Rolle wechseln');
+  await link('Startseite');
   await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
   await link(name);
   await page.locator('main h1').first().waitFor();

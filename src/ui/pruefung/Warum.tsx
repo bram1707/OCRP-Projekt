@@ -86,8 +86,8 @@ export function Warum({
   const Titel = ebene === 3 ? 'h3' : 'h4';
   const Untertitel = ebene === 3 ? 'h4' : 'h5';
   return (
-    <section className="mt-4 rounded-xl border-2 border-slate-400 bg-white p-4" aria-labelledby={titelId}>
-      <Titel id={titelId} className="text-xl font-bold">
+    <section className="mt-4 rounded-xl border border-slate-200 bg-white shadow-sm p-4" aria-labelledby={titelId}>
+      <Titel id={titelId} className="text-lg font-semibold">
         Woran die Sprache erkannt wurde
       </Titel>
       <p className="mt-2">{label.begruendung}</p>
@@ -119,7 +119,7 @@ export function Warum({
       )}
       {label.gruende.length > 0 && (
         <>
-          <Untertitel className="mt-4 text-lg font-bold">Warum auffällig</Untertitel>
+          <Untertitel className="mt-4 text-base font-semibold">Warum auffällig</Untertitel>
           {auffaelligErklaeren && <p className="mt-1 text-slate-700">Auffällig heißt: Max soll genauer hinsehen. Es ist kein Fehler.</p>}
           <ul className="mt-1 list-disc pl-6">
             {label.gruende.map((g) => (

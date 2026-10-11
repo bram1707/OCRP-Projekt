@@ -1,17 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, sans-serif" role="img" aria-label="Platzhalterfoto Label FOE2-05">
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif" role="img" aria-label="Platzhalterfoto Label FOE2-05">
   <defs><filter id="unscharf"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
   <rect width="480" height="340" fill="#d9d9d9"/>
   <g>
-    <rect x="16" y="16" width="448" height="308" rx="10" fill="#ffd400" stroke="#111" stroke-width="5"/>
-    <polygon points="70,36 110,104 30,104" fill="#111"/>
-    <polygon points="70,50 100,98 40,98" fill="#ffd400"/>
-    <text x="64" y="94" font-size="38" font-weight="bold">!</text>
-    <text x="130" y="80" font-size="16">Platzhalterfoto · FOE2-05</text>
-    <g fill="#111">
-    <text x="40" y="130" font-size="19">Zutritt für Unbefugte verboten!</text>
-    <text x="40" y="154" font-size="19"></text>
-    <text x="40" y="178" font-size="19">Entrée interdite. Accès autorisé</text>
-    <text x="40" y="202" font-size="19">uniquement au personnel.</text>
-    </g>
+    <rect x="16" y="16" width="448" height="308" rx="10" fill="#fff" stroke="#111" stroke-width="3"/>
+    <g transform="translate(72,72)"><circle cx="0" cy="-14" r="5" fill="#111"/><path d="M0,-8 v16 m0,0 l-7,14 m7,-14 l7,14 m-7,-18 l-10,6 m10,-6 l10,6" stroke="#111" stroke-width="4" fill="none"/><circle r="40" fill="none" stroke="#c8102e" stroke-width="9"/><line x1="-28" y1="-28" x2="28" y2="28" stroke="#c8102e" stroke-width="9"/></g>
+    <text x="130" y="44" font-size="14" fill="#333">Platzhalterfoto · FOE2-05</text>
+    <rect x="130" y="62" width="318" height="16" fill="#c8102e"/>
+    <g><text x="40" y="140" font-size="19" fill="#111">Zutritt für Unbefugte verboten!</text>
+    <text x="40" y="164" font-size="19" fill="#111"></text>
+    <text x="40" y="188" font-size="19" fill="#111">Entrée interdite. Accès autorisé</text>
+    <text x="40" y="212" font-size="19" fill="#111">uniquement au personnel.</text></g>
   </g>
 </svg>

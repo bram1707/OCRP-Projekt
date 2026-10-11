@@ -18,14 +18,14 @@ Was in einem Test zu tun ist und worauf die Testleitung achtet, steht in [`docs/
 2. Einen der 3 Plätze der „Testanlage Eigene Fotos“ wählen und ein Foto eines Labels hochladen (PNG oder JPEG, höchstens 5 MB). Bitte nur Labels fotografieren, keine Personen.
 3. Die Seite zeigt den gelesenen Text und den Sprachvorschlag. Danach prüft Max das Label wie jedes andere.
 
-Die Texterkennung (tesseract.js) läuft ohne Internet; `npm ci` installiert sie mit den Sprachdaten für Deutsch, Englisch, Polnisch, Französisch und Russisch. Am besten liest sie gerade, scharfe Fotos ohne Spiegelung; schlecht gelesene Fotos landen bei Max als „Unsicher“. Findet sie keinen Text, kann man ihn auf der Kamera-Seite selbst eintippen. Die Fotos liegen unter `daten/` und werden bei „Daten zurücksetzen“ gelöscht. Wer die neue Version in einen Ordner mit älteren Daten entpackt, wählt einmal „Daten zurücksetzen“, damit die Testanlage erscheint.
+Die Texterkennung (tesseract.js) läuft ohne Internet; `npm ci` installiert sie mit den Sprachdaten für Deutsch, Englisch, Polnisch, Französisch, Russisch, Türkisch, Bulgarisch und Chinesisch (Italienisch und Spanisch liest sie mit den lateinischen Sprachdaten mit). Die Sprache wird Abschnitt für Abschnitt bestimmt, deshalb erscheinen bei zweisprachigen Labels beide Sprachen. Am besten liest sie gerade, scharfe Fotos ohne Spiegelung; schlecht gelesene Fotos landen bei Max als „Unsicher“. Findet sie keinen Text, kann man ihn auf der Kamera-Seite selbst eintippen. Die Fotos liegen unter `daten/` und werden bei „Daten zurücksetzen“ gelöscht. Wer die neue Version in einen Ordner mit älteren Daten entpackt, wählt einmal „Daten zurücksetzen“, damit die Testanlage erscheint.
 
 Die Datei `labyrinth.py` ist ein eigenständiges Spiel und gehört nicht zum Prototyp.
 
 ## Für Entwickler
 
 - `npm test` führt alle Tests aus, `npm run typecheck` prüft die Typen.
-- `npm start` startet mit den 20 Basis-Testlabels aus `testdaten/` (Datenbank `daten/pruefsystem.sqlite`), `npm run demo` mit den 37 Demo-Labels und den 3 Plätzen für eigene Fotos aus `testdaten/demo/` (Datenbank `daten/demo.sqlite`, eigene Fotos in `daten/uploads-demo/`). Wer von vorn beginnen will, löscht die jeweilige Datei.
+- `npm start` startet mit den 20 Basis-Testlabels aus `testdaten/` (Datenbank `daten/pruefsystem.sqlite`), `npm run demo` mit den 45 Demo-Labels (vier Anlagen, darunter Abfüllung 5 mit Türkisch, Bulgarisch und Chinesisch) und den 3 Plätzen für eigene Fotos aus `testdaten/demo/` (Datenbank `daten/demo.sqlite`, eigene Fotos in `daten/uploads-demo/`). Wer von vorn beginnen will, löscht die jeweilige Datei.
 - `npm run dev` startet den Entwicklungsserver unter `http://127.0.0.1:5173`.
 - `npm run bilder` erzeugt die Bilder der Basisdaten neu, `npm run bilder -- testdaten/demo` die der Demo-Daten.
 - `OCR_MODUS=aus` in `.env` schaltet die Texterkennung für eigene Fotos ab; dann wird der Text auf der Kamera-Seite eingetippt.

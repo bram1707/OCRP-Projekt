@@ -51,11 +51,21 @@ Bestätigt die Testperson LAC2-07 gleich, lässt sich die Anlage auch freigeben.
 - Verlässt sich die Testperson bei LAC2-04 auf den Vorschlag, oder schaut sie selbst aufs Bild?
 - Fällt Russisch auf? Der Prototyp weist auf die abweichenden Sprachen hin; zweisprachige Labels sind normal, auffällig ist hier nur die zweite Sprache. Achtet die Testperson auf den Hinweis oder auf das Bild?
 
+## Zusatz-Szenario: Abfüllung 5 (weitere Sprachen und Schildarten)
+
+**Aufgabe:** „Prüfen Sie die Labels der Abfüllung 5.“
+
+**Was geschehen soll:** 8 Labels für Exportvarianten, alle korrekt und zweisprachig: Deutsch mit Türkisch (ABF5-01 bis -03), Bulgarisch (ABF5-04, -05) oder Chinesisch (ABF5-06 bis -08). Die Bilder zeigen verschiedene Schildarten nach ISO 7010: gelbe Warnzeichen, blaue Gebotszeichen, rote Verbotszeichen und ein grünes Rettungszeichen. Weil es keine Mehrheit bei den Sprachen gibt, ist keines auffällig. Max bestätigt alle 8 und gibt die Anlage frei.
+
+**Beobachten:**
+- Traut sich die Testperson zu, Türkisch, Bulgarisch oder Chinesisch zu bestätigen? Nutzt sie dafür den Sprachvorschlag und „Warum?“?
+- Verwechselt sie Bulgarisch mit Russisch?
+
 ## Szenario 4: Marie, „Ist alles geprüft?“
 
 **Aufgabe an die Testperson (als Marie):** „Sie wollen wissen, ob alle Labels geprüft sind. Was sagt Ihnen die Übersicht?“
 
-**Was geschehen soll:** Vor der Prüfung zeigt die Übersicht 40 Labels gesamt, 36 offen, 0 erledigt, 4 fehlerhaft, und die Antwort „Nein“. Die vier fehlerhaften sind LAC2-04 und die 3 leeren Plätze der Testanlage „Eigene Fotos“: Maries Zählung rechnet unsichere und fehlende Labels zu „fehlerhaft“; der Knopf „Warum?“ erklärt das. Während Max prüft, ändern sich die Zahlen ohne Neuladen. Nach den Szenarien 1 bis 3 steht „Nein. 3 von 40 Labels sind noch nicht erledigt.“ (die Testanlage). Erst wenn auch Szenario 5 mit 3 eigenen Fotos durchgespielt und die Testanlage freigegeben ist, steht „Ja. Alle 40 Labels sind bestätigt und alle Anlagen freigegeben.“
+**Was geschehen soll:** Vor der Prüfung zeigt die Übersicht 48 Labels gesamt, 44 offen, 0 erledigt, 4 fehlerhaft, und die Antwort „Nein“. Die vier fehlerhaften sind LAC2-04 und die 3 leeren Plätze der Testanlage „Eigene Fotos“: Maries Zählung rechnet unsichere und fehlende Labels zu „fehlerhaft“; der Knopf „Warum?“ erklärt das. Während Max prüft, ändern sich die Zahlen ohne Neuladen. Nach den Szenarien 1 bis 3 steht „Nein. 11 von 48 Labels sind noch nicht erledigt.“ (Abfüllung 5 und die Testanlage), nach dem Zusatz-Szenario „Nein. 3 von 48 …“ (nur noch die Testanlage). Erst wenn auch Szenario 5 mit 3 eigenen Fotos durchgespielt und die Testanlage freigegeben ist, steht „Ja. Alle 48 Labels sind bestätigt und alle Anlagen freigegeben.“
 
 Marie kann nichts bestätigen oder ändern; ihre einzige Eingabe ist „Rückmeldung geben“.
 

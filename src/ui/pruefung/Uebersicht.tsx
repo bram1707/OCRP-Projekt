@@ -4,10 +4,10 @@
 import type { Ref } from 'react';
 import type { AnlageMitLabels, Hinderungsgrund, LabelAnsicht, Zusammenfassung as ZusammenfassungDaten } from '../api.ts';
 import { Balken, Fehler, KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type MeldungDaten } from '../rahmen.tsx';
-import { zurAnlagenliste } from '../route.ts';
+import { zumLabel } from '../route.ts';
 import { istPruefbar, sperreAnzeige } from '../status.ts';
 import { Kachel } from './Kachel.tsx';
-import { anzahl, filtere, fortschritt, naechstesLabel, sperrgrund, zaehlzeile } from './logik.ts';
+import { anzahl, ersteWoerter, filtere, fortschritt, naechstesLabel, sperrgrund, sprachenKurz, zaehlzeile } from './logik.ts';
 import { Zusammenfassung } from './Zusammenfassung.tsx';
 
 export type UebersichtEreignis =
@@ -53,19 +53,16 @@ export function Uebersicht({
   const { daten, kacheln, nurAuffaellige, speichert, meldung, fehler, zusammenfassung, rueckfrage, freigabeFehler } = zustand;
   const { anlage, labels, ausserhalbDerPruefung } = daten;
   const f = fortschritt(anlage);
-  const { sichtbar, ausgeblendet } = filtere(kacheln, nurAuffaellige);
+  // Bestätigte Labels stehen nicht mehr zwischen den offenen, sondern in der einklappbaren Zeile „bestätigt“ (Optimierung 2, Punkt 2).
+  const bestaetigte = kacheln.filter((l) => l.status === 'bestaetigt');
+  const { sichtbar, ausgeblendet } = filtere(kacheln.filter((l) => l.status !== 'bestaetigt'), nurAuffaellige);
+  const freigegeben = anlage.freigegebenAm !== null;
   const hatPruefbare = naechstesLabel(labels) !== null;
   const offen = labels.filter((l) => istPruefbar(l.status)).length;
   const ohneDatensatz = anlage.zaehlung.fehlt - ausserhalbDerPruefung.filter((l) => l.status === 'fehlt').length;
 
   return (
     <>
-      <nav className="mb-3">
-        <a href={zurAnlagenliste()} className={VERWEIS}>
-          Alle Anlagen
-        </a>
-      </nav>
-
       <div className="flex flex-wrap items-center gap-3">
         <h1 ref={ueberschriftRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
           {anlage.name}
@@ -168,7 +165,37 @@ export function Uebersicht({
           ))}
         </ul>
       ) : (
-        nurAuffaellige && <p className="mt-4">Keine auffälligen Labels mehr offen.</p>
+        labels.length > 0 && <p className="mt-4">{nurAuffaellige ? 'Keine auffälligen Labels mehr offen.' : 'Keine Labels mehr offen.'}</p>
+      )}
+
+      {bestaetigte.length > 0 && (
+        <details className="mt-6 rounded-xl border border-slate-200 bg-white p-3" open={sichtbar.length === 0 && !nurAuffaellige} data-bestaetigt="">
+          <summary className="cursor-pointer font-semibold">
+            {anzahl(bestaetigte.length, 'Label', 'Labels')} bestätigt
+          </summary>
+          <ul className="mt-2 divide-y divide-slate-200">
+            {bestaetigte.map((l) => (
+              <li key={l.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2" data-bestaetigt-zeile={l.id}>
+                <a href={zumLabel(l.anlageId, l.id)} className={`${VERWEIS} font-semibold`}>
+                  Label {l.id}
+                </a>
+                <span className="text-slate-800">{ersteWoerter(l.ocrText)}</span>
+                <span className="text-slate-700">{sprachenKurz(l)}</span>
+                {!freigegeben && (
+                  <button
+                    type="button"
+                    className="ml-auto min-h-9 rounded-lg border border-slate-300 bg-white px-2.5 text-sm text-slate-800 hover:bg-slate-50 disabled:opacity-50"
+                    disabled={speichert}
+                    aria-label={`Bestätigung von ${l.id} zurücknehmen`}
+                    onClick={() => ereignis({ art: 'rueckgaengig', labelId: l.id })}
+                  >
+                    Zurücknehmen
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
     </>

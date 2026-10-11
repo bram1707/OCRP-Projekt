@@ -403,6 +403,86 @@
     "auffaellig": [],
     "status": "offen"
   },
+  "ABF5-01": {
+    "sprachen": [
+      "de",
+      "tr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-02": {
+    "sprachen": [
+      "de",
+      "tr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-03": {
+    "sprachen": [
+      "de",
+      "tr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-04": {
+    "sprachen": [
+      "de",
+      "bg"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-05": {
+    "sprachen": [
+      "de",
+      "bg"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-06": {
+    "sprachen": [
+      "de",
+      "zh"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-07": {
+    "sprachen": [
+      "de",
+      "zh"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "ABF5-08": {
+    "sprachen": [
+      "de",
+      "zh"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
   "EIG1-01": {
     "sprachen": [],
     "lesbar": false,

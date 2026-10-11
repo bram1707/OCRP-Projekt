@@ -95,10 +95,11 @@ describe('AK-34 Schlüssel nur aus der Umgebung, Mock ist Standard', () => {
 });
 
 describe('AK-60 keine weiteren Abhängigkeiten', () => {
-  test('package.json: als dependencies nur die Texterkennung (Ausnahme vom 11.10.2026), sonst der Stack aus AK-60 mit Typangaben (Stufe 2, F1)', () => {
+  test('package.json: als dependencies nur die Texterkennung mit ihren Sprachdaten (Ausnahme vom 11.10.2026, Optimierung 2: Türkisch, Bulgarisch, Chinesisch), sonst der Stack aus AK-60 mit Typangaben (Stufe 2, F1)', () => {
     const p = JSON.parse(readFileSync(join(WURZEL, 'package.json'), 'utf8'));
     assert.deepEqual(Object.keys(p.dependencies).sort(), [
-      '@tesseract.js-data/deu', '@tesseract.js-data/eng', '@tesseract.js-data/fra', '@tesseract.js-data/pol', '@tesseract.js-data/rus', 'tesseract.js',
+      '@tesseract.js-data/bul', '@tesseract.js-data/chi_sim', '@tesseract.js-data/deu', '@tesseract.js-data/eng', '@tesseract.js-data/fra',
+      '@tesseract.js-data/pol', '@tesseract.js-data/rus', '@tesseract.js-data/tur', 'tesseract.js',
     ]);
     assert.deepEqual(Object.keys(p.devDependencies).sort(), [
       '@tailwindcss/vite', '@types/node', '@types/react', '@types/react-dom', 'react', 'react-dom', 'tailwindcss', 'typescript', 'vite',

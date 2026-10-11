@@ -8,13 +8,14 @@ import { join } from 'node:path';
 import { after, describe, test } from 'node:test';
 import { bereiteSprachdatenVor, erstelleTesseractLeser, OCR_SPRACHEN } from '../src/ocr/tesseract.ts';
 import { waehleTextLeser } from '../src/ocr/textLeser.ts';
+import { detectLanguage } from '../src/ai/detectLanguage.ts';
 import { WURZEL } from './hilfen.ts';
 
 const ordner = mkdtempSync(join(tmpdir(), 'ocr-sprachen-'));
 after(() => rmSync(ordner, { recursive: true, force: true }));
 
 describe('U-B2 tesseract.js lokal', () => {
-  test('die Sprachdaten für Deutsch, Englisch, Polnisch, Französisch und Russisch liegen lokal vor', () => {
+  test('die Sprachdaten für Deutsch, Englisch, Polnisch, Französisch, Russisch, Türkisch, Bulgarisch und Chinesisch liegen lokal vor', () => {
     bereiteSprachdatenVor(ordner);
     assert.deepEqual(readdirSync(ordner).sort(), OCR_SPRACHEN.map((c) => `${c}.traineddata.gz`).sort());
   });
@@ -34,6 +35,24 @@ describe('U-B2 tesseract.js lokal', () => {
       }
     } finally {
       globalThis.fetch = echtesFetch;
+      await leser.beende();
+    }
+  });
+
+  // Optimierung 2, Punkt 8: Hochgeladene zweisprachige Labels ergaben nur Deutsch oder eine falsche Sprache.
+  test('zweisprachige Testfotos: beide Sprachen werden erkannt, auch Türkisch, Bulgarisch und Chinesisch', async () => {
+    const leser = erstelleTesseractLeser({ sprachOrdner: ordner });
+    const faelle: [string, string[]][] = [
+      ['label-de-tr.png', ['de', 'tr']], ['label-de-bg.png', ['bg', 'de']], ['label-de-zh.png', ['de', 'zh']],
+      ['label-it-es.png', ['es', 'it']], ['label-en-fr.png', ['en', 'fr']], ['label-de-pl.png', ['de', 'pl']],
+    ];
+    try {
+      for (const [datei, sprachen] of faelle) {
+        const { text, konfidenz } = await leser(readFileSync(join(WURZEL, 'tests', 'bilder', datei)), 'png');
+        const antwort = await detectLanguage(text, konfidenz);
+        assert.deepEqual([...antwort.sprachen].sort(), sprachen, `${datei}: ${text}`);
+      }
+    } finally {
       await leser.beende();
     }
   });

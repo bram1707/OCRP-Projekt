@@ -126,17 +126,22 @@ export function AnlageSeite({ anlageId, nav }: { anlageId: string; nav: Navigati
         if (erstes) nav.navigiere(zumLabel(anlageId, erstes.id), null);
         return;
       }
-      case 'bestaetigen':
+      case 'bestaetigen': {
         setRueckfrage(false);
+        // Die bestätigte Kachel wandert in die Zeile „bestätigt“; der Fokus geht auf die Kachel, die an ihre Stelle rückt.
+        const offene = ordneStabil(daten?.labels ?? [], reihenfolge).filter((l) => l.status !== 'bestaetigt');
+        const platz = offene.findIndex((l) => l.id === e.labelId);
+        const danach = offene[platz + 1] ?? offene[platz - 1];
         void schreibe(
           async () => {
             await bestaetige(e.labelId);
-            nav.setMeldung({ text: `${e.labelId} bestätigt.`, rueckgaengig: e.labelId });
+            nav.setMeldung({ text: `${e.labelId} bestätigt. Es steht jetzt unten unter „bestätigt“.` });
             await laden();
           },
-          () => fokusAufKachel(e.labelId),
+          () => fokusAufKachel(danach?.id ?? e.labelId),
         );
         return;
+      }
       case 'rueckgaengig':
         // Eine offene Rückfrage zur Freigabe gilt danach nicht mehr.
         setRueckfrage(false);

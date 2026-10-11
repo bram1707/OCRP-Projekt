@@ -5,10 +5,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ladeKamera, type KameraStand } from '../api.ts';
 import { prozent, sichereBildUrl, sprachZeile } from '../pruefung/logik.ts';
-import { Fehler, KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, Laden, Marke } from '../rahmen.tsx';
+import { Fehler, KNOPF_GEWAEHLT, KNOPF_HAUPT, KNOPF_NEBEN, Laden, Marke, VERWEIS } from '../rahmen.tsx';
 import { STATUS_ANZEIGE } from '../status.ts';
 import { ladeFotoHoch, type FotoErgebnis } from './aktionen.ts';
-import { dateiFehler, groesseText, kannFotoAufnehmen, platzText, vorschlag } from './logik.ts';
+import { Bedeutungen } from '../pruefung/Bedeutungen.tsx';
+import { zumLabel } from '../route.ts';
+import { dateiFehler, groesseText, kannFotoAufnehmen, markiereWoerter, platzName, platzText, unsicherGruende, vorschlag } from './logik.ts';
 
 const MAX_TEXT = 1000;
 
@@ -26,6 +28,7 @@ export function KameraAnsicht({
   onText,
   onTippen,
   onSenden,
+  onNochmal,
 }: {
   stand: KameraStand;
   gewaehlt: string | null;
@@ -41,6 +44,8 @@ export function KameraAnsicht({
   onText: (text: string) => void;
   onTippen: (tippen: boolean) => void;
   onSenden: () => void;
+  /** „Besseres Foto hochladen“: denselben Platz wählen und zur Dateiauswahl springen */
+  onNochmal?: (id: string) => void;
 }) {
   const ueberschrift = useRef<HTMLHeadingElement>(null);
   useEffect(() => ueberschrift.current?.focus(), []);
@@ -71,6 +76,10 @@ export function KameraAnsicht({
       {stand.upload && stand.anlage && (
         <>
           <h2 className="mt-8 text-xl font-semibold tracking-tight">{stand.anlage.name}</h2>
+          <p className="mt-1 max-w-3xl text-slate-800" data-plaetze-erklaerung="">
+            Die Testanlage hat {stand.anlage.sollAnzahl} Labels an verschiedenen Stellen. Laden Sie für jedes ein Foto hoch. Max prüft
+            jedes Foto einzeln; die Anlage wird freigegeben, wenn er alle {stand.anlage.sollAnzahl} bestätigt hat.
+          </p>
           <p className="mt-1 text-slate-700">
             {freigegeben
               ? 'Von Max freigegeben. Neue Fotos gibt es erst nach „Daten zurücksetzen“.'
@@ -79,7 +88,8 @@ export function KameraAnsicht({
           <ul className="mt-4 grid gap-3 md:grid-cols-3">
             {stand.plaetze.map((p) => (
               <li key={p.id} className="rounded-xl border border-slate-200 bg-white shadow-sm p-4" data-platz={p.id}>
-                <p className="text-lg font-semibold">Platz {p.id}</p>
+                <p className="text-lg font-semibold">{platzName(p.id)}</p>
+                <p className="text-sm text-slate-700">Platz {p.id}</p>
                 <div className="mt-1">
                   <Marke anzeige={STATUS_ANZEIGE[p.status]} />
                 </div>
@@ -106,7 +116,7 @@ export function KameraAnsicht({
                       disabled={sendet}
                       onClick={() => onPlatz(p.id)}
                     >
-                      {p.id}
+                      {platzName(p.id)}
                     </button>
                   ))}
                 </div>
@@ -178,15 +188,30 @@ export function KameraAnsicht({
         {!sendet && ergebnis && (
           <div className="rounded-lg border border-green-200 border-l-4 border-l-green-600 bg-green-50 px-4 py-3 text-green-950" data-ergebnis={ergebnis.id}>
             <p className="font-semibold">
-              Foto für Platz {ergebnis.id} gespeichert. Das Label ist jetzt in Max&#39; Prüfung („{ergebnis.statusText}“).
+              Foto für {platzName(ergebnis.id)} gespeichert. Das Label ist jetzt in Max&#39; Prüfung („{ergebnis.statusText}“).
             </p>
             {ergebnis.textGefunden ? (
               <>
                 <p className="mt-2">Erkannter Text (Lesesicherheit {prozent(ergebnis.ocrKonfidenz)}):</p>
-                <p className="mt-1 whitespace-pre-line rounded border border-green-700 bg-white px-3 py-2 text-slate-900">{ergebnis.ocrText}</p>
+                <p className="mt-1 whitespace-pre-line rounded border border-green-700 bg-white px-3 py-2 text-slate-900" data-erkannter-text="">
+                  {markiereWoerter(ergebnis.ocrText, ergebnis.unsichereWoerter ?? []).map((t, i) =>
+                    t.unsicher ? (
+                      <mark key={i} className="rounded border-2 border-dashed border-amber-700 bg-amber-100 px-0.5 text-slate-950" data-unsicher-gelesen="">
+                        {t.text}
+                        <span className="sr-only"> (unsicher gelesen)</span>
+                      </mark>
+                    ) : (
+                      <span key={i}>{t.text}</span>
+                    ),
+                  )}
+                </p>
+                {(ergebnis.unsichereWoerter ?? []).length > 0 && (
+                  <p className="mt-1 text-sm">Gestrichelt umrandet: Wörter, die die Texterkennung nur unsicher gelesen hat.</p>
+                )}
                 <p className="mt-2">
                   Sprachvorschlag: {ergebnis.sprachen.length > 0 ? ergebnis.sprachen.map(sprachZeile).join('; ') : 'keine Sprache erkannt'}
                 </p>
+                <Bedeutungen label={ergebnis} />
               </>
             ) : (
               <p className="mt-2">
@@ -194,7 +219,8 @@ export function KameraAnsicht({
                 Foto für denselben Platz noch einmal senden.
               </p>
             )}
-            {bild && <img src={bild} alt={`Hochgeladenes Foto für Platz ${ergebnis.id}`} className="mt-3 max-h-64 rounded border border-slate-300 bg-white object-contain" />}
+            {ergebnis.status === 'unsicher' && <UnsicherHilfe ergebnis={ergebnis} onNochmal={onNochmal} />}
+            {bild && <img src={bild} alt={`Hochgeladenes Foto für ${platzName(ergebnis.id)}`} className="mt-3 max-h-64 rounded border border-slate-300 bg-white object-contain" />}
           </div>
         )}
       </div>
@@ -204,6 +230,50 @@ export function KameraAnsicht({
         </div>
       )}
     </>
+  );
+}
+
+/**
+ * Was tun, wenn das Foto als „Unsicher“ bei Max liegt (Optimierung 2, Punkt 4): Grund nennen und drei Wege zeigen.
+ * Entscheiden tut weiterhin Max; die Kamera-Seite verweist nur auf seine Einzelansicht.
+ */
+function UnsicherHilfe({ ergebnis, onNochmal }: { ergebnis: FotoErgebnis; onNochmal?: (id: string) => void }) {
+  const gruende = unsicherGruende(ergebnis);
+  const zuMax = zumLabel(ergebnis.anlageId, ergebnis.id);
+  return (
+    <section className="mt-3 rounded-lg border border-amber-300 border-l-4 border-l-amber-600 bg-amber-50 px-4 py-3 text-amber-950" data-unsicher-hilfe="">
+      <h3 className="font-semibold">Warum „Unsicher“?</h3>
+      {gruende.length > 0 ? (
+        <ul className="mt-1 list-disc pl-6">
+          {gruende.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1">Text oder Sprache wurden nicht sicher erkannt.</p>
+      )}
+      <h3 className="mt-3 font-semibold">Was jetzt?</h3>
+      <ul className="mt-1 space-y-2">
+        <li>
+          {onNochmal ? (
+            <button type="button" className={KNOPF_NEBEN} onClick={() => onNochmal(ergebnis.id)}>
+              Besseres Foto hochladen
+            </button>
+          ) : (
+            <span className="font-semibold">Besseres Foto hochladen</span>
+          )}{' '}
+          <span>Tipp: gerade von vorn, gut beleuchtet, ohne Spiegelung, das Label füllt das Bild.</span>
+        </li>
+        <li>
+          <a href={zuMax} className={`${VERWEIS} font-semibold`}>Selbst prüfen und bestätigen</a>: Max sieht sich das Foto an und bestätigt, wenn
+          Text und Sprachen auf dem Label stimmen. Der Vorschlag muss dafür nicht sicher sein.
+        </li>
+        <li>
+          <a href={zuMax} className={`${VERWEIS} font-semibold`}>Fehler melden</a>: Ist das Label selbst falsch oder beschädigt, meldet Max dort einen
+          Fehler.
+        </li>
+      </ul>
+    </section>
   );
 }
 
@@ -291,6 +361,13 @@ export function KameraSeite() {
       onText={setText}
       onTippen={setTippen}
       onSenden={() => void senden()}
+      onNochmal={(id) => {
+        setGewaehlt(id);
+        setTippen(false);
+        const feld = document.getElementById('foto-datei') as HTMLInputElement | null;
+        feld?.scrollIntoView({ block: 'center' });
+        feld?.focus();
+      }}
     />
   );
 }

@@ -29,11 +29,14 @@
     "vite": "8.3.4"
   },
   "dependencies": {
+    "@tesseract.js-data/bul": "1.0.0",
+    "@tesseract.js-data/chi_sim": "1.0.0",
     "@tesseract.js-data/deu": "1.0.0",
     "@tesseract.js-data/eng": "1.0.0",
     "@tesseract.js-data/fra": "1.0.0",
     "@tesseract.js-data/pol": "1.0.0",
     "@tesseract.js-data/rus": "1.0.0",
+    "@tesseract.js-data/tur": "1.0.0",
     "tesseract.js": "7.0.0"
   }
 }

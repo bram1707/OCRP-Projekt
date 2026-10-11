@@ -9,8 +9,10 @@ import { dirname, join } from 'node:path';
 import { begrenzeKonfidenz, type Gelesen, type TextLeser } from './textLeser.ts';
 
 /** Dieselben Sprachen wie die Spracherkennung (U4). */
-export const OCR_SPRACHEN = ['deu', 'eng', 'pol', 'fra', 'rus'] as const;
+export const OCR_SPRACHEN = ['deu', 'eng', 'pol', 'fra', 'rus', 'tur', 'bul', 'chi_sim'] as const;
 export const ZEITLIMIT_MS = 30_000;
+/** Wörter unter dieser Lesesicherheit (in Prozent) zeigt die Kamera-Seite als „unsicher gelesen“. */
+export const WORT_SCHWELLE = 60;
 
 const require = createRequire(import.meta.url);
 
@@ -59,8 +61,10 @@ export function erstelleTesseractLeser({ sprachOrdner, zeitlimitMs = ZEITLIMIT_M
       uhr = setTimeout(() => ablehnen(new Error('Zeitlimit der Texterkennung überschritten.')), zeitlimitMs);
     });
     try {
-      const { data } = await Promise.race([w.recognize(bild), abbruch]);
-      return { text: data.text.trim(), konfidenz: begrenzeKonfidenz(data.confidence / 100) };
+      const { data } = await Promise.race([w.recognize(bild, {}, { text: true, blocks: true }), abbruch]);
+      const woerter = (data.blocks ?? []).flatMap((b) => b.paragraphs.flatMap((p) => p.lines.flatMap((l) => l.words)));
+      const unsichereWoerter = [...new Set(woerter.filter((x) => x.confidence < WORT_SCHWELLE && /\p{L}/u.test(x.text)).map((x) => x.text))];
+      return { text: data.text.trim(), konfidenz: begrenzeKonfidenz(data.confidence / 100), unsichereWoerter };
     } catch (fehler) {
       // Ein hängender Worker wird verworfen; beim nächsten Foto startet ein neuer.
       worker = null;

@@ -3,6 +3,7 @@
 
 import { bewerteAnlage, type Auffaelligkeit, type Grund } from '../ai/auffaelligkeit.ts';
 import { findeBelege, type Beleg } from '../ai/belege.ts';
+import { bedeutungen, type Bedeutung } from '../ai/glossar.ts';
 import { istSpracheUnsicher, SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detectLanguage.ts';
 import { sprachName } from '../ai/sprachen.ts';
 import type { Anlage, Label } from '../db/abfragen.ts';
@@ -31,6 +32,8 @@ export interface LabelAnsicht {
   gruende: Grund[];
   /** Fundstellen für den „Warum?“-Knopf */
   belege: Beleg[];
+  /** Was erkannte fremde Warnbegriffe auf Deutsch bedeuten (kleines Wörterbuch, Optimierung 2) */
+  bedeutungen: Bedeutung[];
 }
 
 export interface AnlageAnsicht {
@@ -63,6 +66,7 @@ function hinweis(l: Label): string | null {
 
 export function labelAnsicht(l: Label, a: Auffaelligkeit | undefined): LabelAnsicht {
   const auffaellig = a?.auffaellig ?? false;
+  const belege = findeBelege(l.ocrText).flatMap((t) => t.belege).sort((x, y) => x.start - y.start);
   return {
     id: l.id,
     anlageId: l.anlageId,
@@ -86,7 +90,8 @@ export function labelAnsicht(l: Label, a: Auffaelligkeit | undefined): LabelAnsi
     letzterFehlergrundText: l.letzterFehlergrund ? FEHLERGRUND_TEXT[l.letzterFehlergrund] : null,
     auffaellig,
     gruende: a?.gruende ?? [],
-    belege: findeBelege(l.ocrText).flatMap((t) => t.belege).sort((x, y) => x.start - y.start),
+    belege,
+    bedeutungen: bedeutungen(belege),
   };
 }
 

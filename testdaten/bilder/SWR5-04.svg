@@ -1,16 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, sans-serif" role="img" aria-label="Platzhalterfoto Label SWR5-04">
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif" role="img" aria-label="Platzhalterfoto Label SWR5-04">
   <defs><filter id="unscharf"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
   <rect width="480" height="340" fill="#d9d9d9"/>
   <g>
     <rect x="16" y="16" width="448" height="308" rx="10" fill="#ffd400" stroke="#111" stroke-width="5"/>
-    <polygon points="70,36 110,104 30,104" fill="#111"/>
-    <polygon points="70,50 100,98 40,98" fill="#ffd400"/>
-    <text x="64" y="94" font-size="38" font-weight="bold">!</text>
+    <polygon points="70,30 116,110 24,110" fill="#111"/>
+    <polygon points="70,44 104,104 36,104" fill="#ffd400"/>
+    <g transform="translate(70,82) scale(0.8)"><text x="0" y="14" font-size="38" font-weight="bold" text-anchor="middle" fill="#111">!</text></g>
     <text x="130" y="80" font-size="16">Platzhalterfoto · SWR5-04</text>
     <g fill="#111">
-    <text x="40" y="130" font-size="19">Vor Wartung abschalten!</text>
-    <text x="40" y="154" font-size="19"></text>
-    <text x="40" y="178" font-size="19">Отключить перед обслуживанием!</text>
+    <text x="40" y="130" font-size="19" fill="#111">Vor Wartung abschalten!</text>
+    <text x="40" y="154" font-size="19" fill="#111"></text>
+    <text x="40" y="178" font-size="19" fill="#111">Отключить перед обслуживанием!</text>
     </g>
   </g>
 </svg>

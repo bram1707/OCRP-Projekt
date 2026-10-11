@@ -2,5 +2,6 @@
   { "id": "PRE3", "name": "Presse 3", "sollAnzahl": 12 },
   { "id": "MON1", "name": "Montagelinie 1", "sollAnzahl": 15 },
   { "id": "LAC2", "name": "Lackierung 2", "sollAnzahl": 10 },
+  { "id": "ABF5", "name": "Abfüllung 5", "sollAnzahl": 8 },
   { "id": "EIG1", "name": "Testanlage Eigene Fotos", "sollAnzahl": 3 }
 ]

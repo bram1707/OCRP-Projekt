@@ -3,7 +3,7 @@
 // Die Wortlisten sind absichtlich überschneidungsfrei (siehe Test), damit ein
 // Wort nie für zwei Sprachen zählt.
 
-export type Sprachcode = 'de' | 'en' | 'pl' | 'fr' | 'ru';
+export type Sprachcode = 'de' | 'en' | 'pl' | 'fr' | 'ru' | 'tr' | 'bg' | 'zh' | 'it' | 'es';
 
 export interface SprachMerkmale {
   code: Sprachcode;
@@ -14,6 +14,8 @@ export interface SprachMerkmale {
   zeichen: RegExp | null;
   /** Beschreibung der Zeichen für die Begründung */
   zeichenName: string;
+  /** Schrift ohne Leerzeichen zwischen Wörtern (Chinesisch): Wörter werden als Teilstück gesucht. */
+  ohneLeerzeichen?: boolean;
 }
 
 export const SPRACHEN: readonly SprachMerkmale[] = [
@@ -91,6 +93,68 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
     ],
     zeichen: /[Ѐ-ӿ]/u,
     zeichenName: 'kyrillische Buchstaben',
+  },
+  // Weitere Sprachen (Optimierung 2, Punkte 7 und 8). Türkisch, Bulgarisch und Chinesisch liest auch die
+  // Texterkennung; Italienisch und Spanisch liest sie mit den lateinischen Sprachdaten mit.
+  {
+    code: 'tr',
+    name: 'Türkisch',
+    woerter: [
+      'dikkat', 'tehlike', 'tehlikesi', 'uyarı', 'yüksek', 'gerilim', 'hayati', 'dokunmayın', 'dokunmayınız', 'sıcak',
+      'yüzey', 'koruyucu', 'gözlük', 'gözlüğü', 'takın', 'kullanın', 'giriş', 'girilmez', 'yasaktır', 'yasak',
+      'ellerinizi', 'uzak', 'tutun', 'ezilme', 'çarpma', 'bakımdan', 'bakım', 'önce', 'kapatın', 'yetkisiz', 'kişilerin',
+      'sigara', 'içilmez', 'kulaklık', 'eldiven', 'elektrik', 've', 'ile', 'için', 'bu', 'alan', 'makineyi', 'açmayın',
+    ],
+    zeichen: /[ğışĞŞ]/u,
+    zeichenName: 'türkische Sonderzeichen',
+  },
+  {
+    code: 'bg',
+    name: 'Bulgarisch',
+    woerter: [
+      'опасност', 'внимавайте', 'предупреждение', 'високо', 'напрежение', 'докосвайте', 'отваряйте', 'гореща',
+      'повърхност', 'смачкване', 'дръжте', 'ръцете', 'далеч', 'носете', 'предпазни', 'очила', 'антифони', 'забранено',
+      'влизането', 'само', 'упълномощен', 'персонал', 'преди', 'поддръжка', 'изключете', 'машината', 'ток', 'токов',
+      'удар', 'живота', 'ръкавици', 'пушенето', 'изход',
+      // Keine Kurzwörter wie „и“, „на“, „от“, „за“, „се“: Die sind im Russischen genauso häufig (Prüfung M1).
+    ],
+    zeichen: /[ъщЪЩ]/u,
+    zeichenName: 'bulgarische Buchstaben ъ und щ',
+  },
+  {
+    code: 'zh',
+    name: 'Chinesisch',
+    woerter: [
+      '注意', '警告', '危险', '小心', '当心', '禁止', '必须', '佩戴', '护目镜', '高压', '高温', '表面', '触摸', '请勿',
+      '触电', '夹手', '打开', '维修', '检修', '前', '关闭', '电源', '进入', '非工作人员', '入内', '耳罩', '手套', '吸烟',
+      '烟火', '安全', '出口', '机器', '运行', '时', '远离',
+    ],
+    zeichen: /\p{Script=Han}/u,
+    zeichenName: 'chinesische Schriftzeichen',
+    ohneLeerzeichen: true,
+  },
+  {
+    code: 'it',
+    name: 'Italienisch',
+    woerter: [
+      'attenzione', 'pericolo', 'avvertenza', 'tensione', 'non', 'toccare', 'calda', 'indossare', 'occhiali',
+      'protettivi', 'vietato', 'ingresso', 'mani', 'lontano', 'lontane', 'rischio', 'schiacciamento', 'prima', 'della',
+      'manutenzione', 'spegnere', 'personale', 'autorizzato', 'aprire', 'parti', 'movimento', 'guanti', 'fumare',
+      'uscita', 'emergenza', 'il', 'di', 'con',
+    ],
+    zeichen: /[ìòÌÒ]/u,
+    zeichenName: 'italienische Akzente',
+  },
+  {
+    code: 'es',
+    name: 'Spanisch',
+    woerter: [
+      'peligro', 'atención', 'advertencia', 'precaución', 'tensión', 'tocar', 'caliente', 'usar', 'gafas', 'protección',
+      'prohibido', 'prohibida', 'manos', 'alejadas', 'riesgo', 'aplastamiento', 'antes', 'mantenimiento', 'desconectar',
+      'personal', 'autorizado', 'abrir', 'piezas', 'guantes', 'fumar', 'salida', 'emergencia', 'el', 'y', 'del', 'las',
+    ],
+    zeichen: /[ñÑ¿¡áíúÁÍÚ]/u,
+    zeichenName: 'spanische Sonderzeichen',
   },
 ];
 

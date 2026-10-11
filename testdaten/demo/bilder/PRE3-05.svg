@@ -1,17 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, sans-serif" role="img" aria-label="Platzhalterfoto Label PRE3-05">
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif" role="img" aria-label="Platzhalterfoto Label PRE3-05">
   <defs><filter id="unscharf"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
   <rect width="480" height="340" fill="#d9d9d9"/>
   <g>
-    <rect x="16" y="16" width="448" height="308" rx="10" fill="#ffd400" stroke="#111" stroke-width="5"/>
-    <polygon points="70,36 110,104 30,104" fill="#111"/>
-    <polygon points="70,50 100,98 40,98" fill="#ffd400"/>
-    <text x="64" y="94" font-size="38" font-weight="bold">!</text>
-    <text x="130" y="80" font-size="16">Platzhalterfoto · PRE3-05</text>
-    <g fill="#111">
-    <text x="40" y="130" font-size="19">Gehörschutz tragen! Nur mit</text>
-    <text x="40" y="154" font-size="19">Gehörschutz betreten.</text>
-    <text x="40" y="178" font-size="19"></text>
-    <text x="40" y="202" font-size="19">Nosić ochronniki słuchu!</text>
-    </g>
+    <rect x="16" y="16" width="448" height="308" rx="10" fill="#fff" stroke="#005387" stroke-width="5"/>
+    <rect x="16" y="16" width="448" height="104" rx="10" fill="#005387"/>
+    <g transform="translate(72,68)"><circle r="40" fill="#fff"/><circle r="34" fill="#005387"/><path d="M-16,4 a16,16 0 0 1 32,0" fill="none" stroke="#fff" stroke-width="4"/><rect x="-20" y="2" width="9" height="14" rx="3" fill="#fff"/><rect x="11" y="2" width="9" height="14" rx="3" fill="#fff"/></g>
+    <text x="130" y="44" font-size="14" fill="#fff">Platzhalterfoto · PRE3-05</text>
+    <g><text x="40" y="150" font-size="19" fill="#111">Gehörschutz tragen! Nur mit</text>
+    <text x="40" y="174" font-size="19" fill="#111">Gehörschutz betreten.</text>
+    <text x="40" y="198" font-size="19" fill="#111"></text>
+    <text x="40" y="222" font-size="19" fill="#111">Nosić ochronniki słuchu!</text></g>
   </g>
 </svg>

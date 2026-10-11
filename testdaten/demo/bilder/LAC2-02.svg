@@ -1,18 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, sans-serif" role="img" aria-label="Platzhalterfoto Label LAC2-02">
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif" role="img" aria-label="Platzhalterfoto Label LAC2-02">
   <defs><filter id="unscharf"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
   <rect width="480" height="340" fill="#d9d9d9"/>
   <g>
     <rect x="16" y="16" width="448" height="308" rx="10" fill="#ffd400" stroke="#111" stroke-width="5"/>
-    <polygon points="70,36 110,104 30,104" fill="#111"/>
-    <polygon points="70,50 100,98 40,98" fill="#ffd400"/>
-    <text x="64" y="94" font-size="38" font-weight="bold">!</text>
+    <polygon points="70,30 116,110 24,110" fill="#111"/>
+    <polygon points="70,44 104,104 36,104" fill="#ffd400"/>
+    <g transform="translate(70,82) scale(0.8)"><path d="M-10,18 q-6,-8 0,-16 q6,-8 0,-16" fill="none" stroke="#111" stroke-width="4"/><path d="M0,18 q-6,-8 0,-16 q6,-8 0,-16" fill="none" stroke="#111" stroke-width="4"/><path d="M10,18 q-6,-8 0,-16 q6,-8 0,-16" fill="none" stroke="#111" stroke-width="4"/><rect x="-18" y="18" width="36" height="5" fill="#111"/></g>
     <text x="130" y="80" font-size="16">Platzhalterfoto · LAC2-02</text>
     <g fill="#111">
-    <text x="40" y="130" font-size="19">VORSICHT! Heiße Oberfläche. Nicht</text>
-    <text x="40" y="154" font-size="19">berühren.</text>
-    <text x="40" y="178" font-size="19"></text>
-    <text x="40" y="202" font-size="19">ATTENTION ! Surface chaude. Ne pas</text>
-    <text x="40" y="226" font-size="19">toucher.</text>
+    <text x="40" y="130" font-size="19" fill="#111">VORSICHT! Heiße Oberfläche. Nicht</text>
+    <text x="40" y="154" font-size="19" fill="#111">berühren.</text>
+    <text x="40" y="178" font-size="19" fill="#111"></text>
+    <text x="40" y="202" font-size="19" fill="#111">ATTENTION ! Surface chaude. Ne pas</text>
+    <text x="40" y="226" font-size="19" fill="#111">toucher.</text>
     </g>
   </g>
 </svg>

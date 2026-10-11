@@ -10,6 +10,11 @@ const FARBE: Record<string, string> = {
   pl: 'bg-pink-200',
   fr: 'bg-orange-200',
   ru: 'bg-cyan-200',
+  tr: 'bg-red-200',
+  bg: 'bg-sky-200',
+  zh: 'bg-violet-200',
+  it: 'bg-emerald-200',
+  es: 'bg-amber-200',
 };
 
 function sprachName(l: LabelAnsicht, code: string): string {

@@ -106,7 +106,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
   }
 
   /** Speichert eine Entscheidung und öffnet danach das nächste offene Label oder die Übersicht. */
-  async function entscheide(arbeit: () => Promise<unknown>, meldungText: string, rueckgaengig?: string): Promise<void> {
+  async function entscheide(arbeit: () => Promise<unknown>, meldungText: string): Promise<void> {
     setFehler(null);
     try {
       await arbeit();
@@ -115,7 +115,8 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
       return;
     }
     schritt('gespeichert');
-    const meldung = { text: meldungText, rueckgaengig };
+    // Zurücknehmen geht über die Zeile „bestätigt“ in der Übersicht (Optimierung 2, Punkt 6), nicht mehr in der Meldung.
+    const meldung = { text: meldungText };
     try {
       const neu = await ladeAnlage(anlageId);
       const naechstes = naechstesLabel(neu.labels, labelId);
@@ -167,7 +168,7 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
         ueberschrift.current?.focus();
         return;
       case 'bestaetigen':
-        if (!fotoFehltRef.current && schritt('bestaetigen')) void entscheide(() => bestaetige(labelId), `${labelId} bestätigt.`, labelId);
+        if (!fotoFehltRef.current && schritt('bestaetigen')) void entscheide(() => bestaetige(labelId), `${labelId} bestätigt.`);
         return;
       case 'grund': {
         const grund: Fehlergrund = e.grund;

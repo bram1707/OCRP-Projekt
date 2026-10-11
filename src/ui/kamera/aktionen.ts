@@ -6,7 +6,8 @@ import { labelPfad, leseAntwort, ServerFehler, type LabelAnsicht } from '../api.
 /** Grenze des Servers; die Seite prüft sie vorab, damit niemand 50 MB umsonst sendet. */
 export const MAX_FOTO_BYTES = 5 * 1024 * 1024;
 
-export type FotoErgebnis = LabelAnsicht & { textGefunden: boolean };
+/** Antwort auf das Hochladen; `unsichereWoerter` kennt nur diese Antwort (die Texterkennung liefert sie Wort für Wort). */
+export type FotoErgebnis = LabelAnsicht & { textGefunden: boolean; unsichereWoerter?: string[] };
 
 /** Sendet das Foto als Rohdaten. Mit `text` wird nicht gelesen, sondern der eingetippte Text genommen. */
 export async function ladeFotoHoch(labelId: string, foto: Blob, text?: string): Promise<FotoErgebnis> {

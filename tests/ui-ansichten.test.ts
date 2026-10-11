@@ -167,9 +167,11 @@ describe('AK-02 Zusammenfassung und Freigabe', () => {
   });
   test('Zusammenfassung und „bleibt gesperrt“ stehen über den Kacheln', () => {
     const fertig = uebersicht(f.sta4Fertig, { zusammenfassung: f.sta4Zusammenfassung });
-    assert.ok(fertig.indexOf('Zusammenfassung: alle Labels bestätigt') < fertig.indexOf('data-kachel='));
+    // Bestätigte Labels stehen in der Zeile „bestätigt“ (Optimierung 2); sie kommt wie die Kacheln danach.
+    const erstesLabel = (h: string) => Math.min(...['data-kachel=', 'data-bestaetigt='].map((m) => h.indexOf(m)).filter((i) => i >= 0));
+    assert.ok(fertig.indexOf('Zusammenfassung: alle Labels bestätigt') < erstesLabel(fertig));
     const swr5 = uebersicht(f.swr5Fertig, { zusammenfassung: f.swr5Zusammenfassung });
-    assert.ok(swr5.indexOf('data-bleibt-gesperrt') > 0 && swr5.indexOf('data-bleibt-gesperrt') < swr5.indexOf('data-kachel='));
+    assert.ok(swr5.indexOf('data-bleibt-gesperrt') > 0 && swr5.indexOf('data-bleibt-gesperrt') < erstesLabel(swr5));
   });
   test('freigegebene Anlage: „Freigegeben“ mit Datum, keine Zusammenfassung, kein Knopf', () => {
     const t = text(uebersicht(f.foe2));
@@ -281,7 +283,7 @@ describe('AK-12 gemeldet und nachgebessert', () => {
 describe('AK-13 Reihenfolge der Kacheln', () => {
   test('Kacheln in der Reihenfolge des Servers: STA4-08, STA4-09, STA4-07 zuerst, „Prüfung starten“ vorhanden', () => {
     const html = uebersicht(f.sta4);
-    assert.deepEqual(kacheln(html), f.sta4.labels.map((l) => l.id));
+    assert.deepEqual(kacheln(html), f.sta4.labels.filter((l) => l.status !== 'bestaetigt').map((l) => l.id));
     assert.deepEqual(kacheln(html).slice(0, 3), ['STA4-08', 'STA4-09', 'STA4-07']);
     assert.ok(knoepfe(html).includes('Prüfung starten'));
   });
@@ -392,7 +394,7 @@ describe('AK-17 Kachelübersicht', () => {
   });
   test('jede Kachel: Vorschaubild mit Alternativtext, erste Wörter, Sprachen, Status', () => {
     const html = uebersicht(f.sta4);
-    for (const l of f.sta4.labels) {
+    for (const l of f.sta4.labels.filter((x) => x.status !== 'bestaetigt')) {
       const k = element(html, 'li', 'data-kachel', l.id)!;
       assert.match(k, new RegExp(`<img[^>]*src="/bilder/${l.id}\\.svg"[^>]*alt="Foto von Label ${l.id}"`), l.id);
       assert.ok(text(k).includes(l.ocrText.split(/\s+/)[0]!), `${l.id} erste Wörter`);
@@ -403,21 +405,23 @@ describe('AK-17 Kachelübersicht', () => {
 });
 
 describe('AK-18 Schalter „Nur auffällige“ / „Alle“', () => {
-  test('„Nur auffällige“: 3 Kacheln, „7 Labels ausgeblendet“; der aktive Schalter ist mit Text markiert', () => {
+  // Bestätigte Labels zählen nicht als ausgeblendet; sie stehen in der Zeile „bestätigt“ (Optimierung 2).
+  test('„Nur auffällige“: 3 Kacheln, „6 Labels ausgeblendet“; der aktive Schalter ist mit Text markiert', () => {
     const html = uebersicht(f.sta4, { nurAuffaellige: true });
     assert.deepEqual(kacheln(html), ['STA4-08', 'STA4-09', 'STA4-07']);
-    assert.equal(text(element(html, 'span', 'data-ausgeblendet', '')!), '7 Labels ausgeblendet');
+    assert.equal(text(element(html, 'span', 'data-ausgeblendet', '')!), '6 Labels ausgeblendet');
     assert.ok(knoepfe(html).includes('Nur auffällige (gewählt)'));
     assert.match(html, /aria-pressed="true"[^>]*>Nur auffällige/);
   });
-  test('nach dem Bestätigen von STA4-07: 2 auffällige, 8 ausgeblendet', () => {
+  test('nach dem Bestätigen von STA4-07: 2 auffällige, 6 ausgeblendet, 2 bestätigt', () => {
     const html = uebersicht(f.sta4NachSta407, { nurAuffaellige: true });
     assert.equal(kacheln(html).length, 2);
-    assert.equal(text(element(html, 'span', 'data-ausgeblendet', '')!), '8 Labels ausgeblendet');
+    assert.equal(text(element(html, 'span', 'data-ausgeblendet', '')!), '6 Labels ausgeblendet');
+    assert.match(text(html), /2 Labels bestätigt/);
   });
   test('„Alle“: kein Hinweis auf Ausgeblendetes', () => {
     const html = uebersicht(f.sta4);
-    assert.equal(kacheln(html).length, 10);
+    assert.equal(kacheln(html).length, 9);
     assert.doesNotMatch(html, /ausgeblendet/);
   });
 });
@@ -425,7 +429,7 @@ describe('AK-18 Schalter „Nur auffällige“ / „Alle“', () => {
 describe('AK-19 Auffällig mit einem Satz', () => {
   test('jede auffällige offene Kachel: „Auffällig“ und genau ein Grund; STA4-08 „und 2 weitere Gründe“', () => {
     const html = uebersicht(f.sta4);
-    for (const l of f.sta4.labels) {
+    for (const l of f.sta4.labels.filter((x) => x.status !== 'bestaetigt')) {
       const t = text(element(html, 'li', 'data-kachel', l.id)!);
       const offenUndAuffaellig = l.auffaellig && ['offen', 'unsicher', 'nachgebessert'].includes(l.status);
       assert.equal(t.includes('Auffällig'), offenUndAuffaellig, l.id);
@@ -513,5 +517,34 @@ describe('AK-21 einfache Bedienung', () => {
       assert.ok(!knoepfe(html).some((k) => /Nachbesserung simulieren|Foto nachreichen/.test(k)), name);
     }
     assert.deepEqual(knoepfe(s.simulation), ['Nachbesserung simulieren', 'Foto nachreichen']);
+  });
+});
+
+describe('Optimierung 2: bestätigte Labels in eigener Zeile, Zurücknehmen dort, Zurück-Link nur in der Einzelansicht', () => {
+  test('bestätigte Labels stehen nicht zwischen den Kacheln, sondern in der einklappbaren Zeile „N bestätigt“ mit „Zurücknehmen“', () => {
+    const html = uebersicht(f.sta4NachSta407);
+    const bestaetigt = f.sta4NachSta407.labels.filter((l) => l.status === 'bestaetigt').map((l) => l.id);
+    assert.equal(bestaetigt.length, 2);
+    for (const id of bestaetigt) {
+      assert.ok(!kacheln(html).includes(id), `${id} keine Kachel`);
+      assert.ok(element(html, 'li', 'data-bestaetigt-zeile', id), `${id} in der Zeile „bestätigt“`);
+    }
+    assert.match(html, /<details[^>]*data-bestaetigt=""/);
+    assert.match(text(html), /2 Labels bestätigt/);
+    assert.equal(knoepfe(html).filter((k) => k === 'Zurücknehmen').length, 2);
+    assert.match(html, /aria-label="Bestätigung von STA4-07 zurücknehmen"/);
+  });
+
+  test('freigegebene Anlage: Zeile „bestätigt“ ist offen, ohne „Zurücknehmen“', () => {
+    const html = uebersicht(f.foe2);
+    assert.match(html, /<details[^>]*open=""[^>]*data-bestaetigt=""|<details[^>]*data-bestaetigt=""[^>]*open=""/);
+    assert.ok(!knoepfe(html).includes('Zurücknehmen'));
+  });
+
+  test('kein „Alle Anlagen“ in der Übersicht (dafür gibt es Startseite und Titel); in der Einzelansicht „Zurück zur Liste“', () => {
+    assert.doesNotMatch(text(uebersicht(f.sta4)), /Alle Anlagen/);
+    const html = einzel(f.sta4, 'STA4-09');
+    assert.match(text(html), /← Zurück zur Liste Stanzanlage 4/);
+    assert.match(html, /href="#\/anlage\/STA4"/);
   });
 });

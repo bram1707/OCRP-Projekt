@@ -21,7 +21,7 @@ import {
   anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
 } from './ansichten.ts';
 import { ENDUNG, erkenneBildtyp, MAX_FOTO_BYTES, MEDIENTYP, UPLOAD_DATEI, type BildTyp } from '../ocr/bild.ts';
-import type { TextLeser } from '../ocr/textLeser.ts';
+import type { Gelesen, TextLeser } from '../ocr/textLeser.ts';
 import { Ereignisse } from './ereignisse.ts';
 import { raeumeUploadsAuf } from './uploads.ts';
 import { marieUebersicht } from './marie.ts';
@@ -300,7 +300,7 @@ export function routen(optionen: ServerOptionen): Route[] {
         if (abgetippt === null && !optionen.textLeser) {
           throw new Fachfehler(400, 'Die Texterkennung ist ausgeschaltet. Bitte den Text auf dem Label eintippen.');
         }
-        let gelesen = { text: abgetippt ?? '', konfidenz: 1 };
+        let gelesen: Gelesen = { text: abgetippt ?? '', konfidenz: 1 };
         if (abgetippt === null) {
           try {
             gelesen = await optionen.textLeser!(bild, typ);
@@ -320,7 +320,7 @@ export function routen(optionen: ServerOptionen): Route[] {
           await unlink(join(ordner, datei)).catch(() => {});
           throw fehler;
         }
-        return { ...labelAntwort(id!), textGefunden: gelesen.text.trim() !== '' };
+        return { ...labelAntwort(id!), textGefunden: gelesen.text.trim() !== '', unsichereWoerter: gelesen.unsichereWoerter ?? [] };
       },
     },
     // Rückmeldung zum Prototyp (AK-51): die einzige Route, die auch Marie aufrufen darf (Zusatz zu AK-46).

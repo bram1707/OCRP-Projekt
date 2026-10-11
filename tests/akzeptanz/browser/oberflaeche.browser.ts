@@ -70,7 +70,8 @@ after(async () => {
 
 describe('Startseite', () => {
   test('AK-01, AK-21: jede Anlage mit „Gesperrt“/„Freigegeben“ wie der Server, Fortschritt, Hinweis Testversion', async () => {
-    await geheZu('', 'start');
+    // Angepasst nach Stufe 4 (B5): #/ ist die Rollenwahl, Max' Anlagen stehen unter #/anlagen.
+    await geheZu('#/anlagen', 'start');
     await bild('startseite');
     const text = await page.locator('body').innerText();
     assert.match(text, /Testversion: Texterkennung und Spracherkennung sind simuliert/);

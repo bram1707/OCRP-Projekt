@@ -46,16 +46,17 @@ const fokus = (): Promise<{ tag: string; text: string }> =>
     const e = document.activeElement;
     return { tag: e?.tagName ?? '', text: (e?.textContent ?? '').replace(/\s+/g, ' ').trim() };
   });
-async function tabZu(text: string): Promise<void> {
+async function tabZu(text: string, taste = 'Tab'): Promise<void> {
   for (let i = 0; i < 200; i++) {
-    await page.keyboard.press('Tab');
+    await page.keyboard.press(taste);
     if ((await fokus()).text.includes(text)) return;
   }
   throw new Error(`Fokus nicht gefunden: ${text}`);
 }
 const zahl = async (z: string): Promise<string> => (await page.locator(`[data-zahl="${z}"] a span`).nth(1).innerText()).trim();
 const zahlen = async (): Promise<string> => `${await zahl('gesamt')}/${await zahl('offen')}/${await zahl('erledigt')}/${await zahl('fehlerhaft')}`;
-const ansage = (): Promise<string> => page.locator('[role="status"]').innerText();
+// Die Ansage des Rahmens; die Rückmeldung hat einen eigenen, meist leeren Bereich.
+const ansage = (): Promise<string> => page.locator('div.sr-only[role="status"]').innerText();
 const reihenfolge = (): Promise<string[]> => page.locator('[data-marie-anlage]').evaluateAll((l: Element[]) => l.map((e) => e.getAttribute('data-marie-anlage')));
 async function vonMax(pfad: string, koerper?: unknown): Promise<void> {
   const res = await fetch(url + pfad, {
@@ -105,8 +106,13 @@ describe('Maries Übersicht im Browser', () => {
     assert.equal(await page.title(), 'Label-Prüfung · Max');
   });
 
-  test('über den Fuß zu Marie: Fokus auf der Frage, vier Zahlen, Anlagen dringendste oben, kein Knopf', async () => {
-    await tabZu('Übersicht für Marie');
+  test('über „Rolle wechseln“ und die Rollenwahl zu Marie: Fokus auf der Frage, vier Zahlen, Anlagen dringendste oben, kein Knopf', async () => {
+    // Seit Stufe 4 führt Max' Rahmen nicht mehr direkt zu Marie, sondern über die Rollenwahl.
+    // „Rolle wechseln“ steht oben in der Kopfzeile, also vor dem Fokus auf der Überschrift.
+    await tabZu('Rolle wechseln', 'Shift+Tab');
+    await page.keyboard.press('Enter');
+    await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
+    await tabZu('Marie · Übersicht ansehen');
     const ab = anfragen.length;
     await page.keyboard.press('Enter');
     await page.locator('[data-aktualisiert]').waitFor();
@@ -152,7 +158,8 @@ describe('Maries Übersicht im Browser', () => {
     assert.ok((await fokus()).text.startsWith('Warum? (Label STA4-09)'), (await fokus()).text);
     assert.ok(await page.locator('[data-warum-label="STA4-09"]').evaluate((d: HTMLDetailsElement) => d.open));
     assert.equal(await ansage(), 'Neuer Stand: 20 gesamt, 8 offen, 8 erledigt, 4 fehlerhaft.');
-    assert.match(await page.locator('[data-aktualisiert]').innerText(), /^Aktualisiert um \d\d:\d\d:\d\d\./);
+    // Ohne Uhrzeit (Stufe 4): Sie verriete, wann Max zuletzt entschieden hat.
+    assert.equal(await page.locator('[data-aktualisiert]').innerText(), 'Die Übersicht ist aktuell und aktualisiert sich von selbst.');
   });
 
   test('AK-44: Melden ändert den Status in der Liste; verlässt das fokussierte Label die Liste, Fokus auf ihre Überschrift', async () => {
@@ -188,6 +195,8 @@ describe('Maries Übersicht im Browser', () => {
 
   test('neben „Warum ist … gesperrt?“ öffnet ein Klick die Karte', async () => {
     const summary = page.locator('[data-warum-anlage="STA4"] summary');
+    // Seit Stufe 4 ist die Kopfzeile höher („Rolle wechseln“); die Karte liegt dann knapp unter dem sichtbaren Bereich.
+    await summary.scrollIntoViewIfNeeded();
     const kasten = await summary.boundingBox();
     await page.mouse.click(kasten.x + kasten.width + 40, kasten.y + kasten.height / 2);
     await page.waitForTimeout(200);
@@ -226,7 +235,7 @@ describe('Maries Übersicht im Browser', () => {
     await page.getByText('Diese Seite gibt es nicht.').waitFor();
     assert.equal(await page.title(), 'Übersicht · Marie (nur ansehen)');
     const ziele = await page.locator('a').evaluateAll((l: HTMLAnchorElement[]) => l.map((a) => a.getAttribute('href')));
-    assert.deepEqual(ziele, ['#/marie', '#/marie', '#/']);
+    assert.deepEqual(ziele, ['#/marie', '#/', '#/marie'], 'Titel, „Rolle wechseln“ und „Zur Übersicht“');
     assert.equal(await page.getByText('Zur Übersicht').getAttribute('href'), '#/marie');
   });
 
@@ -263,6 +272,32 @@ describe('Maries Übersicht im Browser', () => {
     assert.ok((await breite()) <= 390, `Breite ${await breite()} bei 390 px`);
     await bild('m6-telefon');
     await page.setViewportSize({ width: 1280, height: 900 });
+  });
+
+  test('B9: ein verdeckter Tab verbindet sich nicht und lädt nichts; sichtbar geworden, verbindet er sich und lädt', async () => {
+    const tab = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+    const geholt: string[] = [];
+    tab.on('request', (r: any) => geholt.push(new URL(r.url()).pathname));
+    // Wie ein im Hintergrund geöffneter Tab: verdeckt, bis der Test ihn „nach vorn holt“.
+    await tab.addInitScript(() => {
+      (window as any).__sichtbar = false;
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => ((window as any).__sichtbar ? 'visible' : 'hidden') });
+      Object.defineProperty(document, 'hidden', { configurable: true, get: () => !(window as any).__sichtbar });
+    });
+    try {
+      await tab.goto(`${url}/#/marie`);
+      await tab.waitForTimeout(800);
+      assert.ok(!geholt.includes('/api/ereignisse'), 'keine Verbindung im verdeckten Tab');
+      assert.ok(!geholt.includes('/api/marie'), 'nichts geladen im verdeckten Tab');
+      await tab.evaluate(() => {
+        (window as any).__sichtbar = true;
+        document.dispatchEvent(new Event('visibilitychange'));
+      });
+      await tab.locator('[data-aktualisiert]').waitFor({ timeout: 5000 });
+      assert.ok(geholt.includes('/api/ereignisse') && geholt.includes('/api/marie'));
+    } finally {
+      await tab.close();
+    }
   });
 
   test('AK-46: Maries Seiten schicken nur GET ohne Rolle; keine Fehler in der Konsole', () => {

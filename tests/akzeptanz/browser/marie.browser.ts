@@ -91,8 +91,11 @@ describe('Marie im Browser', () => {
   });
 
   test('AK-46: auf Maries Seite gibt es keinen Knopf und kein Eingabefeld zum Entscheiden', async () => {
-    const anzahl = await marie.locator('button, input, textarea, select, [contenteditable="true"]').count();
+    // Angepasst nach Stufe 4 (E1, Zusatz zu AK-46): Im Rahmen jeder Seite steht „Rückmeldung geben“ (AK-51);
+    // sonst gibt es keinen Knopf und kein Eingabefeld.
+    const anzahl = await marie.locator('main').locator('button, input, textarea, select, [contenteditable="true"]').count();
     assert.equal(anzahl, 0);
+    assert.deepEqual(await marie.locator('button, input, textarea, select, [contenteditable="true"]').allInnerTexts(), ['Rückmeldung geben']);
     const text = await marie.locator('main').innerText();
     for (const w of ['Ja, bestätigen', 'Fehler melden', 'Anlage freigeben', 'Nachbessern', 'Zurücknehmen']) assert.ok(!text.includes(w), w);
   });

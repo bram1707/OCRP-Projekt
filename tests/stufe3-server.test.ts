@@ -543,6 +543,7 @@ const SCHREIBENDE_PFADE: Record<string, readonly string[]> = {
   '/api/feedback': ['max', 'marie', 'testleitung'],
   '/api/feedback/loeschen': ['testleitung'],
   '/api/demo/zuruecksetzen': ['testleitung'],
+  '/api/labels/EIG1-01/foto': ['kamera'],
 };
 
 describe('AK-46 Marie sieht nur, auch nicht über die Schnittstelle', () => {

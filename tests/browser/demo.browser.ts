@@ -180,8 +180,8 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await tabZu('Marie · Übersicht ansehen', { seite: marie });
     await marie.keyboard.press('Enter');
     await marie.locator('[data-aktualisiert]').waitFor();
-    assert.equal(await zahlen(), '37/36/0/1');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 37 von 37 Labels sind noch nicht erledigt.');
+    assert.equal(await zahlen(), '40/36/0/4');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 40 von 40 Labels sind noch nicht erledigt.');
     await bild(marie, 'd01-marie-start');
 
     await page.goto(url);
@@ -204,7 +204,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     const gesehen = await pruefeAlle();
     assert.equal(gesehen.length, 12);
     await gebeFrei('Presse 3');
-    await warteAufZahlen('37/24/12/1');
+    await warteAufZahlen('40/24/12/4');
     await bild(page, 'd03-presse3-freigegeben');
   });
 
@@ -218,10 +218,10 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await page.getByRole('heading', { name: 'Montagelinie 1', level: 1 }).waitFor();
     assert.match(await page.locator('main').innerText(), /14 von 15 bestätigt/);
     // „fehlerhaft“ zählt bei Marie auch das unsichere LAC2-04 mit.
-    await warteAufZahlen('37/9/26/2');
+    await warteAufZahlen('40/9/26/5');
 
     await bessereNach('MON1-11');
-    await warteAufZahlen('37/10/26/1');
+    await warteAufZahlen('40/10/26/4');
     await wechsleRolle('Max');
     await starteAnlage('Montagelinie 1');
     assert.equal((await ueberschrift()).trim(), 'Label MON1-11');
@@ -230,7 +230,7 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await bild(page, 'd05-mon1-11-nachgebessert');
     assert.deepEqual(await pruefeAlle(), ['MON1-11']);
     await gebeFrei('Montagelinie 1');
-    await warteAufZahlen('37/9/27/1');
+    await warteAufZahlen('40/9/27/4');
   });
 
   test('Lackierung 2: das unsichere Label bestätigen, Deutsch/Russisch melden, nachbessern lassen, bestätigen, freigeben', async () => {
@@ -246,9 +246,9 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     await bild(page, 'd06-lac2-freigegeben');
   });
 
-  test('Marie: „Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.“, ohne Neuladen', async () => {
-    await warteAufZahlen('37/0/37/0');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.');
+  test('Marie nach den drei Demo-Anlagen: „Nein. 3 von 40 Labels …“ (nur die Testanlage „Eigene Fotos“ fehlt), ohne Neuladen', async () => {
+    await warteAufZahlen('40/0/37/3');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 3 von 40 Labels sind noch nicht erledigt.');
     await merkeText(marie);
     await bild(marie, 'd07-marie-fertig');
   });
@@ -298,10 +298,10 @@ describe('Demo-Durchlauf nur mit der Tastatur, wie in der README', () => {
     marie.on('framenavigated', merke);
     await page.keyboard.press('Enter');
     await page.getByText('Die Daten sind zurückgesetzt. Alle Anlagen stehen wieder am Anfang.').waitFor();
-    await warteAufZahlen('37/36/0/1');
+    await warteAufZahlen('40/36/0/4');
     marie.off('framenavigated', merke);
     assert.deepEqual(navigationen, [], 'Maries Seite lädt nicht neu');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 37 von 37 Labels sind noch nicht erledigt.');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 40 von 40 Labels sind noch nicht erledigt.');
   });
 
   test('Rückmeldungen ansehen: beide sind noch da; „Alle Rückmeldungen löschen“ mit Rückfrage', async () => {

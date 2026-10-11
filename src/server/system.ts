@@ -8,7 +8,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import { leseKonfiguration, waehleModell, type KiKonfiguration } from '../ai/konfiguration.ts';
 import type { SprachModell } from '../ai/mock.ts';
 import { istLeer, ladeTestdaten, oeffneDatenbankMitStand, spieleTestdatenEin } from '../db/datenbank.ts';
+import { leseOcrModus, waehleTextLeser, type OcrModus, type TextLeser } from '../ocr/textLeser.ts';
 import type { ServerOptionen } from './app.ts';
+import { bereiteUploadOrdnerVor, raeumeUploadsAuf } from './uploads.ts';
 
 export const WURZEL = resolve(import.meta.dirname, '..', '..');
 
@@ -41,6 +43,11 @@ export interface System {
   bilderOrdner: string;
   /** Eine Datenbank aus einer älteren Version wurde verworfen und neu angelegt. */
   datenbankErsetzt: boolean;
+  /** Eigene Fotos der Kamera, je Datensatz ein Ordner unter daten/ */
+  uploadOrdner: string;
+  ocrModus: OcrModus;
+  /** null = keine Texterkennung (ausgeschaltet oder nicht installiert), dann wird abgetippt */
+  textLeser: TextLeser | null;
 }
 
 export async function bereiteSystemVor(wurzel = WURZEL): Promise<System> {
@@ -59,13 +66,22 @@ export async function bereiteSystemVor(wurzel = WURZEL): Promise<System> {
   const { db, ersetzt } = oeffneDatenbankMitStand(dbPfad);
   if (istLeer(db)) await spieleTestdatenEin(db, ladeTestdaten(datenOrdner), modell);
 
-  return { konfiguration, modell, db, datensatz, datenOrdner, bilderOrdner: join(datenOrdner, 'bilder'), datenbankErsetzt: ersetzt };
+  // Neben der Datenbank; Fotos ohne Label (etwa nach Löschen der Datenbank) werden gleich entfernt.
+  const uploadOrdner = bereiteUploadOrdnerVor(join(dirname(dbPfad), datensatz === 'demo' ? 'uploads-demo' : 'uploads'));
+  await raeumeUploadsAuf(db, uploadOrdner);
+  const ocrModus = leseOcrModus();
+  const textLeser = await waehleTextLeser(ocrModus, join(wurzel, 'daten', 'ocr-sprachen'));
+
+  return {
+    konfiguration, modell, db, datensatz, datenOrdner, bilderOrdner: join(datenOrdner, 'bilder'), datenbankErsetzt: ersetzt,
+    uploadOrdner, ocrModus, textLeser,
+  };
 }
 
 /** Optionen für den Server; die gebaute Oberfläche liegt in dist/. */
 export function serverOptionen(system: System, wurzel = WURZEL): ServerOptionen {
   return {
     db: system.db, bilderOrdner: system.bilderOrdner, modell: system.modell, datenOrdner: system.datenOrdner,
-    oberflaecheOrdner: join(wurzel, 'dist'),
+    oberflaecheOrdner: join(wurzel, 'dist'), uploadOrdner: system.uploadOrdner, textLeser: system.textLeser,
   };
 }

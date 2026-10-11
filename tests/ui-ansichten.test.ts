@@ -476,7 +476,7 @@ describe('AK-21 einfache Bedienung', () => {
   test('Hinweis „Testversion …“ im Rahmen jeder Seite', () => {
     for (const bereich of ['start', 'max', 'marie', 'simulation', 'testleitung']) {
       const html = rendere(M.rahmen!.Rahmen, { bereich, children: 'Inhalt' });
-      assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./, bereich);
+      assert.match(text(html), /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos, sonst simuliert\./, bereich);
     }
     assert.match(text(rendere(M.rahmen!.Rahmen, { children: 'x' })), /Label-Prüfung · Max \(Qualitätsmanagement\)/);
     assert.match(text(rendere(M.rahmen!.Rahmen, { bereich: 'marie', children: 'x' })), /Übersicht · Marie \(Fertigungsleitung\)/);

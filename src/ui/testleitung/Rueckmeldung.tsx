@@ -13,7 +13,7 @@ export const MAX_KOMMENTAR = 1000;
 export const RUECKMELDUNG_GESPEICHERT = 'rueckmeldung-gespeichert';
 
 /** Mit welcher Rolle die Seite sendet; die Instandhaltung nutzt im Prototyp die Rolle von Max (R9). */
-const ABSENDER: Record<Bereich, Absender> = { start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung' };
+const ABSENDER: Record<Bereich, Absender> = { start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung', kamera: 'max' };
 
 export interface FormularDaten {
   szenario: Szenario;

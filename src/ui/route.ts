@@ -8,6 +8,7 @@
 // #/marie/zahl/fehlerhaft     Marie: Labels hinter einer Zahl
 // #/marie/anlage/STA4         Marie: Labels einer Anlage
 // #/rueckmeldungen            Testleitung: Rückmeldungen ansehen (nur im Prototyp)
+// #/kamera                    Kamera: eigenes Foto hochladen (nur im Prototyp)
 
 export type MarieZahl = 'gesamt' | 'offen' | 'erledigt' | 'fehlerhaft';
 export type MarieAuswahl = { art: 'zahl'; zahl: MarieZahl } | { art: 'anlage'; anlageId: string };
@@ -20,10 +21,11 @@ export type Route =
   | { seite: 'simulation' }
   | { seite: 'marie'; auswahl: MarieAuswahl | null }
   | { seite: 'rueckmeldungen' }
+  | { seite: 'kamera' }
   | { seite: 'unbekannt' };
 
 /** Wessen Seite: Rollenwahl, Max' Prüfung, Maries Übersicht, die simulierte Instandhaltung oder die Testleitung */
-export type Bereich = 'start' | 'max' | 'marie' | 'simulation' | 'testleitung';
+export type Bereich = 'start' | 'max' | 'marie' | 'simulation' | 'testleitung' | 'kamera';
 
 const ID = '([A-Z0-9-]{1,32})';
 const ANLAGE = new RegExp(`^#/anlage/${ID}$`);
@@ -36,6 +38,7 @@ export function leseRoute(hash: string): Route {
   if (hash === '#/anlagen') return { seite: 'anlagen' };
   if (hash === '#/simulation') return { seite: 'simulation' };
   if (hash === '#/rueckmeldungen') return { seite: 'rueckmeldungen' };
+  if (hash === '#/kamera') return { seite: 'kamera' };
   if (hash === '#/marie') return { seite: 'marie', auswahl: null };
   const zahl = MARIE_ZAHL.exec(hash);
   if (zahl) return { seite: 'marie', auswahl: { art: 'zahl', zahl: zahl[1] as MarieZahl } };
@@ -66,6 +69,8 @@ export function bereichDerAdresse(hash: string): Bereich {
       return 'marie';
     case 'rueckmeldungen':
       return 'testleitung';
+    case 'kamera':
+      return 'kamera';
     case 'unbekannt':
       if (/^#\/marie(\/|$)/i.test(hash)) return 'marie';
       if (/^#\/anlagen?(\/|$)/i.test(hash)) return 'max';
@@ -80,6 +85,7 @@ export const STARTSEITE_DES_BEREICHS: Record<Bereich, string> = {
   marie: '#/marie',
   simulation: '#/simulation',
   testleitung: '#/rueckmeldungen',
+  kamera: '#/kamera',
 };
 
 export const zurRollenwahl = () => '#/';
@@ -91,3 +97,4 @@ export const zuMarie = () => '#/marie';
 export const zurMarieZahl = (zahl: MarieZahl) => `#/marie/zahl/${zahl}`;
 export const zurMarieAnlage = (anlageId: string) => `#/marie/anlage/${anlageId}`;
 export const zuRueckmeldungen = () => '#/rueckmeldungen';
+export const zurKamera = () => '#/kamera';

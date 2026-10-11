@@ -68,7 +68,8 @@ export function datumText(iso: string): string {
   return `${teile.day}.${teile.month}.${teile.year}`;
 }
 
-const wer = (e: LetzteEntscheidung) => (e.wer === 'max' ? 'Max' : e.wer === 'simulation' ? 'die simulierte Instandhaltung' : e.wer);
+const WER: Record<string, string> = { max: 'Max', simulation: 'die simulierte Instandhaltung', kamera: 'die Kamera (eigenes Foto)' };
+const wer = (e: LetzteEntscheidung) => WER[e.wer] ?? e.wer;
 
 function fehlergrundText(grund: string | null | undefined): string | null {
   return istFehlergrund(grund) ? FEHLERGRUND_TEXT[grund] : null;

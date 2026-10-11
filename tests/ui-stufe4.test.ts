@@ -14,7 +14,7 @@ let vite: ViteDevServer;
 let M: Record<string, Record<string, any>>;
 
 const ANGRIFF = '<img src=x onerror=alert(1)>';
-const BEREICHE = ['start', 'max', 'marie', 'simulation', 'testleitung'] as const;
+const BEREICHE = ['start', 'max', 'marie', 'simulation', 'testleitung', 'kamera'] as const;
 const ohne = () => {};
 
 before(async () => {
@@ -41,13 +41,14 @@ function ohneFachwoerter(html: string, name: string): void {
 }
 
 describe('B5 Rollenwahl als Startseite', () => {
-  test('„Wer sind Sie?“ mit zwei Rollen (ohne Karte „Instandhaltung“, Bram 11.10.2026), dem Satz zur Anmeldung und dem Bereich für die Testleitung', () => {
+  test('„Wer sind Sie?“ mit Max, Marie und der Kamera (ohne Karte „Instandhaltung“, Bram 11.10.2026), dem Satz zur Anmeldung und dem Bereich für die Testleitung', () => {
     const html = rendere(M.start!.Startseite, {});
     assert.match(html, /<h1[^>]*>Wer sind Sie\?<\/h1>/);
     assert.match(text(html), /Im Prototyp gibt es keine Anmeldung; die Rolle wählen Sie selbst\./);
     assert.deepEqual(verweise(html), [
       ['#/anlagen', 'Max · Labels prüfen (Qualitätsmanagement)'],
       ['#/marie', 'Marie · Übersicht ansehen (Fertigungsleitung)'],
+      ['#/kamera', 'Kamera · Eigenes Foto hochladen (nur im Prototyp)'],
       ['#/rueckmeldungen', 'Rückmeldungen ansehen'],
     ]);
     assert.match(html, /<h2[^>]*>Für die Testleitung<\/h2>/);
@@ -62,12 +63,17 @@ describe('B5 Rollenwahl als Startseite', () => {
     assert.deepEqual(leseRoute('#/rueckmeldungen'), { seite: 'rueckmeldungen' });
     for (const h of ['#/anlagen/', '#/Anlagen', '#/rueckmeldungen/x', '#/start']) assert.deepEqual(leseRoute(h), { seite: 'unbekannt' }, h);
     assert.equal(bereichDerAdresse('#/rueckmeldungen'), 'testleitung');
-    assert.deepEqual(STARTSEITE_DES_BEREICHS, { start: '#/', max: '#/anlagen', marie: '#/marie', simulation: '#/simulation', testleitung: '#/rueckmeldungen' });
+    assert.deepEqual(STARTSEITE_DES_BEREICHS, {
+      start: '#/', max: '#/anlagen', marie: '#/marie', simulation: '#/simulation', testleitung: '#/rueckmeldungen', kamera: '#/kamera',
+    });
+    assert.deepEqual(leseRoute('#/kamera'), { seite: 'kamera' });
+    assert.equal(bereichDerAdresse('#/kamera'), 'kamera');
   });
 
   test('jede Seite zeigt oben die Rolle und „Rolle wechseln“, außer der Rollenwahl selbst', () => {
     const titel = { start: 'Label-Prüfung · Prototyp', max: 'Label-Prüfung · Max (Qualitätsmanagement)', marie: 'Übersicht · Marie (Fertigungsleitung)',
-      simulation: 'Simulation: Instandhaltung (nur im Prototyp)', testleitung: 'Testleitung (nur im Prototyp)' };
+      simulation: 'Simulation: Instandhaltung (nur im Prototyp)', testleitung: 'Testleitung (nur im Prototyp)',
+      kamera: 'Kamera · Eigenes Foto (nur im Prototyp)' };
     for (const bereich of BEREICHE) {
       const html = rahmen(bereich);
       const kopf = /<header\b[\s\S]*?<\/header>/.exec(html)![0];
@@ -75,7 +81,7 @@ describe('B5 Rollenwahl als Startseite', () => {
       assert.deepEqual(links[0], [M.route!.STARTSEITE_DES_BEREICHS[bereich], titel[bereich]], bereich);
       if (bereich === 'start') assert.equal(links.length, 1, 'auf der Rollenwahl kein „Rolle wechseln“');
       else assert.deepEqual(links.slice(1), [['#/', 'Rolle wechseln']], bereich);
-      assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./, bereich);
+      assert.match(text(html), /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos, sonst simuliert\./, bereich);
     }
   });
 
@@ -167,13 +173,15 @@ describe('B6 „Rückmeldung geben“ auf jeder Seite (AK-51)', () => {
 
   test('dieselben Szenarien wie der Server; die Anlagen der Vorauswahl sind genau die Demo-Anlagen', () => {
     assert.deepEqual([...M.szenarien!.SZENARIEN], [...SZENARIEN_SERVER]);
-    assert.deepEqual(Object.keys(M.szenarien!.SZENARIO_DER_ANLAGE).sort(), demoDaten().anlagen.map((a) => a.id).sort());
+    // Die Testanlage „Eigene Fotos“ hat kein eigenes Szenario (dort gilt „allgemein“).
+    assert.deepEqual(Object.keys(M.szenarien!.SZENARIO_DER_ANLAGE).sort(), demoDaten().anlagen.map((a) => a.id).filter((id) => id !== 'EIG1').sort());
+    assert.equal(M.szenarien!.szenarioDerAdresse('#/anlage/EIG1'), 'allgemein');
     for (const a of testdaten().anlagen) assert.equal(M.szenarien!.szenarioDerAdresse(`#/anlage/${a.id}`), 'allgemein', a.id);
   });
 
   test('Marie sendet als „marie“, Max und die Instandhaltung als „max“, Rollenwahl und Testleitung als „testleitung“', () => {
     const quelle = readFileSync(join(UI, 'testleitung', 'Rueckmeldung.tsx'), 'utf8');
-    assert.match(quelle, /const ABSENDER: Record<Bereich, Absender> = \{ start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung' \};/);
+    assert.match(quelle, /const ABSENDER: Record<Bereich, Absender> = \{ start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung', kamera: 'max' \};/);
     const aktionen = readFileSync(join(UI, 'testleitung', 'aktionen.ts'), 'utf8');
     assert.match(aktionen, /sende<\{ id: number \}>\('\/api\/feedback', rolle,/);
   });

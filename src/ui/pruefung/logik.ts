@@ -177,7 +177,7 @@ export function sperrgrund(l: LabelAnsicht): string {
   return `Label ${l.id} ist „${l.statusText}“.`;
 }
 
-const BILD_URL = /^\/bilder\/[A-Za-z0-9_-]{1,64}\.svg$/;
+const BILD_URL = /^\/bilder\/([A-Za-z0-9_-]{1,64}\.svg|uploads\/[a-f0-9]{32}\.(png|jpg))$/;
 
 /** Nur Fotos vom eigenen Server unter /bilder/ werden angezeigt. */
 export function sichereBildUrl(url: string | null): string | null {

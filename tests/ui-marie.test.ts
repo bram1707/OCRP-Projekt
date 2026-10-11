@@ -412,7 +412,7 @@ describe('Querschnitt (AK-14, AK-21, AK-61)', () => {
   test('Rahmen für Marie: eigene Kopfzeile, Hinweis „Testversion“, nur „Rolle wechseln“ zur Rollenwahl (R16a)', () => {
     const html = rendere(M.rahmen!.Rahmen, { bereich: 'marie', children: 'x' });
     assert.match(text(html), /Übersicht · Marie \(Fertigungsleitung\)/);
-    assert.match(text(html), /Testversion: Texterkennung und Spracherkennung sind simuliert\./);
+    assert.match(text(html), /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos, sonst simuliert\./);
     assert.match(html, /<a href="#\/"[^>]*>Rolle wechseln<\/a>/);
     assert.deepEqual([...html.matchAll(/<a\b[^>]*\bhref="([^"]*)"/g)].map((m) => m[1]), ['#/marie', '#/'], 'kein Weg direkt zu Max oder zur Simulation');
     assert.doesNotMatch(html, /Simulation|Label-Prüfung/, 'Max und die Simulation stehen nicht in Maries Rahmen');

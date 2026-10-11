@@ -74,7 +74,7 @@ describe('Startseite', () => {
     await geheZu('#/anlagen', 'start');
     await bild('startseite');
     const text = await page.locator('body').innerText();
-    assert.match(text, /Testversion: Texterkennung und Spracherkennung sind simuliert/);
+    assert.match(text, /Testversion: Spracherkennung simuliert\. Texterkennung echt nur bei eigenen Fotos/);
     for (const a of await api('/api/anlagen')) {
       const zeile = page.locator('li, article, a', { hasText: a.name }).last();
       const t = await zeile.innerText();

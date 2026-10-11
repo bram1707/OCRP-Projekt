@@ -88,7 +88,7 @@ export function Einzelansicht({
               ref={bildRef}
               src={bild}
               alt={`Foto von Label ${label.id}`}
-              className="w-full rounded-lg border-2 border-slate-400 bg-white object-contain"
+              className="max-h-[75vh] w-full rounded-lg border-2 border-slate-400 bg-white object-contain"
               onLoad={() => ereignis({ art: 'bildGeladen' })}
               onError={() => ereignis({ art: 'bildFehlt' })}
             />

@@ -2,7 +2,7 @@
 // Unten die Aufgaben der Testleitung (Rückmeldungen ansehen, Daten zurücksetzen), nur im Prototyp.
 
 import { useEffect, useRef } from 'react';
-import { zuMarie, zuRueckmeldungen, zurAnlagenliste } from '../route.ts';
+import { zuMarie, zuRueckmeldungen, zurAnlagenliste, zurKamera } from '../route.ts';
 import { VERWEIS } from '../stile.ts';
 import { Zuruecksetzen } from '../testleitung/Zuruecksetzen.tsx';
 
@@ -16,6 +16,7 @@ interface RollenKarte {
 const ROLLEN: readonly RollenKarte[] = [
   { ziel: zurAnlagenliste(), wer: 'Max', aufgabe: 'Labels prüfen', zusatz: 'Qualitätsmanagement' },
   { ziel: zuMarie(), wer: 'Marie', aufgabe: 'Übersicht ansehen', zusatz: 'Fertigungsleitung' },
+  { ziel: zurKamera(), wer: 'Kamera', aufgabe: 'Eigenes Foto hochladen', zusatz: 'nur im Prototyp' },
 ];
 
 export function Startseite() {

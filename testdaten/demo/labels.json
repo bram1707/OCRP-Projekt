@@ -272,5 +272,26 @@
     "bild": "LAC2-10.svg",
     "ocrText": "GEFAHR! Lackierkabine nicht betreten.\nATTENTION ! Ne pas entrer dans la cabine.",
     "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "EIG1-01",
+    "anlageId": "EIG1",
+    "bild": null,
+    "ocrText": "",
+    "ocrKonfidenz": 0
+  },
+  {
+    "id": "EIG1-02",
+    "anlageId": "EIG1",
+    "bild": null,
+    "ocrText": "",
+    "ocrKonfidenz": 0
+  },
+  {
+    "id": "EIG1-03",
+    "anlageId": "EIG1",
+    "bild": null,
+    "ocrText": "",
+    "ocrKonfidenz": 0
   }
 ]

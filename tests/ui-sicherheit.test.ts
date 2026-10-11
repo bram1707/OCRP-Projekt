@@ -123,11 +123,11 @@ describe('Quelltext der Oberfläche', () => {
       assert.doesNotMatch(inhalt, /erwartung|['"]lesbar['"]|\blesbar\s*:|nachKorrektur|nachSimulation/i, name(d));
     }
   });
-  test('schreibende Aufrufe nur in pruefung/, simulation/ und testleitung/ (Rückmeldung, Stufe 4)', () => {
+  test('schreibende Aufrufe nur in pruefung/, simulation/, testleitung/ (Rückmeldung, Stufe 4) und kamera/ (eigenes Foto)', () => {
     for (const d of dateien(UI)) {
       const inhalt = lies(d);
       const ort = relative(UI, d).split('/')[0];
-      const darfSchreiben = ort === 'pruefung' || ort === 'simulation' || ort === 'testleitung';
+      const darfSchreiben = ort === 'pruefung' || ort === 'simulation' || ort === 'testleitung' || ort === 'kamera';
       if (!darfSchreiben) {
         assert.doesNotMatch(inhalt, /X-Rolle|method:\s*['"]POST|from ['"][^'"]*aktionen\.ts['"]/, name(d));
       }
@@ -135,7 +135,7 @@ describe('Quelltext der Oberfläche', () => {
     // Nur die Seiten mit Entscheidungen binden die schreibenden Aufrufe ein, nicht die reinen Ansichten.
     const binden = dateien(UI).filter((d) => /from '\.\/aktionen\.ts'|from '\.\.\/pruefung\/aktionen\.ts'/.test(lies(d))).map((d) => relative(UI, d)).sort();
     assert.deepEqual(binden, [
-      'pruefung/AnlageSeite.tsx', 'pruefung/LabelSeite.tsx', 'simulation/Simulation.tsx', 'simulation/aktionen.ts',
+      'kamera/KameraSeite.tsx', 'kamera/logik.ts', 'pruefung/AnlageSeite.tsx', 'pruefung/LabelSeite.tsx', 'simulation/Simulation.tsx', 'simulation/aktionen.ts',
       'testleitung/Rueckmeldung.tsx', 'testleitung/Rueckmeldungen.tsx', 'testleitung/Zuruecksetzen.tsx',
     ]);
   });

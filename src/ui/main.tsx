@@ -9,6 +9,7 @@ import { MarieSeite } from './marie/MarieSeite.tsx';
 import { Fehler, FENSTERTITEL, Rahmen, type MeldungDaten } from './rahmen.tsx';
 import { bereichDerAdresse, leseRoute, STARTSEITE_DES_BEREICHS, type Bereich } from './route.ts';
 import { Simulation } from './simulation/Simulation.tsx';
+import { KameraSeite } from './kamera/KameraSeite.tsx';
 import { Startseite } from './start/Startseite.tsx';
 import { Rueckmeldungen } from './testleitung/Rueckmeldungen.tsx';
 import { szenarioDerAdresse } from './testleitung/szenarien.ts';
@@ -21,6 +22,7 @@ const ZURUECK: Record<Bereich, string> = {
   marie: 'Zur Übersicht',
   simulation: 'Zur Simulation',
   testleitung: 'Zu den Rückmeldungen',
+  kamera: 'Zur Kamera',
 };
 
 function App() {
@@ -65,6 +67,7 @@ function App() {
       {route.seite === 'simulation' && <Simulation />}
       {route.seite === 'marie' && <MarieSeite auswahl={route.auswahl} onAnsage={(text) => setMeldung({ text })} />}
       {route.seite === 'rueckmeldungen' && <Rueckmeldungen />}
+      {route.seite === 'kamera' && <KameraSeite />}
       {route.seite === 'unbekannt' && (
         <>
           <Fehler text="Diese Seite gibt es nicht." />

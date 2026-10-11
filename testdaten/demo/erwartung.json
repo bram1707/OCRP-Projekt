@@ -402,5 +402,26 @@
     "unsicher": false,
     "auffaellig": [],
     "status": "offen"
+  },
+  "EIG1-01": {
+    "sprachen": [],
+    "lesbar": false,
+    "unsicher": true,
+    "auffaellig": [],
+    "status": "fehlt"
+  },
+  "EIG1-02": {
+    "sprachen": [],
+    "lesbar": false,
+    "unsicher": true,
+    "auffaellig": [],
+    "status": "fehlt"
+  },
+  "EIG1-03": {
+    "sprachen": [],
+    "lesbar": false,
+    "unsicher": true,
+    "auffaellig": [],
+    "status": "fehlt"
   }
 }

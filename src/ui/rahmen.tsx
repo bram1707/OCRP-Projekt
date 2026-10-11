@@ -20,6 +20,7 @@ const TITEL: Record<Bereich, string> = {
   marie: 'Übersicht · Marie (Fertigungsleitung)',
   simulation: 'Simulation: Instandhaltung (nur im Prototyp)',
   testleitung: 'Testleitung (nur im Prototyp)',
+  kamera: 'Kamera · Eigenes Foto (nur im Prototyp)',
 };
 
 /** Titel des Browserfensters je Bereich, damit mehrere offene Fenster unterscheidbar sind */
@@ -29,6 +30,7 @@ export const FENSTERTITEL: Record<Bereich, string> = {
   marie: 'Übersicht · Marie (nur ansehen)',
   simulation: 'Simulation · Instandhaltung',
   testleitung: 'Rückmeldungen · Testleitung',
+  kamera: 'Kamera · Eigenes Foto',
 };
 
 export function Rahmen({
@@ -62,7 +64,7 @@ export function Rahmen({
           )}
         </div>
         <p className="border-t border-amber-300 bg-amber-50 px-4 py-2 text-center text-amber-950">
-          Testversion: Texterkennung und Spracherkennung sind simuliert.
+          Testversion: Spracherkennung simuliert. Texterkennung echt nur bei eigenen Fotos, sonst simuliert.
         </p>
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">{children}</main>

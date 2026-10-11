@@ -34,6 +34,16 @@ function inTransaktion<T>(db: DatabaseSync, arbeit: () => T): T {
   }
 }
 
+/** Die einzige Anlage, für die man im Prototyp eigene Fotos hochladen darf (Testanlage „Eigene Fotos“). */
+export const ANLAGE_EIGENE_FOTOS = 'EIG1';
+
+/** Die simulierte Instandhaltung hat für eigene Fotos nichts zu liefern; ein neues Foto kommt nur von der Kamera-Seite. */
+function nichtFuerEigeneFotos(label: Label): void {
+  if (label.anlageId === ANLAGE_EIGENE_FOTOS) {
+    throw new Fachfehler(409, `Für Label ${label.id} gibt es ein neues Foto nur über die Kamera-Seite.`);
+  }
+}
+
 function ladePruefbaresLabel(db: DatabaseSync, labelId: string): Label {
   const label = holeLabel(db, labelId);
   if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
@@ -94,6 +104,7 @@ export async function bessereNach(
 ): Promise<Label> {
   const vorher = holeLabel(db, labelId);
   if (!vorher) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  nichtFuerEigeneFotos(vorher);
   if (vorher.status !== 'fehlerhaft') {
     throw new Fachfehler(409, `Nur fehlerhafte Labels können nachgebessert werden. Label ${vorher.id} ist „${STATUS_TEXT[vorher.status]}“.`);
   }
@@ -132,6 +143,7 @@ export async function erfasseNach(
 ): Promise<Label> {
   const vorher = holeLabel(db, labelId);
   if (!vorher) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  nichtFuerEigeneFotos(vorher);
   if (vorher.status !== 'fehlt') {
     throw new Fachfehler(409, `Nur für Labels ohne Foto kann ein Foto nachgereicht werden. Label ${vorher.id} ist „${STATUS_TEXT[vorher.status]}“.`);
   }
@@ -194,5 +206,58 @@ export function gebeAnlageFrei(db: DatabaseSync, anlageId: string, wer: string, 
     db.prepare('UPDATE anlagen SET freigegeben_am = ?, freigegeben_von = ? WHERE id = ?').run(jetzt.toISOString(), wer, anlage.id);
     protokolliere(db, { anlageId: anlage.id, labelId: null, wer, wann: jetzt.toISOString(), ergebnis: 'freigegeben', grund: null });
     return holeAnlage(db, anlage.id)!;
+  });
+}
+
+
+
+/** Aus diesen Status nimmt die Kamera ein (neues) Foto auf; ein bestätigtes Label bleibt, wie es ist. */
+const AUFNAHME_MOEGLICH: readonly Status[] = ['fehlt', 'offen', 'unsicher', 'fehlerhaft', 'nachgebessert'];
+
+/** Prüft vor dem Speichern des Fotos, ob für dieses Label ein Foto aufgenommen werden darf. */
+export function pruefeFotoAufnahme(db: DatabaseSync, labelId: string): Label {
+  const label = holeLabel(db, labelId);
+  if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  if (label.anlageId !== ANLAGE_EIGENE_FOTOS) {
+    throw new Fachfehler(409, 'Eigene Fotos gibt es nur für die Plätze der Testanlage „Eigene Fotos“.');
+  }
+  const anlage = holeAnlage(db, label.anlageId)!;
+  if (anlage.freigegebenAm) throw new Fachfehler(409, `${anlage.name} ist bereits freigegeben.`);
+  if (!AUFNAHME_MOEGLICH.includes(label.status)) {
+    throw new Fachfehler(409, `Label ${label.id} ist „${STATUS_TEXT[label.status]}“. Dafür wird kein neues Foto gebraucht.`);
+  }
+  return label;
+}
+
+/**
+ * Eigenes Foto (Kamera, nur im Prototyp): Foto und gelesener Text ersetzen den bisherigen Stand.
+ * War das Label gemeldet, kommt es als „Nachgebessert“ zurück zu Max (wie die Nachbesserung),
+ * sonst bekommt es den Status nach der Erfassung (Offen oder Unsicher). Gibt das ersetzte Foto zurück,
+ * damit der Server die alte Datei löschen kann.
+ */
+export async function nimmFotoAuf(
+  db: DatabaseSync,
+  labelId: string,
+  erfassung: { bildPfad: string; ocrText: string; ocrKonfidenz: number; abgetippt: boolean },
+  jetzt = new Date(),
+  modell: SprachModell = mockModell,
+): Promise<{ label: Label; altesBild: string | null }> {
+  pruefeFotoAufnahme(db, labelId);
+  const erkannt = await detectLanguage(erfassung.ocrText, erfassung.ocrKonfidenz, modell);
+  const neu: SprachAntwort = erfassung.abgetippt
+    ? { ...erkannt, begruendung: `Text abgetippt, nicht automatisch gelesen. ${erkannt.begruendung}` }
+    : erkannt;
+
+  return inTransaktion(db, () => {
+    const label = pruefeFotoAufnahme(db, labelId);
+    const nachbesserung = label.status === 'fehlerhaft' || label.status === 'nachgebessert';
+    schreibeErfassung(db, label.id, erfassung, neu);
+    const status: Status = nachbesserung ? 'nachgebessert' : anfangsstatus(true, erfassung.ocrKonfidenz, neu.konfidenz, neu.sprachen);
+    db.prepare('UPDATE labels SET status = ? WHERE id = ?').run(status, label.id);
+    protokolliere(db, {
+      anlageId: label.anlageId, labelId: label.id, wer: 'kamera', wann: jetzt.toISOString(),
+      ergebnis: nachbesserung ? 'nachgebessert' : 'nacherfasst', grund: null,
+    });
+    return { label: holeLabel(db, label.id)!, altesBild: label.bildPfad };
   });
 }

@@ -49,7 +49,7 @@ const klick = (text: string | RegExp, seite = page) => seite.getByRole('button',
 const link = (text: string | RegExp, seite = page) => seite.getByRole('link', { name: text }).first().click();
 
 async function rolle(name: RegExp): Promise<void> {
-  await link('Rolle wechseln');
+  await link('Startseite');
   await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
   await link(name);
   await page.locator('main h1').first().waitFor();
@@ -146,7 +146,7 @@ describe('Stufe 4 im Browser, mit der Maus wie eine Testperson', () => {
     await marie.goto(url);
     await link(/^Marie/, marie);
     await marie.locator('[data-zahl="gesamt"]').waitFor();
-    await warteZahlen('37/36/0/1');
+    await warteZahlen('40/36/0/4');
     assert.match(await marie.locator('[data-antwort]').innerText(), /^Nein\./);
     await merke(marie);
     await bild(marie, '02-marie-start');
@@ -160,7 +160,7 @@ describe('Stufe 4 im Browser, mit der Maus wie eine Testperson', () => {
     assert.equal((await pruefe()).length, 12);
     await freigeben('Presse 3');
     await bild(page, '03-presse3-freigegeben');
-    await warteZahlen('37/24/12/1');
+    await warteZahlen('40/24/12/4');
   });
 
   test('AK-50 Montagelinie 1: MON1-11 vorn mit Hinweis, melden; Freigabe geht nicht; Instandhaltung bessert nach; bestätigen, freigeben', async () => {
@@ -180,9 +180,9 @@ describe('Stufe 4 im Browser, mit der Maus wie eine Testperson', () => {
     assert.match(await page.locator('main').innerText(), /14 von 15 bestätigt/);
     assert.equal(await page.getByRole('button', { name: 'Anlage freigeben' }).count(), 0, 'kein Freigabeknopf, solange eines fehlerhaft ist');
     await bild(page, '05-mon1-gesperrt');
-    await warteZahlen('37/9/26/2');
+    await warteZahlen('40/9/26/5');
     await nachbessern('MON1-11');
-    await warteZahlen('37/10/26/1');
+    await warteZahlen('40/10/26/4');
     await rolle(/^Max/);
     await oeffneAnlage('Montagelinie 1');
     await klick(/Prüfung (starten|fortsetzen)/);
@@ -216,9 +216,9 @@ describe('Stufe 4 im Browser, mit der Maus wie eine Testperson', () => {
     await bild(page, '09-lac2-freigegeben');
   });
 
-  test('AK-50 Marie am Ende: 37 / 0 / 37 / 0 und „Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.“', async () => {
-    await warteZahlen('37/0/37/0');
-    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.');
+  test('AK-50 Marie nach den drei Demo-Anlagen: 40 / 0 / 37 / 3 und „Nein. 3 von 40 Labels …“ (Testanlage „Eigene Fotos“ offen)', async () => {
+    await warteZahlen('40/0/37/3');
+    assert.equal(await marie.locator('[data-antwort]').innerText(), 'Nein. 3 von 40 Labels sind noch nicht erledigt.');
     await merke(marie);
     await bild(marie, '10-marie-fertig');
   });
@@ -258,14 +258,14 @@ describe('Stufe 4 im Browser, mit der Maus wie eine Testperson', () => {
     await bild(page, '13-zuruecksetzen-rueckfrage');
     await klick('Abbrechen');
     await marie.waitForTimeout(500);
-    assert.equal(await zahlen(), '37/0/37/0');
+    assert.equal(await zahlen(), '40/0/37/3');
     let neuGeladen = 0;
     const zaehle = (f: any) => { if (f === marie.mainFrame()) neuGeladen++; };
     marie.on('framenavigated', zaehle);
     await klick('Daten zurücksetzen');
     await klick('Ja, zurücksetzen');
     await page.getByText(/Die Daten sind zurückgesetzt/).waitFor();
-    const ms = await warteZahlen('37/36/0/1');
+    const ms = await warteZahlen('40/36/0/4');
     marie.off('framenavigated', zaehle);
     assert.equal(neuGeladen, 0, 'Marie lädt nicht neu');
     assert.ok(ms < 3000, `${ms} ms`);

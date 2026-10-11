@@ -1,23 +1,29 @@
 // Kleiner HTTP-Server auf node:http. Es gibt bewusst keinen Endpunkt, der mehrere
 // Labels auf einmal ändert (AK-11). Labels und Anlagen ändert nur die simulierte Rolle „max“.
 // Ausnahmen mit eigener Rollenliste: die Rückmeldung zum Prototyp (AK-51, auch Marie) und
-// die Aufgaben der Testleitung (Rückmeldungen ansehen und löschen, Daten zurücksetzen).
+// die Aufgaben der Testleitung (Rückmeldungen ansehen und löschen, Daten zurücksetzen) und das eigene
+// Foto der Kamera (nur im Prototyp, nur für die Testanlage „Eigene Fotos“).
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
-import { readFile } from 'node:fs/promises';
+import { randomBytes } from 'node:crypto';
+import { readFile, unlink, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
 import { holeAnlage, holeAnlagen, holeLabel, holeLabels, holeLetzteEntscheidungen, istBildInVerwendung } from '../db/abfragen.ts';
 import {
-  bessereNach, bestaetigeLabel, erfasseNach, Fachfehler, gebeAnlageFrei, meldeFehler, nimmBestaetigungZurueck,
+  ANLAGE_EIGENE_FOTOS, bessereNach, bestaetigeLabel, erfasseNach, Fachfehler, gebeAnlageFrei, meldeFehler, nimmBestaetigungZurueck,
+  nimmFotoAuf, pruefeFotoAufnahme,
 } from '../db/aktionen.ts';
 import { BILD_DATEI, ladeTestdaten, spieleTestdatenEin } from '../db/datenbank.ts';
 import { holeRueckmeldungen, loescheRueckmeldungen, speichereRueckmeldung } from '../db/feedback.ts';
 import {
   anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
 } from './ansichten.ts';
+import { ENDUNG, erkenneBildtyp, MAX_FOTO_BYTES, MEDIENTYP, UPLOAD_DATEI, type BildTyp } from '../ocr/bild.ts';
+import type { TextLeser } from '../ocr/textLeser.ts';
 import { Ereignisse } from './ereignisse.ts';
+import { raeumeUploadsAuf } from './uploads.ts';
 import { marieUebersicht } from './marie.ts';
 import { CSP_SVG, ladeOberflaeche } from './statisch.ts';
 
@@ -31,6 +37,10 @@ export interface ServerOptionen {
   ereignisse?: Ereignisse;
   /** Ordner des aktiven Datensatzes für „Daten zurücksetzen“ (AK-52); ohne ihn gibt es das Zurücksetzen nicht */
   datenOrdner?: string;
+  /** Ordner für eigene Fotos der Kamera (nur im Prototyp); ohne ihn gibt es keinen Upload */
+  uploadOrdner?: string;
+  /** Texterkennung für eigene Fotos; null = aus, dann wird der Text abgetippt */
+  textLeser?: TextLeser | null;
 }
 
 /** Wird aufgerufen, wenn der Handler nicht zuständig ist (Entwicklungsserver von Vite). */
@@ -38,8 +48,8 @@ export type Weiter = () => void;
 export type Handler = (req: IncomingMessage, res: ServerResponse, weiter?: Weiter) => Promise<void>;
 
 /** Simulierte Rollen, es gibt keine Anmeldung. Die Testleitung gibt es nur im Prototyp. */
-export type Rolle = 'max' | 'marie' | 'testleitung';
-const ROLLEN: readonly Rolle[] = ['max', 'marie', 'testleitung'];
+export type Rolle = 'max' | 'marie' | 'testleitung' | 'kamera';
+const ROLLEN: readonly Rolle[] = ['max', 'marie', 'testleitung', 'kamera'];
 
 const MAX_KOERPER = 10 * 1024;
 
@@ -75,6 +85,9 @@ function istFremdeHerkunft(req: IncomingMessage): boolean {
 interface Anfrage {
   rolle: Rolle | null;
   koerper: () => Promise<Record<string, unknown>>;
+  /** Rohdaten statt JSON, mit eigenem Größenlimit (nur für das eigene Foto) */
+  rohdaten: (grenze: number) => Promise<Buffer>;
+  suche: URLSearchParams;
 }
 
 export interface Route {
@@ -96,35 +109,40 @@ function leseRolle(req: IncomingMessage): Rolle | null {
   return ROLLEN.find((r) => r === wert) ?? null;
 }
 
-function leseKoerper(req: IncomingMessage): Promise<Record<string, unknown>> {
+function leseRohdaten(req: IncomingMessage, grenze: number, meldung = 'Die Anfrage ist zu groß.'): Promise<Buffer> {
   return new Promise((aufloesen, ablehnen) => {
     const teile: Buffer[] = [];
     let groesse = 0;
     req.on('data', (stueck: Buffer) => {
       groesse += stueck.length;
-      if (groesse > MAX_KOERPER) {
+      if (groesse > grenze) {
         // Rest verwerfen statt speichern; die Verbindung wird nach der Antwort geschlossen.
         req.removeAllListeners('data');
         req.resume();
-        ablehnen(new Fachfehler(413, 'Die Anfrage ist zu groß.'));
+        ablehnen(new Fachfehler(413, meldung));
         return;
       }
       teile.push(stueck);
     });
-    req.on('end', () => {
-      const text = Buffer.concat(teile).toString('utf8').trim();
-      if (text === '') return aufloesen({});
-      try {
-        const daten: unknown = JSON.parse(text);
-        if (typeof daten !== 'object' || daten === null || Array.isArray(daten)) {
-          return ablehnen(new Fachfehler(400, 'Die Anfrage muss ein JSON-Objekt sein.'));
-        }
-        aufloesen(daten as Record<string, unknown>);
-      } catch {
-        ablehnen(new Fachfehler(400, 'Die Anfrage ist kein gültiges JSON.'));
-      }
-    });
+    req.on('end', () => aufloesen(Buffer.concat(teile)));
     req.on('error', ablehnen);
+  });
+}
+
+function leseKoerper(req: IncomingMessage): Promise<Record<string, unknown>> {
+  return leseRohdaten(req, MAX_KOERPER).then((roh) => {
+    const text = roh.toString('utf8').trim();
+    if (text === '') return {};
+    let daten: unknown;
+    try {
+      daten = JSON.parse(text);
+    } catch {
+      throw new Fachfehler(400, 'Die Anfrage ist kein gültiges JSON.');
+    }
+    if (typeof daten !== 'object' || daten === null || Array.isArray(daten)) {
+      throw new Fachfehler(400, 'Die Anfrage muss ein JSON-Objekt sein.');
+    }
+    return daten as Record<string, unknown>;
   });
 }
 
@@ -139,6 +157,19 @@ function sendeJson(res: ServerResponse, status: number, daten: unknown): void {
 }
 
 const NUR_TESTLEITUNG = 'Das darf nur die Testleitung (nur im Prototyp).';
+const NUR_KAMERA = 'Eigene Fotos lädt nur die Kamera-Seite hoch (nur im Prototyp).';
+/** Höchstlänge für abgetippten Text */
+export const MAX_ABGETIPPT = 1000;
+
+/** Abgetippter Text aus der Adresse (Rückfall ohne Texterkennung); null = nicht angegeben. */
+function abgetippterText(suche: URLSearchParams): string | null {
+  const text = suche.get('text');
+  if (text === null) return null;
+  const sauber = text.replace(/\r\n?/g, '\n').trim();
+  if (sauber === '') throw new Fachfehler(400, 'Bitte den Text auf dem Label eintippen.');
+  if (sauber.length > MAX_ABGETIPPT) throw new Fachfehler(400, `Der Text darf höchstens ${MAX_ABGETIPPT} Zeichen haben.`);
+  return sauber;
+}
 
 /** Alle Routen der Schnittstelle; exportiert, damit ein Test jede schreibende Route als Marie aufrufen kann (AK-46). */
 export function routen(optionen: ServerOptionen): Route[] {
@@ -238,6 +269,60 @@ export function routen(optionen: ServerOptionen): Route[] {
         return labelAntwort(id!);
       },
     },
+    // Kamera (nur im Prototyp): Plätze der Testanlage „Eigene Fotos“ und ob es eine Texterkennung gibt.
+    {
+      methode: 'GET', muster: /^\/api\/kamera$/,
+      aktion: () => {
+        const anlage = holeAnlage(db, ANLAGE_EIGENE_FOTOS);
+        const labels = anlage ? holeLabels(db, anlage.id) : [];
+        const bewertung = bewerteLabels(labels);
+        return {
+          texterkennung: Boolean(optionen.textLeser) && Boolean(optionen.uploadOrdner),
+          upload: Boolean(optionen.uploadOrdner),
+          anlage: anlage ? anlageAnsicht(anlage, labels) : null,
+          plaetze: labels.map((l) => labelAnsicht(l, bewertung.get(l.id))),
+        };
+      },
+    },
+    {
+      // Eigenes Foto: Rohdaten (PNG oder JPEG, höchstens 5 MB), Typ nur nach Signatur. Dann Texterkennung oder
+      // abgetippter Text (?text=…), Spracherkennung und derselbe Weg zu Max wie ein nachgereichtes Foto.
+      methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/foto$/,
+      rollen: { erlaubt: ['kamera'], sonst: NUR_KAMERA },
+      aktion: async (anfrage, [id]) => {
+        const ordner = optionen.uploadOrdner;
+        if (!ordner) throw new Fachfehler(404, 'Eigene Fotos sind bei diesem Server nicht eingerichtet.');
+        const abgetippt = abgetippterText(anfrage.suche);
+        pruefeFotoAufnahme(db, id!);
+        const bild = await anfrage.rohdaten(MAX_FOTO_BYTES);
+        const typ: BildTyp | null = erkenneBildtyp(bild);
+        if (!typ) throw new Fachfehler(415, 'Bitte ein Foto als PNG oder JPEG hochladen.');
+        if (abgetippt === null && !optionen.textLeser) {
+          throw new Fachfehler(400, 'Die Texterkennung ist ausgeschaltet. Bitte den Text auf dem Label eintippen.');
+        }
+        let gelesen = { text: abgetippt ?? '', konfidenz: 1 };
+        if (abgetippt === null) {
+          try {
+            gelesen = await optionen.textLeser!(bild, typ);
+          } catch {
+            throw new Fachfehler(503, 'Die Texterkennung hat das Foto nicht gelesen. Bitte erneut versuchen oder den Text eintippen.');
+          }
+        }
+        const datei = `${randomBytes(16).toString('hex')}.${ENDUNG[typ]}`;
+        await writeFile(join(ordner, datei), bild, { flag: 'wx' });
+        try {
+          const { altesBild } = await nimmFotoAuf(
+            db, id!, { bildPfad: `uploads/${datei}`, ocrText: gelesen.text, ocrKonfidenz: gelesen.konfidenz, abgetippt: abgetippt !== null },
+            new Date(), modell,
+          );
+          if (altesBild && UPLOAD_DATEI.test(altesBild)) await unlink(join(ordner, altesBild.slice('uploads/'.length))).catch(() => {});
+        } catch (fehler) {
+          await unlink(join(ordner, datei)).catch(() => {});
+          throw fehler;
+        }
+        return { ...labelAntwort(id!), textGefunden: gelesen.text.trim() !== '' };
+      },
+    },
     // Rückmeldung zum Prototyp (AK-51): die einzige Route, die auch Marie aufrufen darf (Zusatz zu AK-46).
     // Sie schreibt nur in die Tabelle feedback und ändert nichts an Labels, Anlagen oder Protokoll.
     {
@@ -268,25 +353,36 @@ export function routen(optionen: ServerOptionen): Route[] {
       aktion: async () => {
         if (!optionen.datenOrdner) throw new Fachfehler(404, 'Zurücksetzen ist bei diesem Server nicht eingerichtet.');
         await spieleTestdatenEin(db, ladeTestdaten(optionen.datenOrdner), modell, { ersetzen: true });
+        // Erst nach dem erfolgreichen Einspielen: eigene Fotos löschen, auf die kein Label mehr verweist.
+        if (optionen.uploadOrdner) await raeumeUploadsAuf(db, optionen.uploadOrdner);
         return { zurueckgesetzt: true };
       },
     },
   ];
 }
 
-/** Liefert nur Fotos, auf die gerade ein Label verweist; Fotos der Simulation bleiben bis dahin unsichtbar. */
-async function sendeBild(res: ServerResponse, db: DatabaseSync, bilderOrdner: string, datei: string): Promise<void> {
-  if (!BILD_DATEI.test(datei) || !istBildInVerwendung(db, datei)) throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
+/**
+ * Liefert nur Fotos, auf die gerade ein Label verweist; Fotos der Simulation bleiben bis dahin unsichtbar.
+ * Eigene Fotos (uploads/…) kommen aus dem Upload-Ordner, mit dem Typ aus ihren ersten Bytes.
+ */
+async function sendeBild(res: ServerResponse, optionen: ServerOptionen, datei: string): Promise<void> {
+  const hochgeladen = UPLOAD_DATEI.test(datei);
+  if (!(BILD_DATEI.test(datei) || (hochgeladen && optionen.uploadOrdner)) || !istBildInVerwendung(optionen.db, datei)) {
+    throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
+  }
   let inhalt: Buffer;
   try {
-    inhalt = await readFile(join(bilderOrdner, datei));
+    inhalt = await readFile(hochgeladen ? join(optionen.uploadOrdner!, datei.slice('uploads/'.length)) : join(optionen.bilderOrdner, datei));
   } catch {
     throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
   }
+  const typ = hochgeladen ? erkenneBildtyp(inhalt) : null;
+  if (hochgeladen && !typ) throw new Fachfehler(404, 'Dieses Bild gibt es nicht.');
   res.writeHead(200, {
-    'Content-Type': 'image/svg+xml',
+    'Content-Type': typ ? MEDIENTYP[typ] : 'image/svg+xml',
     'X-Content-Type-Options': 'nosniff',
     'Content-Security-Policy': CSP_SVG,
+    ...(hochgeladen ? { 'Cache-Control': 'no-store' } : {}),
   });
   res.end(inhalt);
 }
@@ -303,14 +399,15 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
   return async (req, res, weiter) => {
     let geaendert = false;
     try {
-      const pfad = new URL(req.url ?? '/', 'http://localhost').pathname;
+      const adresse = new URL(req.url ?? '/', 'http://localhost');
+      const pfad = adresse.pathname;
       const eigenerPfad = pfad === '/api' || pfad.startsWith('/api/') || pfad.startsWith('/bilder/');
       if (weiter && !eigenerPfad) return weiter();
 
       if (!istErlaubterHost(req.headers.host)) throw new Fachfehler(421, 'Unbekannte Serveradresse.');
 
       if (req.method === 'GET' && pfad.startsWith('/bilder/')) {
-        await sendeBild(res, optionen.db, optionen.bilderOrdner, pfad.slice('/bilder/'.length));
+        await sendeBild(res, optionen, pfad.slice('/bilder/'.length));
         return;
       }
 
@@ -348,7 +445,12 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
         throw new Fachfehler(403, 'Nur Max (Qualitätsmanagement) darf Labels prüfen und Anlagen freigeben.');
       }
 
-      const ergebnis = await route.aktion({ rolle, koerper: () => leseKoerper(req) }, teile);
+      const ergebnis = await route.aktion({
+        rolle,
+        koerper: () => leseKoerper(req),
+        rohdaten: (grenze) => leseRohdaten(req, grenze, 'Das Foto ist zu groß. Bitte höchstens 5 MB.'),
+        suche: adresse.searchParams,
+      }, teile);
       sendeJson(res, 200, ergebnis);
       geaendert = route.signal ?? route.methode !== 'GET';
     } catch (fehler) {

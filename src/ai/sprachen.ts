@@ -26,6 +26,9 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
       'quetschgefahr', 'heiße', 'oberfläche', 'maschine', 'und', 'nur', 'für',
       'abschalten', 'stromschlag', 'elektrische', 'spannung', 'wartung', 'vor',
       'hände', 'fernhalten', 'unbefugte', 'personen', 'zutritt', 'benutzen',
+      // echte Warnschilder (Erweiterung eigenes Foto, U5)
+      'lebensgefahr', 'verletzungsgefahr', 'brandgefahr', 'warnhinweis', 'beachten', 'schutzhandschuhe', 'sicherheitsschuhe',
+      'rauchen', 'feuer', 'bereich', 'gefährliche', 'schutzausrüstung', 'notausgang', 'kein',
     ],
     zeichen: /[äöüßÄÖÜ]/u,
     zeichenName: 'Umlaute und ß',
@@ -38,6 +41,9 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
       'wear', 'safety', 'glasses', 'hearing', 'hot', 'before', 'maintenance',
       'switch', 'off', 'entry', 'crushing', 'electric', 'shock', 'authorized',
       'only', 'the', 'do', 'touch', 'hazard',
+      // echte Warnschilder (Erweiterung eigenes Foto, U5)
+      'injury', 'risk', 'must', 'be', 'worn', 'fire', 'flammable', 'moving', 'parts', 'smoking', 'protective', 'gloves',
+      'emergency', 'exit', 'this', 'area', 'no',
     ],
     zeichen: null,
     zeichenName: '',
@@ -51,6 +57,9 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
       'powierzchnia', 'przed', 'konserwacją', 'wyłączyć', 'maszynę', 'ręce', 'trzymać',
       'zgniecenia', 'ryzyko', 'ochronniki', 'słuchu', 'porażenia', 'prądem',
       'osobom', 'nieupoważnionym', 'zakaz', 'dala',
+      // echte Warnschilder (Erweiterung eigenes Foto, U5)
+      'niebezpieczne', 'palenia', 'obowiązek', 'stosowania', 'rękawic', 'ochronnych', 'ogień', 'pożaru', 'wyjście',
+      'ewakuacyjne', 'urządzenia', 'obsługi',
     ],
     zeichen: /[ąęłżźśćńóĄĘŁŻŹŚĆŃÓ]/u,
     zeichenName: 'polnische Sonderzeichen',
@@ -63,6 +72,8 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
       'chaude', 'avant', 'entretien', 'couper', 'interdit', 'entrée', 'risque',
       'écrasement', 'électrique', 'mains', 'éloignées', 'autorisé', 'uniquement',
       'protection', 'ouvrir', 'tenir', 'les',
+      // echte Warnschilder (Erweiterung eigenes Foto, U5)
+      'avertissement', 'dangereux', 'défense', 'fumer', 'obligatoire', 'gants', 'incendie', 'sortie', 'secours', 'blessure',
     ],
     zeichen: /[éèêàâçîôûùëïÉÈÊÀÂÇÎÔÛÙËÏ]/u,
     zeichenName: 'französische Akzente',
@@ -75,6 +86,8 @@ export const SPRACHEN: readonly SprachMerkmale[] = [
       'открывать', 'носить', 'защитные', 'очки', 'горячая', 'поверхность', 'перед',
       'обслуживанием', 'отключить', 'вход', 'запрещён', 'запрещен', 'опасность',
       'руки', 'держать', 'только', 'для', 'персонала',
+      // echte Warnschilder (Erweiterung eigenes Foto, U5)
+      'курить', 'запрещается', 'пожар', 'огонь', 'выход', 'перчатки', 'током', 'электрическим', 'опасная', 'зона',
     ],
     zeichen: /[Ѐ-ӿ]/u,
     zeichenName: 'kyrillische Buchstaben',

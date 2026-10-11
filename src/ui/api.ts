@@ -69,5 +69,13 @@ export const ladeZusammenfassung = (anlageId: string) => hole<Zusammenfassung>(`
 export const ladeLabel = (labelId: string) => hole<LabelAnsicht>(labelPfad(labelId));
 /** Maries Übersicht in einem Abruf (AK-40 bis AK-45) */
 export const ladeMarie = () => hole<MarieUebersicht>('/api/marie');
+/** Plätze der Testanlage „Eigene Fotos“ und ob der Server Fotos lesen kann (Kamera, nur im Prototyp) */
+export interface KameraStand {
+  texterkennung: boolean;
+  upload: boolean;
+  anlage: AnlageAnsicht | null;
+  plaetze: LabelAnsicht[];
+}
+export const ladeKamera = () => hole<KameraStand>('/api/kamera');
 /** Adresse für das Signal nach jeder Änderung (AK-44) */
 export const EREIGNISSE = '/api/ereignisse';

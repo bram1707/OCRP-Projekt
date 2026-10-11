@@ -109,7 +109,7 @@ describe('Maries Übersicht im Browser', () => {
   test('über „Rolle wechseln“ und die Rollenwahl zu Marie: Fokus auf der Frage, vier Zahlen, Anlagen dringendste oben, kein Knopf', async () => {
     // Seit Stufe 4 führt Max' Rahmen nicht mehr direkt zu Marie, sondern über die Rollenwahl.
     // „Rolle wechseln“ steht oben in der Kopfzeile, also vor dem Fokus auf der Überschrift.
-    await tabZu('Rolle wechseln', 'Shift+Tab');
+    await tabZu('Startseite', 'Shift+Tab');
     await page.keyboard.press('Enter');
     await page.getByRole('heading', { name: 'Wer sind Sie?' }).waitFor();
     await tabZu('Marie · Übersicht ansehen');
@@ -235,7 +235,7 @@ describe('Maries Übersicht im Browser', () => {
     await page.getByText('Diese Seite gibt es nicht.').waitFor();
     assert.equal(await page.title(), 'Übersicht · Marie (nur ansehen)');
     const ziele = await page.locator('a').evaluateAll((l: HTMLAnchorElement[]) => l.map((a) => a.getAttribute('href')));
-    assert.deepEqual(ziele, ['#/marie', '#/', '#/marie'], 'Titel, „Rolle wechseln“ und „Zur Übersicht“');
+    assert.deepEqual(ziele, ['#/', '#/marie', '#/marie'], '„Startseite“, Titel und „Zur Übersicht“');
     assert.equal(await page.getByText('Zur Übersicht').getAttribute('href'), '#/marie');
   });
 

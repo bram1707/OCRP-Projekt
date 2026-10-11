@@ -70,7 +70,7 @@ describe('B2 Datensatz wählbar', () => {
     assert.equal(datenbankPfad('/w', 'demo', { DB_PFAD: '/x/y.sqlite' }), '/x/y.sqlite');
   });
 
-  test('mit DATENSATZ=demo: 3 Anlagen, 37 Labels, Fotos aus testdaten/demo, simulierte Erkennung erzwungen', async () => {
+  test('mit DATENSATZ=demo: 3 Anlagen und die Testanlage „Eigene Fotos“, 40 Labels, Fotos aus testdaten/demo, simulierte Erkennung erzwungen', async () => {
     const ordner = mkdtempSync(join(tmpdir(), 'pruefsystem-demo-'));
     try {
       const system = await mitUmgebung(
@@ -83,8 +83,8 @@ describe('B2 Datensatz wählbar', () => {
         assert.equal(system.datenOrdner, DEMO);
         assert.equal(system.bilderOrdner, DEMO_BILDER);
         const anlagen = system.db.prepare('SELECT id FROM anlagen ORDER BY id').all().map((z) => z.id);
-        assert.deepEqual(anlagen, ['LAC2', 'MON1', 'PRE3']);
-        assert.equal((system.db.prepare('SELECT COUNT(*) AS n FROM labels').get() as { n: number }).n, 37);
+        assert.deepEqual(anlagen, ['EIG1', 'LAC2', 'MON1', 'PRE3']);
+        assert.equal((system.db.prepare('SELECT COUNT(*) AS n FROM labels').get() as { n: number }).n, 40);
       } finally {
         system.db.close();
       }
@@ -140,9 +140,9 @@ describe('B2 Datensatz wählbar', () => {
         kind.on('exit', (code) => fehler(new Error(`Server beendet mit ${code}: ${puffer}`)));
         setTimeout(() => fehler(new Error(`keine Startmeldung: ${puffer}`)), 10_000);
       });
-      assert.match(ausgabe, /Spracherkennung: mock, Demo-Daten, nur fiktive Daten/);
+      assert.match(ausgabe, /Spracherkennung: mock, Texterkennung für eigene Fotos: (tesseract|aus), Demo-Daten/);
       const anlagen = (await (await fetch(`${url}/api/anlagen`)).json()) as { name: string }[];
-      assert.deepEqual(anlagen.map((a) => a.name).sort(), ['Lackierung 2', 'Montagelinie 1', 'Presse 3']);
+      assert.deepEqual(anlagen.map((a) => a.name).sort(), ['Lackierung 2', 'Montagelinie 1', 'Presse 3', 'Testanlage Eigene Fotos']);
     } finally {
       kind.kill();
       rmSync(ordner, { recursive: true, force: true });
@@ -151,13 +151,15 @@ describe('B2 Datensatz wählbar', () => {
 });
 
 describe('B3 Demo-Daten (AK-50)', () => {
-  test('Presse 3 mit 12, Montagelinie 1 mit 15, Lackierung 2 mit 10 Labels; jedes Label hat ein Foto', () => {
+  test('Presse 3 mit 12, Montagelinie 1 mit 15, Lackierung 2 mit 10 Labels, jedes mit Foto; dazu 3 leere Plätze für eigene Fotos', () => {
     assert.deepEqual(
       daten.anlagen.map((a) => [a.id, a.name, a.sollAnzahl]),
-      [['PRE3', 'Presse 3', 12], ['MON1', 'Montagelinie 1', 15], ['LAC2', 'Lackierung 2', 10]],
+      [['PRE3', 'Presse 3', 12], ['MON1', 'Montagelinie 1', 15], ['LAC2', 'Lackierung 2', 10], ['EIG1', 'Testanlage Eigene Fotos', 3]],
     );
     for (const a of daten.anlagen) assert.equal(labelsVon(a.id).length, a.sollAnzahl, a.id);
-    assert.ok(daten.labels.every((l) => l.bild !== null && !l.ausgangszustand && !l.nacherfassung));
+    const demo = daten.labels.filter((l) => l.anlageId !== 'EIG1');
+    assert.ok(demo.every((l) => l.bild !== null && !l.ausgangszustand && !l.nacherfassung));
+    assert.ok(labelsVon('EIG1').every((id) => daten.labels.find((l) => l.id === id)!.bild === null));
     assert.ok(daten.anlagen.every((a) => !a.freigabe));
   });
 
@@ -213,12 +215,12 @@ describe('B3 Demo-Daten (AK-50)', () => {
     }
   });
 
-  test('Marie sieht zu Beginn 37 gesamt, 36 offen, 0 erledigt, 1 fehlerhaft (das unsicher erkannte Label)', async () => {
+  test('Marie sieht zu Beginn 40 gesamt, 36 offen, 0 erledigt, 4 fehlerhaft (das unsicher erkannte Label und die 3 leeren Plätze)', async () => {
     await mitDemoServer(async (s) => {
       const uebersicht = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-      assert.deepEqual(uebersicht.zahlen, { gesamt: 37, offen: 36, erledigt: 0, fehlerhaft: 1 });
-      assert.deepEqual(uebersicht.labels.filter((l) => l.gruppe === 'fehlerhaft').map((l) => l.schluessel), ['LAC2-04']);
-      assert.match(antwort(uebersicht), /^Nein\. 37 von 37 Labels sind noch nicht erledigt\.$/);
+      assert.deepEqual(uebersicht.zahlen, { gesamt: 40, offen: 36, erledigt: 0, fehlerhaft: 4 });
+      assert.deepEqual(uebersicht.labels.filter((l) => l.gruppe === 'fehlerhaft').map((l) => l.schluessel), ['EIG1-01', 'EIG1-02', 'EIG1-03', 'LAC2-04']);
+      assert.match(antwort(uebersicht), /^Nein\. 40 von 40 Labels sind noch nicht erledigt\.$/);
     });
   });
 
@@ -287,13 +289,15 @@ describe('B3 Demo-Daten (AK-50)', () => {
       });
     });
 
-    test('nach allen drei Durchläufen antwortet Maries Übersicht „Ja. Alle 37 Labels …“', async () => {
+    // „Ja“ gibt es erst mit drei eigenen Fotos; das prüft tests/upload-server.test.ts.
+    test('nach allen drei Durchläufen fehlen nur noch die 3 Plätze der Testanlage „Eigene Fotos“', async () => {
       await mitDemoServer(async (s) => {
         await bestaetige(s, [...labelsVon('PRE3'), ...labelsVon('MON1'), ...labelsVon('LAC2')]);
-        for (const a of daten.anlagen) assert.equal((await anfrage(s, `/api/anlagen/${a.id}/freigeben`, max)).status, 200, a.id);
+        for (const a of ['PRE3', 'MON1', 'LAC2']) assert.equal((await anfrage(s, `/api/anlagen/${a}/freigeben`, max)).status, 200, a);
+        assert.equal((await anfrage(s, '/api/anlagen/EIG1/freigeben', max)).status, 409);
         const uebersicht = (await anfrage(s, '/api/marie')).daten as MarieUebersicht;
-        assert.deepEqual(uebersicht.zahlen, { gesamt: 37, offen: 0, erledigt: 37, fehlerhaft: 0 });
-        assert.equal(antwort(uebersicht), 'Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.');
+        assert.deepEqual(uebersicht.zahlen, { gesamt: 40, offen: 0, erledigt: 37, fehlerhaft: 3 });
+        assert.equal(antwort(uebersicht), 'Nein. 3 von 40 Labels sind noch nicht erledigt.');
       });
     });
   });

@@ -61,7 +61,7 @@ export function Einzelansicht({
           Zur Übersicht {anlage.name}
         </a>
       </nav>
-      <div className="mb-4 rounded-xl border-2 border-slate-300 bg-white p-3">
+      <div className="mb-4 rounded-xl border border-slate-200 bg-white p-3">
         <p className="mb-2 font-semibold">
           {anlage.name} · Label {label.id} · {f.text}
         </p>
@@ -72,12 +72,12 @@ export function Einzelansicht({
       {fehler && <Fehler text={fehler} />}
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
-        <h1 ref={ueberschriftRef} tabIndex={-1} className="text-3xl font-bold">
+        <h1 ref={ueberschriftRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
           Label {label.id}
         </h1>
         <Marke anzeige={STATUS_ANZEIGE[label.status]} />
         {label.auffaellig && pruefbar && (
-          <span className="rounded-md border-2 border-amber-700 bg-amber-50 px-2 py-0.5 font-semibold text-amber-950">Auffällig</span>
+          <span className="rounded-full border border-amber-600 bg-amber-50 px-2.5 py-0.5 text-sm font-semibold text-amber-950">Auffällig</span>
         )}
       </div>
 
@@ -88,12 +88,12 @@ export function Einzelansicht({
               ref={bildRef}
               src={bild}
               alt={`Foto von Label ${label.id}`}
-              className="w-full rounded-lg border-2 border-slate-400 bg-white object-contain"
+              className="max-h-[75vh] w-full rounded-lg border border-slate-300 bg-white object-contain"
               onLoad={() => ereignis({ art: 'bildGeladen' })}
               onError={() => ereignis({ art: 'bildFehlt' })}
             />
           ) : (
-            <div className="flex aspect-[48/34] w-full items-center justify-center rounded-lg border-2 border-slate-400 bg-slate-100">
+            <div className="flex aspect-[48/34] w-full items-center justify-center rounded-lg border border-slate-300 bg-slate-100">
               Kein Foto vorhanden
             </div>
           )}
@@ -105,9 +105,9 @@ export function Einzelansicht({
         </figure>
 
         <div>
-          <h2 className="text-xl font-bold">Vom Foto abgelesener Text (automatisch, kann Fehler enthalten)</h2>
+          <h2 className="text-lg font-semibold">Vom Foto abgelesener Text (automatisch, kann Fehler enthalten)</h2>
           <div
-            className={`mt-2 rounded-lg border-2 p-3 ${textSchlecht ? 'border-red-700 bg-red-50' : 'border-slate-400 bg-white'}`}
+            className={`mt-2 rounded-lg border p-3 ${textSchlecht ? 'border-red-300 bg-red-50' : 'border-slate-300 bg-white'}`}
             data-schlecht-lesbar={textSchlecht ? '' : undefined}
           >
             {textSchlecht && <p className="mb-2 font-bold text-red-900">Text schlecht lesbar</p>}
@@ -115,7 +115,7 @@ export function Einzelansicht({
           </div>
           <Legende label={label} />
 
-          <h2 className="mt-5 text-xl font-bold">Erkannte Sprachen (nur ein Vorschlag)</h2>
+          <h2 className="mt-5 text-lg font-semibold">Erkannte Sprachen (nur ein Vorschlag)</h2>
           <ul className="mt-1">
             {label.sprachen.length === 0 ? (
               <li className="font-semibold">Keine Sprache erkannt</li>
@@ -127,10 +127,10 @@ export function Einzelansicht({
               ))
             )}
           </ul>
-          {label.hinweis && <p className="mt-3 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-amber-950">{label.hinweis}</p>}
+          {label.hinweis && <p className="mt-3 rounded-lg border border-amber-200 border-l-4 border-l-amber-600 bg-amber-50 px-3 py-2 text-amber-950">{label.hinweis}</p>}
 
           {label.letzterFehlergrundText && (label.status === 'nachgebessert' || label.status === 'fehlerhaft') && (
-            <p className="mt-3 rounded-lg border-2 border-violet-700 bg-violet-50 px-3 py-2 text-violet-950">
+            <p className="mt-3 rounded-lg border border-violet-200 border-l-4 border-l-violet-600 bg-violet-50 px-3 py-2 text-violet-950">
               Von Ihnen gemeldet: {label.letzterFehlergrundText}
             </p>
           )}
@@ -160,8 +160,8 @@ export function Einzelansicht({
         </div>
       </div>
 
-      <section className="mt-8 rounded-xl border-2 border-slate-400 bg-white p-4" aria-labelledby="entscheidung-titel">
-        <h2 id="entscheidung-titel" className="text-2xl font-bold">
+      <section className="mt-8 rounded-xl border border-slate-200 bg-white shadow-sm p-4" aria-labelledby="entscheidung-titel">
+        <h2 id="entscheidung-titel" className="text-xl font-semibold tracking-tight">
           Ihre Entscheidung
         </h2>
         {pruefbar && <Entscheidung zustand={zustand} fotoFehlt={fotoFehlt} ereignis={ereignis} gruendeRef={gruendeRef} />}
@@ -209,7 +209,7 @@ function Entscheidung({
   if (zustand === 'gruende') {
     return (
       <div className="mt-2" role="group" aria-labelledby="gruende-titel">
-        <h3 id="gruende-titel" ref={gruendeRef} tabIndex={-1} className="text-xl font-bold">
+        <h3 id="gruende-titel" ref={gruendeRef} tabIndex={-1} className="text-lg font-semibold">
           Was ist am Label nicht in Ordnung?
         </h3>
         <div className="mt-3 grid gap-3 md:grid-cols-3">
@@ -217,10 +217,10 @@ function Entscheidung({
             <button
               key={g.grund}
               type="button"
-              className="flex min-h-24 flex-col items-start rounded-lg border-2 border-red-800 bg-white px-4 py-3 text-left text-slate-900 hover:bg-red-50"
+              className="flex min-h-24 flex-col items-start rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-white px-4 py-3 text-left text-slate-900 hover:bg-red-50"
               onClick={() => ereignis({ art: 'grund', grund: g.grund })}
             >
-              <span className="text-lg font-bold">{g.titel}</span>
+              <span className="text-base font-semibold">{g.titel}</span>
               <span>{g.erklaerung}</span>
             </button>
           ))}

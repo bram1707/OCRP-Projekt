@@ -61,6 +61,6 @@ describe('Ablauf für die Testleitung (B10, H1)', () => {
     for (const s of ['Presse 3', 'Montagelinie 1', 'Lackierung 2', 'Ist alles geprüft?', 'Beobachten (H1)', 'Daten zurücksetzen']) {
       assert.ok(ablauf.includes(s), s);
     }
-    assert.match(ablauf, /37 Labels gesamt, 36 offen, 0 erledigt, 1 fehlerhaft/);
+    assert.match(ablauf, /40 Labels gesamt, 36 offen, 0 erledigt, 4 fehlerhaft/);
   });
 });

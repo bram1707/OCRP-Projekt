@@ -67,7 +67,7 @@ export function Uebersicht({
       </nav>
 
       <div className="flex flex-wrap items-center gap-3">
-        <h1 ref={ueberschriftRef} tabIndex={-1} className="text-3xl font-bold">
+        <h1 ref={ueberschriftRef} tabIndex={-1} className="text-2xl font-semibold tracking-tight">
           {anlage.name}
         </h1>
         <Marke anzeige={sperreAnzeige(anlage.gesperrt)} />
@@ -90,7 +90,7 @@ export function Uebersicht({
         </details>
       )}
 
-      <div className="mt-4 rounded-xl border-2 border-slate-300 bg-white p-3">
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
         <p className="mb-2 font-semibold">{f.text}</p>
         <Balken prozent={f.prozent} beschriftung={`${anlage.name}: ${f.text}`} />
         <p className="mt-3" data-zaehlzeile="">
@@ -119,8 +119,8 @@ export function Uebersicht({
             onAbbrechen={() => ereignis({ art: 'freigabeAbbrechen' })}
           />
         ) : (
-          <section className="mt-6 rounded-xl border-2 border-amber-700 bg-amber-50 p-5 text-amber-950" data-bleibt-gesperrt="">
-            <h2 className="text-2xl font-bold">Sie haben alle Labels geprüft, die Sie jetzt prüfen können.</h2>
+          <section className="mt-6 rounded-xl border border-amber-300 border-l-4 border-l-amber-600 bg-amber-50 shadow-sm p-5 text-amber-950" data-bleibt-gesperrt="">
+            <h2 className="text-xl font-semibold tracking-tight">Sie haben alle Labels geprüft, die Sie jetzt prüfen können.</h2>
             <p className="mt-2">Die Anlage bleibt gesperrt, weil:</p>
             <ul className="mt-1 list-disc pl-6">
               {zusammenfassung.offenePunkte.map((p, i) => (

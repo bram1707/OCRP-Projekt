@@ -33,8 +33,8 @@ export function Rueckfrage({
     return () => document.removeEventListener('keydown', taste);
   }, []);
   return (
-    <div role="group" aria-labelledby={`${id}-titel`} aria-describedby={`${id}-text`} data-rueckfrage="" className="mt-3 rounded-lg border-2 border-red-700 bg-red-50 p-4 text-red-950">
-      <h3 id={`${id}-titel`} className="text-xl font-bold">
+    <div role="group" aria-labelledby={`${id}-titel`} aria-describedby={`${id}-text`} data-rueckfrage="" className="mt-3 rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-red-50 p-4 text-red-950">
+      <h3 id={`${id}-titel`} className="text-lg font-semibold">
         {titel}
       </h3>
       <p id={`${id}-text`} className="mt-1">

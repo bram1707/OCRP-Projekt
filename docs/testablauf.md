@@ -5,7 +5,7 @@ Dieser Ablauf gehört zum Prototyp der Label-Prüfung. Er beschreibt, was in jed
 ## Vorbereitung
 
 1. Prototyp nach der README starten (`npm run demo`, `http://127.0.0.1:3000`).
-2. Auf der Startseite unten „Daten zurücksetzen“ wählen und bestätigen. Alle drei Anlagen stehen dann auf „Gesperrt“, nichts ist geprüft.
+2. Auf der Startseite unten „Daten zurücksetzen“ wählen und bestätigen. Alle Anlagen stehen dann auf „Gesperrt“, nichts ist geprüft, und hochgeladene eigene Fotos sind gelöscht.
    **Vorher alle anderen Fenster mit Max' Seiten schließen.** Eine offene Seite vom letzten Durchlauf merkt das Zurücksetzen nicht und könnte sonst ein Label bestätigen, dessen neues Foto niemand angesehen hat (Review R18).
    „Daten zurücksetzen“ und „Rückmeldungen ansehen“ stehen auf der Rollenwahl, die auch die Testperson sieht. Sagen Sie ihr, dass dieser Bereich nur für die Testleitung ist (Review R19).
 3. Für das Marie-Szenario ein zweites Browserfenster öffnen und dort „Marie · Übersicht ansehen“ wählen. Die Übersicht aktualisiert sich von selbst.
@@ -55,7 +55,7 @@ Bestätigt die Testperson LAC2-07 gleich, lässt sich die Anlage auch freigeben.
 
 **Aufgabe an die Testperson (als Marie):** „Sie wollen wissen, ob alle Labels geprüft sind. Was sagt Ihnen die Übersicht?“
 
-**Was geschehen soll:** Vor der Prüfung zeigt die Übersicht 37 Labels gesamt, 36 offen, 0 erledigt, 1 fehlerhaft, und die Antwort „Nein“. Das eine fehlerhafte Label ist LAC2-04: Maries Zählung rechnet unsichere Labels zu „fehlerhaft“; der Knopf „Warum?“ erklärt das. Während Max prüft, ändern sich die Zahlen ohne Neuladen. Am Ende steht „Ja. Alle 37 Labels sind bestätigt und alle Anlagen freigegeben.“
+**Was geschehen soll:** Vor der Prüfung zeigt die Übersicht 40 Labels gesamt, 36 offen, 0 erledigt, 4 fehlerhaft, und die Antwort „Nein“. Die vier fehlerhaften sind LAC2-04 und die 3 leeren Plätze der Testanlage „Eigene Fotos“: Maries Zählung rechnet unsichere und fehlende Labels zu „fehlerhaft“; der Knopf „Warum?“ erklärt das. Während Max prüft, ändern sich die Zahlen ohne Neuladen. Nach den Szenarien 1 bis 3 steht „Nein. 3 von 40 Labels sind noch nicht erledigt.“ (die Testanlage). Erst wenn auch Szenario 5 mit 3 eigenen Fotos durchgespielt und die Testanlage freigegeben ist, steht „Ja. Alle 40 Labels sind bestätigt und alle Anlagen freigegeben.“
 
 Marie kann nichts bestätigen oder ändern; ihre einzige Eingabe ist „Rückmeldung geben“.
 
@@ -64,7 +64,23 @@ Marie kann nichts bestätigen oder ändern; ihre einzige Eingabe ist „Rückmel
 - Kann sie ohne Erklärung beantworten, ob alles geprüft ist?
 - Klickt sie auf eine Zahl, um zu sehen, welche Labels gemeint sind?
 
+## Szenario 5: Eigenes Foto (Kamera, nur im Prototyp)
+
+**Vorbereitung:** ein Foto eines echten oder ausgedruckten Warnlabels (PNG oder JPEG, höchstens 5 MB), am besten gerade von vorn, scharf und ohne Spiegelung. Keine Personen auf dem Foto.
+
+**Aufgabe an die Testperson:** „Wählen Sie auf der Startseite ‚Kamera · Eigenes Foto hochladen‘ und laden Sie Ihr Foto für einen Platz der Testanlage hoch. Prüfen Sie es danach als Max.“
+
+**Was geschehen soll:** Die Testanlage „Eigene Fotos“ hat 3 Plätze, zu Beginn ohne Foto („Fehlt“). Nach dem Hochladen steht einige Sekunden „Das Foto wird gelesen …“, dann zeigt die Seite den erkannten Text, die Lesesicherheit und den Sprachvorschlag. Das Label liegt danach in Max' Prüfung, als „Offen“ oder, wenn Text oder Sprache unsicher sind, als „Unsicher“. Max bestätigt oder meldet einen Fehler wie bei jedem Label. Meldet er einen Fehler, lädt die Kamera-Seite ein neues Foto für denselben Platz hoch; es kommt als „Nachgebessert“ zurück.
+Findet die Texterkennung nichts, bietet die Seite an, den Text selbst einzutippen und das Foto noch einmal zu senden.
+
+**Beobachten:**
+- Wie gut liest die Texterkennung echte Fotos? Wie oft ist das Ergebnis „Unsicher“?
+- Vertraut Max dem gelesenen Text, oder schaut er aufs Foto?
+- Ist die Wartezeit beim Lesen akzeptabel?
+
+Erst wenn alle 3 Plätze bestätigt und die Testanlage freigegeben ist, kann Marie „Ja“ sehen.
+
 ## Rückmeldungen und nächster Durchlauf
 
 - Rückmeldungen sammelt der Prototyp mit Szenario, Zeitpunkt und Kommentar, ohne Namen. Die Testleitung sieht sie auf der Startseite unter „Rückmeldungen ansehen“.
-- „Daten zurücksetzen“ stellt alle Anlagen auf den Anfang, die Rückmeldungen bleiben. „Alle Rückmeldungen löschen“ löscht sie endgültig, etwa nach der Auswertung.
+- „Daten zurücksetzen“ stellt alle Anlagen auf den Anfang und löscht die eigenen Fotos, die Rückmeldungen bleiben. „Alle Rückmeldungen löschen“ löscht sie endgültig, etwa nach der Auswertung.

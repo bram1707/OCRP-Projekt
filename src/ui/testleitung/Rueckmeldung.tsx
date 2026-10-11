@@ -13,7 +13,7 @@ export const MAX_KOMMENTAR = 1000;
 export const RUECKMELDUNG_GESPEICHERT = 'rueckmeldung-gespeichert';
 
 /** Mit welcher Rolle die Seite sendet; die Instandhaltung nutzt im Prototyp die Rolle von Max (R9). */
-const ABSENDER: Record<Bereich, Absender> = { start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung' };
+const ABSENDER: Record<Bereich, Absender> = { start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung', kamera: 'max' };
 
 export interface FormularDaten {
   szenario: Szenario;
@@ -45,8 +45,8 @@ export function RueckmeldungFormular({
     onSenden();
   };
   return (
-    <form aria-labelledby={`${id}-titel`} onSubmit={absenden} onKeyDown={onTaste} noValidate data-rueckmeldung="" className="mt-3 w-full max-w-2xl rounded-lg border-2 border-slate-400 bg-white p-4 text-slate-900">
-      <h2 id={`${id}-titel`} className="text-xl font-bold">
+    <form aria-labelledby={`${id}-titel`} onSubmit={absenden} onKeyDown={onTaste} noValidate data-rueckmeldung="" className="mt-3 w-full max-w-2xl rounded-lg border border-slate-300 bg-white p-4 text-slate-900">
+      <h2 id={`${id}-titel`} className="text-lg font-semibold">
         Rückmeldung zum Prototyp
       </h2>
       <label htmlFor={`${id}-szenario`} className="mt-3 block font-semibold">
@@ -54,7 +54,7 @@ export function RueckmeldungFormular({
       </label>
       <select
         id={`${id}-szenario`}
-        className="mt-1 min-h-12 rounded-lg border-2 border-slate-700 bg-white px-3 text-lg"
+        className="mt-1 min-h-11 rounded-lg border border-slate-300 bg-white px-3 shadow-sm"
         value={daten.szenario}
         disabled={daten.sendet}
         onChange={(e) => onSzenario(e.target.value as Szenario)}
@@ -76,7 +76,7 @@ export function RueckmeldungFormular({
         id={`${id}-kommentar`}
         aria-describedby={`${id}-hinweis${daten.fehler ? ` ${id}-fehler` : ''}`}
         aria-invalid={daten.fehler ? true : undefined}
-        className="mt-1 block min-h-32 w-full rounded-lg border-2 border-slate-700 p-2 text-lg"
+        className="mt-1 block min-h-32 w-full rounded-lg border border-slate-300 shadow-sm p-2"
         maxLength={MAX_KOMMENTAR}
         value={daten.kommentar}
         disabled={daten.sendet}

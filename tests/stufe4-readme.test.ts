@@ -24,7 +24,7 @@ describe('README (AK-53)', () => {
 
   test('Start in höchstens 5 Schritten: Node prüfen, npm ci, npm run demo, Adresse öffnen, Rolle wählen', () => {
     assert.ok(schritte.length >= 1 && schritte.length <= 5, `${schritte.length} Schritte`);
-    assert.match(schritte[0], /Node\.js ab Version 22\.18/);
+    assert.match(schritte[0] ?? '', /Node\.js ab Version 22\.18/);
     assert.ok(schritte.some((z) => z.includes('`npm ci`')));
     assert.ok(schritte.some((z) => z.includes('`npm run demo`')));
     assert.ok(schritte.some((z) => z.includes('http://127.0.0.1:3000')));
@@ -38,8 +38,8 @@ describe('README (AK-53)', () => {
   });
 
   test('Jedes genannte `npm run …` und `npm start`/`npm test` gibt es in package.json', () => {
-    const genannt = new Set([...README.matchAll(/npm run ([a-z:-]+)/g)].map((m) => m[1]));
-    for (const m of README.matchAll(/npm (start|test)\b/g)) genannt.add(m[1]);
+    const genannt = new Set([...README.matchAll(/npm run ([a-z:-]+)/g)].map((m) => m[1] ?? ''));
+    for (const m of README.matchAll(/npm (start|test)\b/g)) genannt.add(m[1] ?? '');
     assert.ok(genannt.size >= 5);
     for (const name of genannt) assert.ok(SKRIPTE.includes(name), `npm run ${name} fehlt`);
   });
@@ -49,7 +49,7 @@ describe('README (AK-53)', () => {
     assert.equal(pkg.engines.node, '>=22.18');
     assert.match(README, /\(docs\/testablauf\.md\)/);
     assert.ok(existsSync(join(WURZEL, 'docs', 'testablauf.md')));
-    for (const datei of [...README.matchAll(/`((?:tests|testdaten|docs)\/[^`*]+?\.(?:ts|md))`/g)].map((m) => m[1])) {
+    for (const datei of [...README.matchAll(/`((?:tests|testdaten|docs)\/[^`*]+?\.(?:ts|md))`/g)].map((m) => m[1] ?? '')) {
       assert.ok(existsSync(join(WURZEL, datei)), datei);
     }
   });

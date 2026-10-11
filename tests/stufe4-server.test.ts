@@ -101,6 +101,19 @@ describe('B6 Rückmeldung speichern (AK-51)', () => {
     });
   });
 
+  test('Gegenprüfung: Steuerzeichen wie das Nullzeichen ergeben 400 mit Fachmeldung statt 500; Zeilenumbruch und Tabulator bleiben erlaubt', async () => {
+    await mitServer(async (s, db) => {
+      for (const kommentar of ['\u0000abc', 'a\u0000', 'a\u0007b', 'a\u001bb', 'a\u007fb']) {
+        const r = await rueckmeldung(s, 'marie', { szenario: 'marie', kommentar });
+        assert.equal(r.status, 400, JSON.stringify(kommentar));
+        assert.match(await r.text(), /Zeichen, die sich nicht speichern lassen/);
+      }
+      assert.equal(zeilen(db).length, 0);
+      assert.equal((await rueckmeldung(s, 'marie', { szenario: 'marie', kommentar: 'Zeile 1\n\tZeile 2' })).status, 200);
+      assert.equal(zeilen(db)[0]?.kommentar, 'Zeile 1\n\tZeile 2');
+    });
+  });
+
   test('403 ohne Rolle, mit unbekannter Rolle und von einer fremden Seite', async () => {
     await mitServer(async (s, db) => {
       const gut = { szenario: 'allgemein', kommentar: 'Gut.' };

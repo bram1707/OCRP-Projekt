@@ -9,6 +9,7 @@ export const SZENARIEN = ['presse3', 'montagelinie1', 'lackierung2', 'marie', 'a
 export type Szenario = (typeof SZENARIEN)[number];
 
 export const MAX_KOMMENTAR = 1000;
+const STEUERZEICHEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/;
 
 export interface Rueckmeldung {
   id: number;
@@ -29,6 +30,9 @@ export function speichereRueckmeldung(db: DatabaseSync, eingabe: Record<string, 
   const text = typeof kommentar === 'string' ? kommentar.trim() : '';
   if (text === '') throw new Fachfehler(400, 'Bitte schreiben Sie einen Kommentar.');
   if (text.length > MAX_KOMMENTAR) throw new Fachfehler(400, `Der Kommentar ist zu lang (höchstens ${MAX_KOMMENTAR} Zeichen).`);
+  // Steuerzeichen außer Zeilenumbruch und Tabulator: SQLite zählt etwa nach einem Nullzeichen nicht weiter,
+  // der CHECK der Tabelle schlüge dann mit einem internen Fehler fehl.
+  if (STEUERZEICHEN.test(text)) throw new Fachfehler(400, 'Der Kommentar enthält Zeichen, die sich nicht speichern lassen.');
   const zeitpunkt = jetzt.toISOString();
   const { lastInsertRowid } = db.prepare('INSERT INTO feedback (szenario, zeitpunkt, kommentar) VALUES (?, ?, ?)').run(szenario, zeitpunkt, text);
   return { id: Number(lastInsertRowid), szenario, zeitpunkt, kommentar: text };

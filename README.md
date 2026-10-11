@@ -1,6 +1,6 @@
 # Label-Prüfung (Prototyp)
 
-Prototyp zur Vorprüfung von Sicherheits- und Warnlabels an Anlagen. Max (Qualitätsmanagement) prüft jedes Label einzeln und gibt eine Anlage erst frei, wenn alle Labels bestätigt sind. Marie (Produktionsleitung) sieht in einer Übersicht, wie viele Labels offen, erledigt oder fehlerhaft sind. Texterkennung und Spracherkennung sind simuliert, alle Daten sind fiktiv.
+Prototyp zur Vorprüfung von Sicherheits- und Warnlabels an Anlagen. Max (Qualitätsmanagement) prüft jedes Label einzeln und gibt eine Anlage erst frei, wenn alle Labels bestätigt sind. Marie (Fertigungsleitung) sieht in einer Übersicht, wie viele Labels offen, erledigt oder fehlerhaft sind. Texterkennung und Spracherkennung sind simuliert, alle Daten sind fiktiv.
 
 ## Starten
 

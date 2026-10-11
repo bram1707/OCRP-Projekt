@@ -2,13 +2,15 @@
 // Bei Marie ist das die einzige Eingabe; sie ändert nichts an Labels oder Anlagen (Zusatz zu AK-46).
 // Gesendet wird mit fetch, denn die Seite verbietet das Absenden von Formularen (Content-Security-Policy).
 
-import { useEffect, useId, useRef, useState, type FormEvent, type Ref } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type Ref } from 'react';
 import type { Bereich } from '../route.ts';
 import { KNOPF_HAUPT, KNOPF_NEBEN } from '../stile.ts';
 import { sendeRueckmeldung, type Absender } from './aktionen.ts';
 import { SZENARIEN, SZENARIO_TEXT, type Szenario } from './szenarien.ts';
 
 export const MAX_KOMMENTAR = 1000;
+/** Ereignis nach dem Speichern; die Liste der Rückmeldungen lädt dann neu. */
+export const RUECKMELDUNG_GESPEICHERT = 'rueckmeldung-gespeichert';
 
 /** Mit welcher Rolle die Seite sendet; die Instandhaltung nutzt im Prototyp die Rolle von Max (R9). */
 const ABSENDER: Record<Bereich, Absender> = { start: 'testleitung', max: 'max', marie: 'marie', simulation: 'max', testleitung: 'testleitung' };
@@ -27,9 +29,11 @@ export function RueckmeldungFormular({
   onKommentar,
   onSenden,
   onAbbrechen,
+  onTaste,
 }: {
   daten: FormularDaten;
   feldRef?: Ref<HTMLTextAreaElement>;
+  onTaste?: (e: KeyboardEvent<HTMLFormElement>) => void;
   onSzenario: (s: Szenario) => void;
   onKommentar: (text: string) => void;
   onSenden: () => void;
@@ -41,7 +45,7 @@ export function RueckmeldungFormular({
     onSenden();
   };
   return (
-    <form aria-labelledby={`${id}-titel`} onSubmit={absenden} noValidate data-rueckmeldung="" className="mt-3 w-full max-w-2xl rounded-lg border-2 border-slate-400 bg-white p-4 text-slate-900">
+    <form aria-labelledby={`${id}-titel`} onSubmit={absenden} onKeyDown={onTaste} noValidate data-rueckmeldung="" className="mt-3 w-full max-w-2xl rounded-lg border-2 border-slate-400 bg-white p-4 text-slate-900">
       <h2 id={`${id}-titel`} className="text-xl font-bold">
         Rückmeldung zum Prototyp
       </h2>
@@ -112,22 +116,31 @@ export function Rueckmeldung({ bereich, szenario }: { bereich: Bereich; szenario
     }
   }, [offen]);
 
+  // Beim Senden war das Feld gesperrt und hat den Fokus verloren; nach einem Fehler zurück ins Feld.
+  const fokusInsFeld = useRef(false);
+  useEffect(() => {
+    if (daten.sendet || !fokusInsFeld.current) return;
+    fokusInsFeld.current = false;
+    feld.current?.focus();
+  }, [daten.sendet]);
+
   const schliesse = () => {
     fokusZurueck.current = true;
     setOffen(false);
   };
 
+  // Escape gilt nur im Formular und erreicht die Rückfragen der Seite nicht (etwa Max' offene Gründe).
+  // Während des Sendens bleibt das Formular offen, damit ein Fehler zu sehen ist.
+  const taste = (e: KeyboardEvent<HTMLFormElement>) => {
+    if (e.key !== 'Escape') return;
+    e.stopPropagation();
+    if (!daten.sendet) schliesse();
+  };
+
+  // Wechselt die Seite, folgt die Vorauswahl ihr; ein angefangener Kommentar bleibt.
   useEffect(() => {
-    if (!offen) return;
-    const taste = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        fokusZurueck.current = true;
-        setOffen(false);
-      }
-    };
-    document.addEventListener('keydown', taste);
-    return () => document.removeEventListener('keydown', taste);
-  }, [offen]);
+    setDaten((d) => ({ ...d, szenario }));
+  }, [szenario]);
 
   const oeffne = () => {
     // Vorauswahl aus der Seite, die gerade zu sehen ist; ein angefangener Kommentar bleibt.
@@ -150,8 +163,10 @@ export function Rueckmeldung({ bereich, szenario }: { bereich: Bereich; szenario
       setDaten((d) => ({ ...d, kommentar: '', sendet: false }));
       setDanke(true);
       schliesse();
+      window.dispatchEvent(new Event(RUECKMELDUNG_GESPEICHERT));
     } catch (e) {
       setDaten((d) => ({ ...d, sendet: false, fehler: e instanceof Error ? e.message : 'Die Rückmeldung wurde nicht gespeichert.' }));
+      fokusInsFeld.current = true;
     }
   };
 
@@ -168,6 +183,7 @@ export function Rueckmeldung({ bereich, szenario }: { bereich: Bereich; szenario
           onKommentar={(text) => setDaten((d) => ({ ...d, kommentar: text, fehler: null }))}
           onSenden={() => void senden()}
           onAbbrechen={schliesse}
+          onTaste={taste}
         />
       ) : (
         <button ref={knopf} type="button" className={KNOPF_NEBEN} onClick={oeffne} data-rueckmeldung-knopf="">

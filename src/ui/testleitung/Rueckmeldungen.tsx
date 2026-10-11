@@ -7,13 +7,14 @@ import { Fehler, Laden } from '../rahmen.tsx';
 import { KNOPF_NEBEN } from '../stile.ts';
 import { ladeRueckmeldungen, loescheRueckmeldungen } from './aktionen.ts';
 import { Rueckfrage } from './Rueckfrage.tsx';
+import { RUECKMELDUNG_GESPEICHERT } from './Rueckmeldung.tsx';
 import { istSzenario, SZENARIO_TEXT } from './szenarien.ts';
 
 const ZEIT = new Intl.DateTimeFormat('de-DE', {
   timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
 });
 
-/** „11.10.2026, 14:03“ in deutscher Zeit; Unlesbares bleibt, wie es ist. */
+/** „11.10.2026, 14:03“ in deutscher Zeit; ein ungültiger Zeitpunkt bleibt, wie es ist. */
 export function zeitText(iso: string): string {
   const datum = new Date(iso);
   return Number.isNaN(datum.getTime()) ? iso : ZEIT.format(datum);
@@ -116,6 +117,12 @@ export function Rueckmeldungen() {
     }
   }, []);
   useEffect(() => void laden(), [laden]);
+  // Eine Rückmeldung, die auf dieser Seite gesendet wird, erscheint gleich in der Liste.
+  useEffect(() => {
+    const neu = () => void laden();
+    window.addEventListener(RUECKMELDUNG_GESPEICHERT, neu);
+    return () => window.removeEventListener(RUECKMELDUNG_GESPEICHERT, neu);
+  }, [laden]);
 
   const geladen = liste !== null;
   useEffect(() => {
@@ -139,6 +146,8 @@ export function Rueckmeldungen() {
     try {
       const { geloescht } = await loescheRueckmeldungen();
       setMeldung(geloescht === 1 ? '1 Rückmeldung ist gelöscht.' : `${geloescht} Rückmeldungen sind gelöscht.`);
+      // Gelöscht ist gelöscht, auch wenn das Neuladen danach scheitert.
+      setListe([]);
       await laden();
     } catch (e) {
       setFehler(e instanceof Error ? e.message : 'Es wurde nichts gelöscht.');

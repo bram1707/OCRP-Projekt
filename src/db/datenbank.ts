@@ -51,7 +51,8 @@ export function oeffneDatenbank(pfad = ':memory:'): DatabaseSync {
  */
 export function oeffneDatenbankMitStand(pfad = ':memory:'): { db: DatabaseSync; ersetzt: boolean } {
   const db = new DatabaseSync(pfad);
-  db.exec('PRAGMA foreign_keys = ON;');
+  // Gelöschte Inhalte (Rückmeldungen, zurückgesetzte Prüfungen) werden in der Datei überschrieben, nicht nur freigegeben.
+  db.exec('PRAGMA foreign_keys = ON; PRAGMA secure_delete = ON;');
   const { user_version: stand } = db.prepare('PRAGMA user_version').get() as { user_version: number };
   const { n: tabellen } = db.prepare("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name IN ('anlagen', 'labels', 'entscheidungen')").get() as { n: number };
   if (tabellen > 0 && stand > SCHEMA_STAND) {
@@ -61,7 +62,9 @@ export function oeffneDatenbankMitStand(pfad = ':memory:'): { db: DatabaseSync; 
   const ersetzt = tabellen > 0 && stand < SCHEMA_STAND;
   db.exec('BEGIN IMMEDIATE');
   try {
-    if (ersetzt) db.exec('DROP TABLE IF EXISTS entscheidungen; DROP TABLE IF EXISTS labels; DROP TABLE IF EXISTS anlagen;');
+    if (ersetzt) {
+      db.exec('DROP TABLE IF EXISTS feedback; DROP TABLE IF EXISTS entscheidungen; DROP TABLE IF EXISTS labels; DROP TABLE IF EXISTS anlagen;');
+    }
     db.exec(SCHEMA);
     db.exec(`PRAGMA user_version = ${SCHEMA_STAND}`);
     db.exec('COMMIT');
@@ -131,11 +134,16 @@ function plusMinuten(iso: string, minuten: number): string {
   return new Date(new Date(iso).getTime() + minuten * 60_000).toISOString();
 }
 
-/** Spielt die Testdaten ein. Die Spracherkennung läuft dabei für jedes Label mit Foto. */
+/**
+ * Spielt die Testdaten ein. Die Spracherkennung läuft dabei für jedes Label mit Foto.
+ * Mit `ersetzen` werden Anlagen, Labels und Protokoll vorher gelöscht („Daten zurücksetzen“, AK-52);
+ * Rückmeldungen bleiben. Löschen und Einspielen liegen in derselben Transaktion, damit es keinen leeren Zwischenstand gibt.
+ */
 export async function spieleTestdatenEin(
   db: DatabaseSync,
   daten: Testdaten,
   modell: SprachModell = mockModell,
+  { ersetzen = false }: { ersetzen?: boolean } = {},
 ): Promise<void> {
   // Erst alle Erkennungen (asynchron), dann alles in einer Transaktion schreiben.
   const erkennungen = await Promise.all(
@@ -154,6 +162,9 @@ export async function spieleTestdatenEin(
 
   db.exec('BEGIN IMMEDIATE');
   try {
+    if (ersetzen) {
+      db.exec("DELETE FROM entscheidungen; DELETE FROM labels; DELETE FROM anlagen; DELETE FROM sqlite_sequence WHERE name = 'entscheidungen';");
+    }
     for (const a of daten.anlagen) {
       neueAnlage.run(a.id, a.name, a.sollAnzahl, a.freigabe?.am ?? null, a.freigabe?.von ?? null);
     }

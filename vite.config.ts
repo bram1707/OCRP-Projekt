@@ -14,11 +14,12 @@ function schnittstelle(): Plugin {
     name: 'pruefsystem-schnittstelle',
     apply: 'serve',
     async configureServer(server) {
-      const { bereiteSystemVor, HINWEIS_DATENBANK_ERSETZT } = await import('./src/server/system.ts');
+      const { bereiteSystemVor, HINWEIS_DATENBANK_ERSETZT, serverOptionen } = await import('./src/server/system.ts');
       const { erstelleHandler } = await import('./src/server/app.ts');
       const system = await bereiteSystemVor(wurzel);
       if (system.datenbankErsetzt) server.config.logger.warn(HINWEIS_DATENBANK_ERSETZT);
-      const handler = erstelleHandler({ db: system.db, bilderOrdner: system.bilderOrdner, modell: system.modell });
+      // Die Oberfläche liefert hier Vite selbst, nicht der Handler.
+      const handler = erstelleHandler({ ...serverOptionen(system, wurzel), oberflaecheOrdner: undefined });
       // Direkt eingehängt, also vor den eigenen Middlewares von Vite und ohne Pfad-Präfix.
       server.middlewares.use((req, res, next) => void handler(req, res, () => next()));
     },

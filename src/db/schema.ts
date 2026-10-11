@@ -4,8 +4,9 @@
 /**
  * Stand des Schemas (PRAGMA user_version). Stufe 1 hatte keinen Stand (0).
  * Stufe 2: Foto bei der Nachbesserung, nachgereichtes Foto, Zurücknehmen.
+ * Stufe 4: Rückmeldungen zum Prototyp (AK-51).
  */
-export const SCHEMA_STAND = 2;
+export const SCHEMA_STAND = 3;
 
 export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS anlagen (
@@ -52,4 +53,12 @@ CREATE TABLE IF NOT EXISTS entscheidungen (
   grund     TEXT
 );
 CREATE INDEX IF NOT EXISTS entscheidungen_label ON entscheidungen(label_id);
+
+-- Rückmeldungen aus Nutzertests (AK-51): bewusst ohne Name, Rolle, Adresse oder Browser.
+CREATE TABLE IF NOT EXISTS feedback (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  szenario  TEXT NOT NULL CHECK (szenario IN ('presse3', 'montagelinie1', 'lackierung2', 'marie', 'allgemein')),
+  zeitpunkt TEXT NOT NULL,
+  kommentar TEXT NOT NULL CHECK (length(kommentar) BETWEEN 1 AND 1000)
+);
 `;

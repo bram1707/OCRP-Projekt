@@ -64,5 +64,8 @@ export async function bereiteSystemVor(wurzel = WURZEL): Promise<System> {
 
 /** Optionen für den Server; die gebaute Oberfläche liegt in dist/. */
 export function serverOptionen(system: System, wurzel = WURZEL): ServerOptionen {
-  return { db: system.db, bilderOrdner: system.bilderOrdner, modell: system.modell, oberflaecheOrdner: join(wurzel, 'dist') };
+  return {
+    db: system.db, bilderOrdner: system.bilderOrdner, modell: system.modell, datenOrdner: system.datenOrdner,
+    oberflaecheOrdner: join(wurzel, 'dist'),
+  };
 }

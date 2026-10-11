@@ -10,7 +10,7 @@ import { GRUPPE_MARIE, RANG_MARIE, sortiereFuerMarie, STATUS, type Status } from
 import { erstelleServer, routen } from '../src/server/app.ts';
 import { Ereignisse } from '../src/server/ereignisse.ts';
 import { datumText, type MarieLabel, type MarieUebersicht } from '../src/server/marie.ts';
-import { anfrage, BILDER, erwartungen, neueDatenbank, starteServer, testdaten, type TestServer } from './hilfen.ts';
+import { anfrage, BILDER, erwartungen, hoere, kurz, neueDatenbank, starteServer, testdaten, type TestServer } from './hilfen.ts';
 
 const max = { methode: 'POST', rolle: 'max' } as const;
 const melde = (grund: string) => ({ ...max, koerper: JSON.stringify({ grund }) });
@@ -374,53 +374,6 @@ describe('AK-61 keine Erwartungswerte in Maries Übersicht', () => {
 });
 
 /** Liest Server-Sent Events mit fetch; `naechste()` wartet auf die nächste Nachricht. */
-async function hoere(url: string, kopf: Record<string, string> = {}) {
-  const abbruch = new AbortController();
-  const res = await fetch(url, { headers: kopf, signal: abbruch.signal });
-  const nachrichten: string[] = [];
-  const wartend: { aufruf: (() => void) | null } = { aufruf: null };
-  let rest = '';
-  const leser = res.body!.getReader();
-  void (async () => {
-    try {
-      for (;;) {
-        const { value, done } = await leser.read();
-        if (done) break;
-        rest += new TextDecoder().decode(value);
-        let ende: number;
-        while ((ende = rest.indexOf('\n\n')) >= 0) {
-          const block = rest.slice(0, ende);
-          rest = rest.slice(ende + 2);
-          const daten = block.split('\n').filter((z) => z.startsWith('data: ')).map((z) => z.slice(6));
-          if (daten.length > 0) {
-            nachrichten.push(daten.join('\n'));
-            wartend.aufruf?.();
-          }
-        }
-      }
-    } catch {
-      // abgebrochen
-    }
-  })();
-  return {
-    res,
-    nachrichten,
-    async naechste(ms = 2000): Promise<string> {
-      await new Promise<void>((fertig, fehler) => {
-        const uhr = setTimeout(() => fehler(new Error('keine Nachricht')), ms);
-        wartend.aufruf = () => {
-          clearTimeout(uhr);
-          wartend.aufruf = null;
-          fertig();
-        };
-      });
-      return nachrichten.at(-1)!;
-    },
-    schliessen: () => abbruch.abort(),
-  };
-}
-
-const kurz = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
   test('Bestätigen, Melden, Nachbessern, Foto nachreichen und Zurücknehmen senden je ein Signal; danach zeigt Marie den neuen Stand', async () => {
@@ -576,30 +529,46 @@ describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
 });
 
 /** Je schreibender Route ein Aufruf; der Test darunter sorgt dafür, dass keine neue Route fehlt. */
-const SCHREIBENDE_PFADE = [
-  '/api/labels/STA4-01/bestaetigen',
-  '/api/labels/STA4-01/fehler',
-  '/api/labels/STA4-10/zuruecknehmen',
-  '/api/labels/SWR5-02/nachbessern',
-  '/api/labels/SWR5-05/nacherfassen',
-  '/api/anlagen/STA4/freigeben',
-];
+/**
+ * Jede schreibende Route mit den Rollen, die sie aufrufen dürfen (R16b). Labels und Anlagen ändert nur Max.
+ * Die Rückmeldung zum Prototyp darf auch Marie senden (Zusatz zu AK-46, Stufe 4); sie ändert nichts an Labels oder Anlagen.
+ */
+const SCHREIBENDE_PFADE: Record<string, readonly string[]> = {
+  '/api/labels/STA4-01/bestaetigen': ['max'],
+  '/api/labels/STA4-01/fehler': ['max'],
+  '/api/labels/STA4-10/zuruecknehmen': ['max'],
+  '/api/labels/SWR5-02/nachbessern': ['max'],
+  '/api/labels/SWR5-05/nacherfassen': ['max'],
+  '/api/anlagen/STA4/freigeben': ['max'],
+  '/api/feedback': ['max', 'marie', 'testleitung'],
+  '/api/feedback/loeschen': ['testleitung'],
+  '/api/demo/zuruecksetzen': ['testleitung'],
+};
 
 describe('AK-46 Marie sieht nur, auch nicht über die Schnittstelle', () => {
-  test('die Liste der schreibenden Aufrufe deckt jede schreibende Route ab, auch künftige', () => {
+  test('die Liste der schreibenden Aufrufe deckt jede schreibende Route ab, auch künftige, mit den erlaubten Rollen', () => {
     const schreibend = routen({ db: oeffneDatenbank(':memory:'), bilderOrdner: BILDER }).filter((r) => r.methode !== 'GET');
     assert.ok(schreibend.length > 0);
-    for (const r of schreibend) assert.ok(SCHREIBENDE_PFADE.some((p) => r.muster.test(p)), `${r.muster} fehlt in SCHREIBENDE_PFADE`);
-    for (const p of SCHREIBENDE_PFADE) assert.ok(schreibend.some((r) => r.muster.test(p)), `${p} ist keine schreibende Route`);
+    for (const r of schreibend) {
+      const pfad = Object.keys(SCHREIBENDE_PFADE).find((p) => r.muster.test(p));
+      assert.ok(pfad, `${r.muster} fehlt in SCHREIBENDE_PFADE`);
+      assert.deepEqual(r.rollen?.erlaubt ?? ['max'], SCHREIBENDE_PFADE[pfad], pfad);
+    }
+    for (const p of Object.keys(SCHREIBENDE_PFADE)) assert.ok(schreibend.some((r) => r.muster.test(p)), `${p} ist keine schreibende Route`);
   });
 
-  test('jeder schreibende Aufruf als Marie → 403, Maries Übersicht bleibt gleich', async () => {
+  test('jeder schreibende Aufruf als Marie → 403, außer der Rückmeldung; Maries Übersicht bleibt gleich', async () => {
     await mitServer(async (s) => {
       const vorher = (await anfrage(s, '/api/marie')).text;
-      for (const pfad of SCHREIBENDE_PFADE) {
+      for (const [pfad, rollen] of Object.entries(SCHREIBENDE_PFADE)) {
+        if (rollen.includes('marie')) continue;
         const r = await anfrage(s, pfad, { methode: 'POST', rolle: 'marie', koerper: JSON.stringify({ grund: 'unleserlich' }) });
         assert.equal(r.status, 403, pfad);
       }
+      const rueckmeldung = await anfrage(s, '/api/feedback', {
+        methode: 'POST', rolle: 'marie', koerper: JSON.stringify({ szenario: 'marie', kommentar: 'Die Zahlen sind gut lesbar.' }),
+      });
+      assert.equal(rueckmeldung.status, 200);
       assert.equal((await anfrage(s, '/api/marie')).text, vorher);
     });
   });

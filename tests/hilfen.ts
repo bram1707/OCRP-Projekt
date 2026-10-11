@@ -94,3 +94,52 @@ export async function anfrage(
   }
   return { status: res.status, daten, kopf: res.headers, text };
 }
+
+/** Hört auf das Signal (/api/ereignisse) und sammelt die Nachrichten (AK-44). */
+export async function hoere(url: string, kopf: Record<string, string> = {}) {
+  const abbruch = new AbortController();
+  const res = await fetch(url, { headers: kopf, signal: abbruch.signal });
+  const nachrichten: string[] = [];
+  const wartend: { aufruf: (() => void) | null } = { aufruf: null };
+  let rest = '';
+  const leser = res.body!.getReader();
+  void (async () => {
+    try {
+      for (;;) {
+        const { value, done } = await leser.read();
+        if (done) break;
+        rest += new TextDecoder().decode(value);
+        let ende: number;
+        while ((ende = rest.indexOf('\n\n')) >= 0) {
+          const block = rest.slice(0, ende);
+          rest = rest.slice(ende + 2);
+          const daten = block.split('\n').filter((z) => z.startsWith('data: ')).map((z) => z.slice(6));
+          if (daten.length > 0) {
+            nachrichten.push(daten.join('\n'));
+            wartend.aufruf?.();
+          }
+        }
+      }
+    } catch {
+      // abgebrochen
+    }
+  })();
+  return {
+    res,
+    nachrichten,
+    async naechste(ms = 2000): Promise<string> {
+      await new Promise<void>((fertig, fehler) => {
+        const uhr = setTimeout(() => fehler(new Error('keine Nachricht')), ms);
+        wartend.aufruf = () => {
+          clearTimeout(uhr);
+          wartend.aufruf = null;
+          fertig();
+        };
+      });
+      return nachrichten.at(-1)!;
+    },
+    schliessen: () => abbruch.abort(),
+  };
+}
+
+export const kurz = (ms: number) => new Promise((r) => setTimeout(r, ms));

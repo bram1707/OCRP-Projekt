@@ -1,5 +1,7 @@
 // Kleiner HTTP-Server auf node:http. Es gibt bewusst keinen Endpunkt, der mehrere
-// Labels auf einmal ändert (AK-11). Schreiben darf nur die simulierte Rolle „max“.
+// Labels auf einmal ändert (AK-11). Labels und Anlagen ändert nur die simulierte Rolle „max“.
+// Ausnahmen mit eigener Rollenliste: die Rückmeldung zum Prototyp (AK-51, auch Marie) und
+// die Aufgaben der Testleitung (Rückmeldungen ansehen und löschen, Daten zurücksetzen).
 
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -10,7 +12,8 @@ import { holeAnlage, holeAnlagen, holeLabel, holeLabels, holeLetzteEntscheidunge
 import {
   bessereNach, bestaetigeLabel, erfasseNach, Fachfehler, gebeAnlageFrei, meldeFehler, nimmBestaetigungZurueck,
 } from '../db/aktionen.ts';
-import { BILD_DATEI } from '../db/datenbank.ts';
+import { BILD_DATEI, ladeTestdaten, spieleTestdatenEin } from '../db/datenbank.ts';
+import { holeRueckmeldungen, loescheRueckmeldungen, speichereRueckmeldung } from '../db/feedback.ts';
 import {
   anlageAnsicht, bewerteLabels, labelAnsicht, labelsAusserhalbDerPruefung, labelsFuerMax, zusammenfassung,
 } from './ansichten.ts';
@@ -26,14 +29,17 @@ export interface ServerOptionen {
   oberflaecheOrdner?: string;
   /** Verteiler für das Signal nach jeder Änderung (AK-44); ohne Angabe ein eigener */
   ereignisse?: Ereignisse;
+  /** Ordner des aktiven Datensatzes für „Daten zurücksetzen“ (AK-52); ohne ihn gibt es das Zurücksetzen nicht */
+  datenOrdner?: string;
 }
 
 /** Wird aufgerufen, wenn der Handler nicht zuständig ist (Entwicklungsserver von Vite). */
 export type Weiter = () => void;
 export type Handler = (req: IncomingMessage, res: ServerResponse, weiter?: Weiter) => Promise<void>;
 
-/** Simulierte Rollen, es gibt keine Anmeldung. */
-export type Rolle = 'max' | 'marie';
+/** Simulierte Rollen, es gibt keine Anmeldung. Die Testleitung gibt es nur im Prototyp. */
+export type Rolle = 'max' | 'marie' | 'testleitung';
+const ROLLEN: readonly Rolle[] = ['max', 'marie', 'testleitung'];
 
 const MAX_KOERPER = 10 * 1024;
 
@@ -72,15 +78,22 @@ interface Anfrage {
 }
 
 export interface Route {
-  /** Jede Route, die nicht GET ist, schreibt und verlangt die Rolle „max“. */
+  /** Jede Route, die nicht GET ist, schreibt und verlangt die Rolle „max“, außer sie nennt eigene `rollen`. */
   methode: 'GET' | 'POST';
   muster: RegExp;
+  /**
+   * Nur diese Rollen dürfen die Route aufrufen, und nur von der eigenen Seite aus (wie beim Signal, R14).
+   * Ohne Angabe: lesen alle, schreiben nur „max“.
+   */
+  rollen?: { erlaubt: readonly Rolle[]; sonst: string };
+  /** Sendet nach Erfolg das Signal (AK-44). Ohne Angabe: jede Route, die nicht GET ist. */
+  signal?: boolean;
   aktion: (anfrage: Anfrage, teile: string[]) => Promise<unknown> | unknown;
 }
 
 function leseRolle(req: IncomingMessage): Rolle | null {
   const wert = req.headers['x-rolle'];
-  return wert === 'max' || wert === 'marie' ? wert : null;
+  return ROLLEN.find((r) => r === wert) ?? null;
 }
 
 function leseKoerper(req: IncomingMessage): Promise<Record<string, unknown>> {
@@ -124,6 +137,8 @@ function sendeJson(res: ServerResponse, status: number, daten: unknown): void {
   });
   res.end(JSON.stringify(daten));
 }
+
+const NUR_TESTLEITUNG = 'Das darf nur die Testleitung (nur im Prototyp).';
 
 /** Alle Routen der Schnittstelle; exportiert, damit ein Test jede schreibende Route als Marie aufrufen kann (AK-46). */
 export function routen(optionen: ServerOptionen): Route[] {
@@ -223,6 +238,39 @@ export function routen(optionen: ServerOptionen): Route[] {
         return labelAntwort(id!);
       },
     },
+    // Rückmeldung zum Prototyp (AK-51): die einzige Route, die auch Marie aufrufen darf (Zusatz zu AK-46).
+    // Sie schreibt nur in die Tabelle feedback und ändert nichts an Labels, Anlagen oder Protokoll.
+    {
+      methode: 'POST', muster: /^\/api\/feedback$/,
+      rollen: { erlaubt: ['max', 'marie', 'testleitung'], sonst: 'Rückmeldungen gibt es nur über die Seiten des Prototyps.' },
+      signal: false,
+      aktion: async (anfrage) => {
+        const { id, szenario, zeitpunkt } = speichereRueckmeldung(db, await anfrage.koerper(), new Date());
+        return { id, szenario, zeitpunkt };
+      },
+    },
+    // Aufgaben der Testleitung (nur im Prototyp).
+    {
+      methode: 'GET', muster: /^\/api\/feedback$/,
+      rollen: { erlaubt: ['testleitung'], sonst: NUR_TESTLEITUNG },
+      aktion: () => holeRueckmeldungen(db),
+    },
+    {
+      methode: 'POST', muster: /^\/api\/feedback\/loeschen$/,
+      rollen: { erlaubt: ['testleitung'], sonst: NUR_TESTLEITUNG },
+      signal: false,
+      aktion: () => ({ geloescht: loescheRueckmeldungen(db) }),
+    },
+    {
+      // Spielt den aktiven Datensatz neu ein (AK-52); Rückmeldungen bleiben. Danach ein Signal für offene Übersichten.
+      methode: 'POST', muster: /^\/api\/demo\/zuruecksetzen$/,
+      rollen: { erlaubt: ['testleitung'], sonst: NUR_TESTLEITUNG },
+      aktion: async () => {
+        if (!optionen.datenOrdner) throw new Fachfehler(404, 'Zurücksetzen ist bei diesem Server nicht eingerichtet.');
+        await spieleTestdatenEin(db, ladeTestdaten(optionen.datenOrdner), modell, { ersetzen: true });
+        return { zurueckgesetzt: true };
+      },
+    },
   ];
 }
 
@@ -292,13 +340,17 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
       }
 
       const rolle = leseRolle(req);
-      if (route.methode !== 'GET' && rolle !== 'max') {
+      if (route.rollen) {
+        if (rolle === null || !route.rollen.erlaubt.includes(rolle) || istFremdeHerkunft(req)) {
+          throw new Fachfehler(403, route.rollen.sonst);
+        }
+      } else if (route.methode !== 'GET' && rolle !== 'max') {
         throw new Fachfehler(403, 'Nur Max (Qualitätsmanagement) darf Labels prüfen und Anlagen freigeben.');
       }
 
       const ergebnis = await route.aktion({ rolle, koerper: () => leseKoerper(req) }, teile);
       sendeJson(res, 200, ergebnis);
-      geaendert = route.methode !== 'GET';
+      geaendert = route.signal ?? route.methode !== 'GET';
     } catch (fehler) {
       if (fehler instanceof Fachfehler) {
         sendeJson(res, fehler.status, { fehler: fehler.message, details: fehler.details ?? null });

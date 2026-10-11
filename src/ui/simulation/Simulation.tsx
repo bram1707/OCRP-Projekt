@@ -96,7 +96,10 @@ export function Simulation() {
     const je = await Promise.all(anlagen.map((a) => ladeAnlage(a.id)));
     setWartend(
       // Außerhalb der Prüfung liefert der Server nur „Fehlerhaft“ und „Fehlt“.
-      je.flatMap(({ anlage, ausserhalbDerPruefung }) => ausserhalbDerPruefung.map((label) => ({ anlageName: anlage.name, label }))),
+      // Die Testanlage „Eigene Fotos“ bekommt neue Fotos nur über die Kamera-Seite.
+      je
+        .filter(({ anlage }) => anlage.id !== 'EIG1')
+        .flatMap(({ anlage, ausserhalbDerPruefung }) => ausserhalbDerPruefung.map((label) => ({ anlageName: anlage.name, label }))),
     );
   }, []);
 

@@ -51,7 +51,7 @@ export function Rahmen({
       <div role="status" aria-live="polite" className="sr-only">
         {ansage}
       </div>
-      <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      <header className="md:sticky md:top-0 z-10 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
           {/* Oben links immer der Weg zur Startseite (Optimierung 11.10.2026). Andere Rollen erreicht man nur über sie (R16a). */}
           {bereich !== 'start' && (

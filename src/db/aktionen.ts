@@ -34,6 +34,16 @@ function inTransaktion<T>(db: DatabaseSync, arbeit: () => T): T {
   }
 }
 
+/** Die einzige Anlage, für die man im Prototyp eigene Fotos hochladen darf (Testanlage „Eigene Fotos“). */
+export const ANLAGE_EIGENE_FOTOS = 'EIG1';
+
+/** Die simulierte Instandhaltung hat für eigene Fotos nichts zu liefern; ein neues Foto kommt nur von der Kamera-Seite. */
+function nichtFuerEigeneFotos(label: Label): void {
+  if (label.anlageId === ANLAGE_EIGENE_FOTOS) {
+    throw new Fachfehler(409, `Für Label ${label.id} gibt es ein neues Foto nur über die Kamera-Seite.`);
+  }
+}
+
 function ladePruefbaresLabel(db: DatabaseSync, labelId: string): Label {
   const label = holeLabel(db, labelId);
   if (!label) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
@@ -94,6 +104,7 @@ export async function bessereNach(
 ): Promise<Label> {
   const vorher = holeLabel(db, labelId);
   if (!vorher) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  nichtFuerEigeneFotos(vorher);
   if (vorher.status !== 'fehlerhaft') {
     throw new Fachfehler(409, `Nur fehlerhafte Labels können nachgebessert werden. Label ${vorher.id} ist „${STATUS_TEXT[vorher.status]}“.`);
   }
@@ -132,6 +143,7 @@ export async function erfasseNach(
 ): Promise<Label> {
   const vorher = holeLabel(db, labelId);
   if (!vorher) throw new Fachfehler(404, 'Dieses Label gibt es nicht.');
+  nichtFuerEigeneFotos(vorher);
   if (vorher.status !== 'fehlt') {
     throw new Fachfehler(409, `Nur für Labels ohne Foto kann ein Foto nachgereicht werden. Label ${vorher.id} ist „${STATUS_TEXT[vorher.status]}“.`);
   }
@@ -197,8 +209,7 @@ export function gebeAnlageFrei(db: DatabaseSync, anlageId: string, wer: string, 
   });
 }
 
-/** Die einzige Anlage, für die man im Prototyp eigene Fotos hochladen darf (Testanlage „Eigene Fotos“). */
-export const ANLAGE_EIGENE_FOTOS = 'EIG1';
+
 
 /** Aus diesen Status nimmt die Kamera ein (neues) Foto auf; ein bestätigtes Label bleibt, wie es ist. */
 const AUFNAHME_MOEGLICH: readonly Status[] = ['fehlt', 'offen', 'unsicher', 'fehlerhaft', 'nachgebessert'];

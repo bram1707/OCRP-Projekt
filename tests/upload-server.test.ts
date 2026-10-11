@@ -261,6 +261,20 @@ describe('U-B4 POST /api/labels/:id/foto', () => {
   });
 });
 
+describe('Prüfung M1: die simulierte Instandhaltung lässt die Testanlage in Ruhe', () => {
+  test('„Foto nachreichen“ und „Nachbessern“ für EIG1 → 409 mit Hinweis auf die Kamera-Seite; das Label bleibt, wie es ist', async () => {
+    await mitUpload(async ({ s }) => {
+      const r = await anfrage(s, '/api/labels/EIG1-01/nacherfassen', max);
+      assert.equal(r.status, 409);
+      assert.match(r.daten.fehler, /Kamera-Seite/);
+      await lade(s, 'EIG1-02', PNG);
+      await anfrage(s, '/api/labels/EIG1-02/fehler', { ...max, koerper: JSON.stringify({ grund: 'unleserlich' }) });
+      assert.equal((await anfrage(s, '/api/labels/EIG1-02/nachbessern', max)).status, 409);
+      assert.equal((await anfrage(s, '/api/labels/EIG1-02')).daten.status, 'fehlerhaft');
+    });
+  });
+});
+
 describe('U-B7 Daten zurücksetzen löscht die eigenen Fotos', () => {
   test('nach dem Zurücksetzen keine Datei mehr, EIG1 wieder 3 × „Fehlt“, das alte Foto gibt es nicht mehr', async () => {
     await mitUpload(async ({ s, ordner }) => {

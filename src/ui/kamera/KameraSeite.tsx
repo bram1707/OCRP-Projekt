@@ -65,7 +65,7 @@ export function KameraAnsicht({
 
       {!stand.upload && <div className="mt-6"><Fehler text="Eigene Fotos sind bei diesem Server nicht eingerichtet." /></div>}
       {stand.upload && !stand.anlage && (
-        <p className="mt-6">In diesen Daten gibt es keine Testanlage für eigene Fotos. Bitte den Prototyp mit „npm run demo“ starten.</p>
+        <p className="mt-6">In diesen Daten gibt es keine Testanlage für eigene Fotos. Bitte den Prototyp mit „npm run demo“ starten. Läuft er schon so, auf der Startseite einmal „Daten zurücksetzen“ wählen (die Daten stammen dann aus einer älteren Version).</p>
       )}
 
       {stand.upload && stand.anlage && (

@@ -37,6 +37,8 @@
 /* Grundschrift 16 px; alle Größen der Oberfläche bauen darauf auf. */
 html {
   font-size: 100%;
+  /* Die feste Kopfzeile verdeckt nie das Element mit dem Fokus (WCAG 2.4.11). */
+  scroll-padding-top: 8rem;
   -webkit-font-smoothing: antialiased;
 }
 

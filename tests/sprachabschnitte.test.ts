@@ -26,6 +26,11 @@ describe('Optimierung 2, Punkt 8: Sprache je Abschnitt', () => {
     ['Polnisch und Russisch', 'UWAGA\nWysokie napięcie. Nie dotykać.\nВНИМАНИЕ\nВысокое напряжение. Не прикасаться.', ['pl', 'ru']],
     ['zwei Sprachen in einer Zeile', 'ACHTUNG! Nicht berühren. UWAGA! Nie dotykać.', ['de', 'pl']],
     ['nur Englisch', 'WARNING\nHot surface. Do not touch.', ['en']],
+    // Prüfung M1: russische Kurzwörter machen kein Bulgarisch.
+    ['nur Russisch, auch mit „и“ und „на“', 'ОСТОРОЖНО\nНе открывать и не прикасаться на ходу.', ['ru']],
+    // Prüfung M2: eine Überschrift oder ein Zusatz in einer anderen Sprache bleibt sichtbar.
+    ['deutsche Überschrift über englischem Text', 'ACHTUNG\nHot surface. Do not touch.', ['de', 'en']],
+    ['ein polnisches Wort mit Sonderzeichen in derselben Zeile', 'Nicht berühren - Nie dotykać', ['de', 'pl']],
   ];
   for (const [name, text, erwartet] of faelle) {
     test(name, () => assert.deepEqual(sprachen(text), erwartet));

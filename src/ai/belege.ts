@@ -107,8 +107,17 @@ function wortzahl(zeile: string): number {
 /** Höchstens so viele Wörter hat eine Überschrift, die zur Zeile darunter gehört. */
 const UEBERSCHRIFT_WOERTER = 2;
 
-/** Teilt den Text in Abschnitte: Zeilen mit Buchstaben; eine kurze Überschrift gehört zur nächsten Zeile. */
-export function teileInAbschnitte(text: string): Abschnitt[] {
+/**
+ * Teilt den Text in Abschnitte: Zeilen mit Buchstaben; eine kurze Überschrift gehört zur nächsten Zeile.
+ * Mit `siegerVon` nur, wenn die Überschrift keine eigene Sprache hat oder ihre Sprache auch in der Zeile Belege hat
+ * („PELIGRO“ über „No tocar“, „ВНИМАНИЕ“ über kyrillischem Text). Eine Überschrift in einer anderen
+ * Sprache („ACHTUNG“ über englischem Text) bleibt ein eigener Abschnitt, damit Max sie sieht (Prüfung M2).
+ */
+export function teileInAbschnitte(
+  text: string,
+  siegerVon?: (a: Abschnitt) => Sprachcode | null,
+  sprachenIn?: (a: Abschnitt) => Set<Sprachcode>,
+): Abschnitt[] {
   const zeilen: Abschnitt[] = [];
   let start = 0;
   for (const teil of text.split('\n')) {
@@ -120,7 +129,7 @@ export function teileInAbschnitte(text: string): Abschnitt[] {
   for (let i = 0; i < zeilen.length; i += 1) {
     const zeile = zeilen[i]!;
     const naechste = zeilen[i + 1];
-    if (naechste && istUeberschrift(zeile) && !istUeberschrift(naechste)) {
+    if (naechste && istUeberschrift(zeile) && !istUeberschrift(naechste) && passtZu(zeile, naechste, siegerVon, sprachenIn)) {
       abschnitte.push({ start: zeile.start, ende: naechste.ende });
       i += 1;
     } else {
@@ -130,13 +139,23 @@ export function teileInAbschnitte(text: string): Abschnitt[] {
   return abschnitte;
 }
 
+function passtZu(ueberschrift: Abschnitt, zeile: Abschnitt, siegerVon?: (a: Abschnitt) => Sprachcode | null, sprachenIn?: (a: Abschnitt) => Set<Sprachcode>): boolean {
+  if (!siegerVon || !sprachenIn) return true;
+  const oben = siegerVon(ueberschrift);
+  // Ohne eigene Sprache gehört die Überschrift dazu; sonst nur, wenn ihre Sprache auch in der Zeile Belege hat.
+  return oben === null || sprachenIn(zeile).has(oben);
+}
+
 /** Stärke der Belege, gleiche Formel wie die Sicherheit im Mock (Wörter zählen viel, Zeichen wenig). */
 function staerke(woerter: number, zeichen: number): number {
   if (woerter > 0) return 0.55 + 0.12 * Math.min(woerter, 3) + 0.04 * Math.min(zeichen, 3);
   return zeichen >= 2 ? 0.4 + 0.05 * Math.min(zeichen, 3) : 0;
 }
 
-/** Eine zweite Sprache in derselben Zeile zählt erst ab so vielen verschiedenen typischen Wörtern. */
+/**
+ * Eine zweite Sprache in derselben Zeile zählt ab so vielen verschiedenen typischen Wörtern, oder mit einem Wort
+ * und ihren eigenen Sonderzeichen („Nie dotykać“). Ein einzelnes „no“ in einer spanischen Zeile zählt nicht.
+ */
 const MIN_WOERTER_ZWEITE_SPRACHE = 2;
 
 /** Schrift einer Sprache. Fremde Schriftzeichen mitten in einem Abschnitt bleiben sichtbar (z. B. kyrillisch gelesene Buchstaben). */
@@ -161,22 +180,34 @@ export function findeBelege(text: string): SprachTreffer[] {
   const alle = findeAlleBelege(text).flatMap((t) => t.belege);
   const gesammelt = new Map<Sprachcode, Beleg[]>();
 
-  for (const abschnitt of teileInAbschnitte(text)) {
-    const hier = alle.filter((b) => b.start >= abschnitt.start && b.ende <= abschnitt.ende);
+  /** Sprachen eines Abschnitts, die stärkste zuerst; bei Gleichstand die mit mehr Belegen, dann die frühere. */
+  const imAbschnitt = (abschnitt: Abschnitt) => alle.filter((b) => b.start >= abschnitt.start && b.ende <= abschnitt.ende);
+  const bewerte = (abschnitt: Abschnitt) => {
+    const hier = imAbschnitt(abschnitt);
     const jeSprache = new Map<Sprachcode, Beleg[]>();
     for (const b of hier) jeSprache.set(b.sprache, [...(jeSprache.get(b.sprache) ?? []), b]);
+    return [...jeSprache]
+      .map(([code, belege]) => {
+        const t = ausBelegen(code, belege);
+        return { code, belege, woerter: t.woerter.length, zeichen: t.zeichen.length, wert: staerke(t.woerter.length, t.zeichen.length) };
+      })
+      .filter((k) => k.wert > 0)
+      .sort((a, b) => b.wert - a.wert || b.belege.length - a.belege.length || a.belege[0]!.start - b.belege[0]!.start);
+  };
 
-    const bewertet = [...jeSprache].map(([code, belege]) => {
-      const t = ausBelegen(code, belege);
-      return { code, belege, woerter: t.woerter.length, wert: staerke(t.woerter.length, t.zeichen.length) };
-    }).filter((k) => k.wert > 0);
+  for (const abschnitt of teileInAbschnitte(text, (a) => bewerte(a)[0]?.code ?? null, (a) => new Set(imAbschnitt(a).map((b) => b.sprache)))) {
+    const bewertet = bewerte(abschnitt);
     if (bewertet.length === 0) continue;
-    // Stärkste Sprache gewinnt; bei Gleichstand die mit mehr Belegen, dann die frühere.
-    bewertet.sort((a, b) => b.wert - a.wert || b.belege.length - a.belege.length || a.belege[0]!.start - b.belege[0]!.start);
     const [sieger, ...rest] = bewertet;
     const behalten = [
       sieger!,
-      ...rest.filter((k) => k.woerter >= MIN_WOERTER_ZWEITE_SPRACHE || schrift(k.code) !== schrift(sieger!.code)),
+      ...rest.filter(
+        (k) =>
+          k.woerter >= MIN_WOERTER_ZWEITE_SPRACHE ||
+          // Ein Wort reicht mit eigenen Sonderzeichen; kyrillische Buchstaben teilen sich Russisch und Bulgarisch.
+          (k.woerter >= 1 && k.zeichen >= 1 && schrift(k.code) === 'lateinisch') ||
+          schrift(k.code) !== schrift(sieger!.code),
+      ),
     ];
     for (const k of behalten) gesammelt.set(k.code, [...(gesammelt.get(k.code) ?? []), ...k.belege]);
   }

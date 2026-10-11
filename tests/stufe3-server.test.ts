@@ -7,9 +7,9 @@ import type { DatabaseSync } from 'node:sqlite';
 import { describe, test } from 'node:test';
 import { oeffneDatenbank, spieleTestdatenEin, type Testdaten } from '../src/db/datenbank.ts';
 import { GRUPPE_MARIE, RANG_MARIE, sortiereFuerMarie, STATUS, type Status } from '../src/db/status.ts';
-import { erstelleServer } from '../src/server/app.ts';
+import { erstelleServer, routen } from '../src/server/app.ts';
 import { Ereignisse } from '../src/server/ereignisse.ts';
-import { zeitText, type MarieLabel, type MarieUebersicht } from '../src/server/marie.ts';
+import { datumText, type MarieLabel, type MarieUebersicht } from '../src/server/marie.ts';
 import { anfrage, BILDER, erwartungen, neueDatenbank, starteServer, testdaten, type TestServer } from './hilfen.ts';
 
 const max = { methode: 'POST', rolle: 'max' } as const;
@@ -202,7 +202,7 @@ describe('AK-42 Labels hinter Zahl und Anlage, mit Foto, Status und Grund', () =
     unsicher: /^(Sprache nicht sicher erkannt\.|Text schlecht lesbar\.)( Text schlecht lesbar\.)? Max muss genau hinsehen\.$/,
     nachgebessert: /^Nachgebessert nach Max' Meldung \((Unleserlich|Sprache falsch|Label beschädigt)\), wartet auf erneute Prüfung durch Max\.$/,
     offen: /^Erfasst, von Max noch nicht geprüft\.$/,
-    bestaetigt: /^Von Max bestätigt am \d\d\.\d\d\.2026 um \d\d:\d\d\.$/,
+    bestaetigt: /^Von Max bestätigt am \d\d\.\d\d\.2026\.$/,
   };
 
   test('jedes der 20 Testlabels hat einen Satz als Grund, passend zu seinem Status, und sein Foto', async () => {
@@ -218,7 +218,7 @@ describe('AK-42 Labels hinter Zahl und Anlage, mit Foto, Status und Grund', () =
       }
       assert.equal(label(m, 'SWR5-02').grund, 'Von Max gemeldet (Label beschädigt), wartet auf Nachbesserung.');
       assert.equal(label(m, 'STA4-09').grund, 'Sprache nicht sicher erkannt. Max muss genau hinsehen.');
-      assert.equal(label(m, 'FOE2-01').grund, 'Von Max bestätigt am 09.10.2026 um 16:10.');
+      assert.equal(label(m, 'FOE2-01').grund, 'Von Max bestätigt am 09.10.2026.');
     });
   });
 
@@ -228,14 +228,14 @@ describe('AK-42 Labels hinter Zahl und Anlage, mit Foto, Status und Grund', () =
       await anfrage(s, '/api/labels/STA4-01/zuruecknehmen', max);
       const l = label(await marie(s), 'STA4-01');
       assert.equal(l.status, 'offen');
-      assert.match(l.grund, /^Max hat seine Bestätigung am \d\d\.\d\d\.\d{4} um \d\d:\d\d zurückgenommen, wartet auf erneute Prüfung\.$/);
-      assert.match(l.warum.join(' '), /^Max hat die Bestätigung von STA4-01 am .* zurückgenommen\. Jetzt wartet es auf Max' erneute Prüfung\.$/);
+      assert.match(l.grund, /^Max hat seine Bestätigung am \d\d\.\d\d\.\d{4} zurückgenommen, wartet auf erneute Prüfung\.$/);
+      assert.match(l.warum.join(' '), /^Max hat die Bestätigung von STA4-01 am \d\d\.\d\d\.\d{4} zurückgenommen\. Jetzt wartet es auf Max' erneute Prüfung\.$/);
       assert.doesNotMatch(l.grund + l.warum.join(' '), /noch nicht geprüft/);
     });
   });
 
   test('ein unlesbarer Zeitpunkt legt die Übersicht nicht lahm: er erscheint wie gespeichert', () => {
-    assert.equal(zeitText('9. Oktober 2026'), '9. Oktober 2026');
+    assert.equal(datumText('9. Oktober 2026'), '9. Oktober 2026');
   });
 
   test('nach einer Meldung nennt der Grund den gemeldeten Fehler', async () => {
@@ -247,9 +247,13 @@ describe('AK-42 Labels hinter Zahl und Anlage, mit Foto, Status und Grund', () =
     });
   });
 
-  test('Zeiten stehen in deutscher Zeit, im Sommer wie im Winter', () => {
-    assert.equal(zeitText('2026-10-09T15:00:00.000Z'), '09.10.2026 um 17:00');
-    assert.equal(zeitText('2026-12-01T15:05:00.000Z'), '01.12.2026 um 16:05');
+  test('das Datum gilt in deutscher Zeit, im Sommer wie im Winter, auch kurz nach Mitternacht', () => {
+    assert.equal(datumText('2026-10-09T15:00:00.000Z'), '09.10.2026');
+    // Sommerzeit (UTC+2): 22:30 UTC ist in Deutschland schon der nächste Tag.
+    assert.equal(datumText('2026-10-09T22:30:00.000Z'), '10.10.2026');
+    // Winterzeit (UTC+1): 22:55 UTC ist noch derselbe Tag, 23:05 UTC schon der nächste.
+    assert.equal(datumText('2026-12-01T22:55:00.000Z'), '01.12.2026');
+    assert.equal(datumText('2026-12-01T23:05:00.000Z'), '02.12.2026');
   });
 });
 
@@ -268,7 +272,7 @@ describe('AK-43 „Warum?“ mit Belegen', () => {
         '2 Labels „Unsicher“ (Erkennung nicht sicher, Max muss genau hinsehen): STA4-08, STA4-09.',
         '7 Labels „Offen“ (wartet auf Max\' Prüfung): STA4-01, STA4-02, STA4-03, STA4-04, STA4-05, STA4-06, STA4-07.',
       ]);
-      assert.deepEqual(warum('FOE2'), ['Max hat die Anlage am 09.10.2026 um 17:00 freigegeben. Alle 5 Labels sind bestätigt.']);
+      assert.deepEqual(warum('FOE2'), ['Max hat die Anlage am 09.10.2026 freigegeben. Alle 5 Labels sind bestätigt.']);
       // Dieselben Labels wie in Max' offenen Punkten, jedes genau einmal.
       for (const a of m.anlagen.filter((x) => x.gesperrt)) {
         const zf = (await anfrage(s, `/api/anlagen/${a.id}/zusammenfassung`)).daten;
@@ -300,17 +304,17 @@ describe('AK-43 „Warum?“ mit Belegen', () => {
     });
   });
 
-  test('jeder Status ist belegt: Schwellen mit Prozent, Zeitpunkt und Grund der Meldung, Zeitpunkt der Bestätigung', async () => {
+  test('jeder Status ist belegt: Schwellen mit Prozent, Datum und Grund der Meldung, Datum der Bestätigung', async () => {
     await mitServer(async (s) => {
       const m = await marie(s);
       for (const l of m.labels) assert.ok(l.warum.length > 0, l.schluessel);
       assert.deepEqual(label(m, 'STA4-09').warum.slice(0, 1), ['Russisch 50 %, Polnisch 87 %: unter 90 % gilt eine Sprache als nicht sicher erkannt.']);
       assert.match(label(m, 'STA4-08').warum.join(' '), /Texterkennung 34 %: unter 80 % gilt der Text als schlecht lesbar\./);
       assert.match(label(m, 'STA4-08').warum.join(' '), /keine Sprache sicher zuordnen.*rät nie/);
-      assert.match(label(m, 'SWR5-02').warum[0]!, /^Max hat SWR5-02 am \d\d\.\d\d\.2026 um \d\d:\d\d gemeldet: Label beschädigt\.$/);
-      assert.match(label(m, 'SWR5-03').warum.join(' '), /gemeldet: Sprache falsch\. Nachgebessert am \d\d\.\d\d\.2026 um \d\d:\d\d\..*zählt deshalb als offen/);
+      assert.match(label(m, 'SWR5-02').warum[0]!, /^Max hat SWR5-02 am \d\d\.\d\d\.2026 gemeldet: Label beschädigt\.$/);
+      assert.match(label(m, 'SWR5-03').warum.join(' '), /gemeldet: Sprache falsch\. Nachgebessert am \d\d\.\d\d\.2026\..*zählt deshalb als offen/);
       assert.match(label(m, 'SWR5-05').warum.join(' '), /Für SWR5-05 gibt es kein Foto\..*bleibt die Anlage gesperrt/);
-      assert.deepEqual(label(m, 'STA4-10').warum, ['Max hat STA4-10 am 10.10.2026 um 09:40 bestätigt.']);
+      assert.deepEqual(label(m, 'STA4-10').warum, ['Max hat STA4-10 am 10.10.2026 bestätigt.']);
     });
   });
 
@@ -321,6 +325,27 @@ describe('AK-43 „Warum?“ mit Belegen', () => {
       assert.ok(belege.some((b) => b.sprache === 'de' && b.art === 'wort'), 'deutsches Wort');
       assert.ok(belege.some((b) => b.sprache === 'pl'), 'polnischer Beleg');
       assert.deepEqual(label(m, 'STA4-01').label!.sprachen.map((x) => x.code), ['de', 'pl']);
+    });
+  });
+
+  test('von Max\' Entscheidungen sieht Marie nur das Datum, nie die Uhrzeit (Datensparsamkeit)', async () => {
+    await mitServer(async (s) => {
+      const schritte: [string, Parameters<typeof anfrage>[2]][] = [
+        ['/api/labels/STA4-01/bestaetigen', max],
+        ['/api/labels/STA4-01/zuruecknehmen', max],
+        ['/api/labels/STA4-02/fehler', melde('unleserlich')],
+        ['/api/labels/STA4-02/nachbessern', max],
+        ['/api/labels/STA4-04/fehler', melde('sprache_falsch')],
+        ['/api/labels/SWR5-05/nacherfassen', max],
+      ];
+      for (const [pfad, optionen] of schritte) assert.equal((await anfrage(s, pfad, optionen)).status, 200, pfad);
+      const m = await marie(s);
+      // Bestätigt, zurückgenommen, gemeldet, nachgebessert und freigegeben (Förderband 2) kommen alle vor.
+      const texte = [...m.labels.flatMap((l) => [l.grund, ...l.warum]), ...m.anlagen.flatMap((a) => a.warum)];
+      for (const t of texte) assert.doesNotMatch(t, /\d:\d\d|\bUhr\b/, t);
+      for (const art of [/bestätigt am \d\d\.\d\d\.\d{4}\./, /Bestätigung am \d\d\.\d\d\.\d{4} zurückgenommen/, /am \d\d\.\d\d\.\d{4} gemeldet/, /Nachgebessert am \d\d\.\d\d\.\d{4}\./, /Anlage am \d\d\.\d\d\.\d{4} freigegeben/]) {
+        assert.ok(texte.some((t) => art.test(t)), `Datum fehlt: ${art}`);
+      }
     });
   });
 });
@@ -499,6 +524,46 @@ describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
     dritte.schliessen();
   });
 
+  test('nur die eigene Seite bekommt das Signal: fremde Herkunft → 403 und belegt keinen Platz', async () => {
+    const db = await neueDatenbank();
+    const ereignisse = new Ereignisse();
+    const server = erstelleServer({ db, bilderOrdner: BILDER, ereignisse });
+    await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+    const { port } = server.address() as AddressInfo;
+    const status = (kopf: Record<string, string>) =>
+      new Promise<number>((fertig, fehler) => {
+        const anfrage = request({ host: '127.0.0.1', port, path: '/api/ereignisse', headers: kopf }, (res) => {
+          fertig(res.statusCode!);
+          res.destroy();
+        });
+        anfrage.on('error', fehler);
+        anfrage.end();
+      });
+    try {
+      // Eine fremde Webseite: Der Browser schickt „Origin“ (bei EventSource) oder „Sec-Fetch-Site“ (auch bei no-cors).
+      const fremd: Record<string, string>[] = [
+        { Origin: 'http://boese.example' },
+        { Origin: 'null' },
+        { Origin: `http://localhost:${port + 1}` },
+        { Origin: 'http://boese.example', 'Sec-Fetch-Site': 'cross-site' },
+        { 'Sec-Fetch-Site': 'cross-site' },
+        { 'Sec-Fetch-Site': 'same-site' },
+      ];
+      for (const kopf of fremd) assert.equal(await status(kopf), 403, JSON.stringify(kopf));
+      assert.equal(ereignisse.anzahl, 0, 'abgewiesene Anfragen belegen keinen Platz');
+      // Maries Seite selbst, die Adresszeile und Werkzeuge ohne diese Kopfzeilen.
+      const eigen: Record<string, string>[] = [
+        { Origin: `http://127.0.0.1:${port}`, 'Sec-Fetch-Site': 'same-origin' },
+        { 'Sec-Fetch-Site': 'same-origin' },
+        { 'Sec-Fetch-Site': 'none' },
+        {},
+      ];
+      for (const kopf of eigen) assert.equal(await status(kopf), 200, JSON.stringify(kopf));
+    } finally {
+      await new Promise<void>((r) => server.close(() => r()));
+    }
+  });
+
   test('nach dem Schließen nimmt der Verteiler keine Verbindung mehr an', () => {
     const e = new Ereignisse();
     e.schliesseAlle();
@@ -510,19 +575,28 @@ describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
   });
 });
 
+/** Je schreibender Route ein Aufruf; der Test darunter sorgt dafür, dass keine neue Route fehlt. */
+const SCHREIBENDE_PFADE = [
+  '/api/labels/STA4-01/bestaetigen',
+  '/api/labels/STA4-01/fehler',
+  '/api/labels/STA4-10/zuruecknehmen',
+  '/api/labels/SWR5-02/nachbessern',
+  '/api/labels/SWR5-05/nacherfassen',
+  '/api/anlagen/STA4/freigeben',
+];
+
 describe('AK-46 Marie sieht nur, auch nicht über die Schnittstelle', () => {
+  test('die Liste der schreibenden Aufrufe deckt jede schreibende Route ab, auch künftige', () => {
+    const schreibend = routen({ db: oeffneDatenbank(':memory:'), bilderOrdner: BILDER }).filter((r) => r.methode !== 'GET');
+    assert.ok(schreibend.length > 0);
+    for (const r of schreibend) assert.ok(SCHREIBENDE_PFADE.some((p) => r.muster.test(p)), `${r.muster} fehlt in SCHREIBENDE_PFADE`);
+    for (const p of SCHREIBENDE_PFADE) assert.ok(schreibend.some((r) => r.muster.test(p)), `${p} ist keine schreibende Route`);
+  });
+
   test('jeder schreibende Aufruf als Marie → 403, Maries Übersicht bleibt gleich', async () => {
     await mitServer(async (s) => {
       const vorher = (await anfrage(s, '/api/marie')).text;
-      const pfade = [
-        '/api/labels/STA4-01/bestaetigen',
-        '/api/labels/STA4-01/fehler',
-        '/api/labels/STA4-10/zuruecknehmen',
-        '/api/labels/SWR5-02/nachbessern',
-        '/api/labels/SWR5-05/nacherfassen',
-        '/api/anlagen/STA4/freigeben',
-      ];
-      for (const pfad of pfade) {
+      for (const pfad of SCHREIBENDE_PFADE) {
         const r = await anfrage(s, pfad, { methode: 'POST', rolle: 'marie', koerper: JSON.stringify({ grund: 'unleserlich' }) });
         assert.equal(r.status, 403, pfad);
       }

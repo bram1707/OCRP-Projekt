@@ -79,7 +79,9 @@ const breite = (): Promise<number> => page.evaluate(() => document.documentEleme
 before(async () => {
   assert.ok(existsSync(join(DIST, 'index.html')), 'Vorher `npm run build` ausführen (dist/ fehlt).');
   await starte();
-  const { chromium } = await import(PW);
+  const { chromium } = await import(PW).catch((e: unknown) => {
+    throw new Error(`Playwright nicht gefunden unter ${PW}. Den Pfad mit PLAYWRIGHT_PFAD angeben; Playwright ist kein Paket des Projekts.`, { cause: e });
+  });
   browser = await chromium.launch();
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   page.on('console', (m: any) => konsole.push(`${m.type()}: ${m.text()}`));
@@ -105,8 +107,12 @@ describe('Maries Übersicht im Browser', () => {
 
   test('über den Fuß zu Marie: Fokus auf der Frage, vier Zahlen, Anlagen dringendste oben, kein Knopf', async () => {
     await tabZu('Übersicht für Marie');
+    const ab = anfragen.length;
     await page.keyboard.press('Enter');
     await page.locator('[data-aktualisiert]').waitFor();
+    await page.waitForTimeout(500);
+    // Die erste Nachricht des Signals lädt; ein eigenes Laden davor wäre doppelt (R15).
+    assert.equal(anfragen.slice(ab).filter((a) => a.pfad === '/api/marie').length, 1, 'die Übersicht wird beim Öffnen genau einmal geladen');
     assert.ok(page.url().endsWith('#/marie'));
     assert.equal((await fokus()).tag, 'H1');
     assert.equal(await page.title(), 'Übersicht · Marie (nur ansehen)');
@@ -222,6 +228,24 @@ describe('Maries Übersicht im Browser', () => {
     const ziele = await page.locator('a').evaluateAll((l: HTMLAnchorElement[]) => l.map((a) => a.getAttribute('href')));
     assert.deepEqual(ziele, ['#/marie', '#/marie', '#/']);
     assert.equal(await page.getByText('Zur Übersicht').getAttribute('href'), '#/marie');
+  });
+
+  test('kommt die Verbindung für das Signal nicht zustande, lädt die Seite trotzdem und sagt es; später verbindet sie sich selbst', async () => {
+    const ab = konsole.length;
+    await page.route('**/api/ereignisse', (r: any) =>
+      r.fulfill({ status: 503, contentType: 'application/json', body: '{"fehler":"Zu viele offene Verbindungen."}' }),
+    );
+    await page.goto(`${url}/#/marie`);
+    await page.locator('[data-aktualisiert][role="alert"]').waitFor({ timeout: 5000 });
+    assert.equal(await zahlen(), '20/8/8/4');
+    await page.unroute('**/api/ereignisse');
+    // Nach 5 s öffnet die Seite die Verbindung selbst neu; danach kommen Änderungen wieder an.
+    await page.locator('[data-aktualisiert]:has-text("aktualisiert sich von selbst")').waitFor({ timeout: 10000 });
+    await vonMax('/api/labels/STA4-03/bestaetigen');
+    await warteAufZahlen('20/7/9/4');
+    // Die gewollte Ablehnung meldet der Browser in der Konsole; sie zählt im letzten Test nicht als Fehler.
+    const rest = konsole.slice(ab).filter((z) => !/503/.test(z));
+    konsole.splice(ab, konsole.length - ab, ...rest);
   });
 
   test('schmale Bildschirme: kein seitliches Scrollen, auch mit offenem „Warum?“', async () => {

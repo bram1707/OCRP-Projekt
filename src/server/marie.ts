@@ -20,7 +20,7 @@ export interface MarieLabel {
   gruppe: GruppeMarie;
   /** ein Satz für die Liste, z. B. „Von Max gemeldet (Label beschädigt), wartet auf Nachbesserung.“ */
   grund: string;
-  /** Belege für den Status (AK-43), etwa Zeitpunkt und Grund der Meldung oder die Schwellen der Erkennung */
+  /** Belege für den Status (AK-43), etwa Datum und Grund der Meldung oder die Schwellen der Erkennung */
   warum: string[];
   /** die Daten des Labels für Foto und Sprachbelege; null, wenn es laut Anlagenliste fehlt und keinen Datensatz hat */
   label: LabelAnsicht | null;
@@ -55,21 +55,17 @@ export interface AnlageMitDaten {
 
 type Entscheidungen = Partial<Record<Ergebnis, LetzteEntscheidung>>;
 
-const ZEIT = new Intl.DateTimeFormat('de-DE', {
-  timeZone: 'Europe/Berlin',
-  day: '2-digit',
-  month: '2-digit',
-  year: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
+const DATUM = new Intl.DateTimeFormat('de-DE', { timeZone: 'Europe/Berlin', day: '2-digit', month: '2-digit', year: 'numeric' });
 
-/** „09.10.2026 um 17:00“, immer in deutscher Zeit, egal wo der Server läuft. Unlesbares bleibt, wie es ist. */
-export function zeitText(iso: string): string {
+/**
+ * „09.10.2026“, immer in deutscher Zeit, egal wo der Server läuft. Unlesbares bleibt, wie es ist.
+ * Nur das Datum: Wann genau Max etwas entschieden hat, braucht Marie nicht; es steht im Protokoll (R13).
+ */
+export function datumText(iso: string): string {
   const datum = new Date(iso);
   if (Number.isNaN(datum.getTime())) return iso;
-  const teile = Object.fromEntries(ZEIT.formatToParts(datum).map((t) => [t.type, t.value]));
-  return `${teile.day}.${teile.month}.${teile.year} um ${teile.hour}:${teile.minute}`;
+  const teile = Object.fromEntries(DATUM.formatToParts(datum).map((t) => [t.type, t.value]));
+  return `${teile.day}.${teile.month}.${teile.year}`;
 }
 
 const wer = (e: LetzteEntscheidung) => (e.wer === 'max' ? 'Max' : e.wer === 'simulation' ? 'die simulierte Instandhaltung' : e.wer);
@@ -93,17 +89,17 @@ export function grundFuerMarie(l: LabelAnsicht, e: Entscheidungen = {}): string 
     case 'offen':
       // Offen nach dem Zurücknehmen heißt: Max hatte schon geprüft, prüft aber erneut.
       return e.zurueckgenommen
-        ? `Max hat seine Bestätigung am ${zeitText(e.zurueckgenommen.wann)} zurückgenommen, wartet auf erneute Prüfung.`
+        ? `Max hat seine Bestätigung am ${datumText(e.zurueckgenommen.wann)} zurückgenommen, wartet auf erneute Prüfung.`
         : 'Erfasst, von Max noch nicht geprüft.';
     case 'bestaetigt':
-      return e.bestaetigt ? `Von ${wer(e.bestaetigt)} bestätigt am ${zeitText(e.bestaetigt.wann)}.` : 'Von Max bestätigt.';
+      return e.bestaetigt ? `Von ${wer(e.bestaetigt)} bestätigt am ${datumText(e.bestaetigt.wann)}.` : 'Von Max bestätigt.';
   }
 }
 
 /** Belege für den Status eines Labels (AK-43). Woran die Sprache erkannt wurde, zeigt die Oberfläche aus `label.belege`. */
 export function warumStatus(l: LabelAnsicht, anlage: Anlage, e: Entscheidungen = {}): string[] {
   const meldung = e.fehler;
-  const gemeldet = meldung ? `Max hat ${l.id} am ${zeitText(meldung.wann)} gemeldet: ${fehlergrundText(meldung.grund) ?? 'ohne Grund'}.` : null;
+  const gemeldet = meldung ? `Max hat ${l.id} am ${datumText(meldung.wann)} gemeldet: ${fehlergrundText(meldung.grund) ?? 'ohne Grund'}.` : null;
   switch (l.status) {
     case 'fehlt':
       return [
@@ -131,15 +127,15 @@ export function warumStatus(l: LabelAnsicht, anlage: Anlage, e: Entscheidungen =
     case 'nachgebessert':
       return [
         gemeldet ?? `Max hat ${l.id} gemeldet.`,
-        e.nachgebessert ? `Nachgebessert am ${zeitText(e.nachgebessert.wann)}.` : 'Es wurde nachgebessert.',
+        e.nachgebessert ? `Nachgebessert am ${datumText(e.nachgebessert.wann)}.` : 'Es wurde nachgebessert.',
         'Jetzt wartet es auf Max\' erneute Prüfung und zählt deshalb als offen.',
       ];
     case 'offen':
       return e.zurueckgenommen
-        ? [`${wer(e.zurueckgenommen)} hat die Bestätigung von ${l.id} am ${zeitText(e.zurueckgenommen.wann)} zurückgenommen.`, 'Jetzt wartet es auf Max\' erneute Prüfung.']
+        ? [`${wer(e.zurueckgenommen)} hat die Bestätigung von ${l.id} am ${datumText(e.zurueckgenommen.wann)} zurückgenommen.`, 'Jetzt wartet es auf Max\' erneute Prüfung.']
         : ['Das Foto ist erfasst. Max hat das Label noch nicht geprüft.'];
     case 'bestaetigt':
-      return [e.bestaetigt ? `${wer(e.bestaetigt)} hat ${l.id} am ${zeitText(e.bestaetigt.wann)} bestätigt.` : `Max hat ${l.id} bestätigt.`];
+      return [e.bestaetigt ? `${wer(e.bestaetigt)} hat ${l.id} am ${datumText(e.bestaetigt.wann)} bestätigt.` : `Max hat ${l.id} bestätigt.`];
   }
 }
 
@@ -162,7 +158,7 @@ function warumAnlage(anlage: Anlage, labels: readonly Label[], gesperrt: boolean
     zeilen.push(`Angelegt sind ${labels.length} Labels, laut Anlagenliste sind es ${anlage.sollAnzahl}. Gezählt werden alle ${labels.length}.`);
   }
   if (!gesperrt) {
-    const am = anlage.freigegebenAm ? ` am ${zeitText(anlage.freigegebenAm)}` : '';
+    const am = anlage.freigegebenAm ? ` am ${datumText(anlage.freigegebenAm)}` : '';
     return [...zeilen, `Max hat die Anlage${am} freigegeben. Alle ${labels.length} Labels sind bestätigt.`];
   }
   const pruefung = pruefeFreigabe(anlage.sollAnzahl, labels);
@@ -179,6 +175,8 @@ function warumAnlage(anlage: Anlage, labels: readonly Label[], gesperrt: boolean
 export function marieUebersicht(anlagen: readonly AnlageMitDaten[], entscheidungen: ReadonlyMap<string, Entscheidungen>): MarieUebersicht {
   const alleLabels: MarieLabel[] = [];
   const marieAnlagen: MarieAnlage[] = [];
+  /** je Anlage: wie viele ihrer Labels den dringendsten Status haben (für die Reihenfolge) */
+  const imDringendsten = new Map<string, number>();
 
   for (const { anlage, labels } of anlagen) {
     const bewertung = bewerteLabels(labels);
@@ -218,6 +216,7 @@ export function marieUebersicht(anlagen: readonly AnlageMitDaten[], entscheidung
     const a = anlageAnsicht(anlage, labels);
     const gruppen = Object.fromEntries(GRUPPEN_MARIE.map((g) => [g, eigene.filter((x) => x.gruppe === g).length])) as Record<GruppeMarie, number>;
     const dringendster = eigene.reduce<Status>((d, x) => (RANG_MARIE[x.status] < RANG_MARIE[d] ? x.status : d), 'bestaetigt');
+    imDringendsten.set(anlage.id, eigene.filter((x) => x.status === dringendster).length);
     marieAnlagen.push({
       id: anlage.id,
       name: anlage.name,
@@ -235,7 +234,7 @@ export function marieUebersicht(anlagen: readonly AnlageMitDaten[], entscheidung
   // Dringendste Anlage zuerst: nach ihrem dringendsten Status, dann gesperrte vor freigegebenen (eine
   // vollständig bestätigte, aber gesperrte Anlage braucht noch Max), dann wie viele Labels den dringendsten
   // Status haben, dann nach Name.
-  const anzahlIm = (a: MarieAnlage) => alleLabels.filter((l) => l.anlageId === a.id && l.status === a.dringendster).length;
+  const anzahlIm = (a: MarieAnlage) => imDringendsten.get(a.id) ?? 0;
   marieAnlagen.sort(
     (x, y) =>
       RANG_MARIE[x.dringendster] - RANG_MARIE[y.dringendster] ||

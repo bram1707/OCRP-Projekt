@@ -34,11 +34,9 @@ export const GRUPPE_REGEL: Record<GruppeMarie, string> = {
 
 export const labelsText = (n: number) => anzahl(n, 'Label', 'Labels');
 
-/** Wort für die Zahl im Satz, z. B. „Warum 4 fehlerhaft?“ */
-const ZAHL_WORT: Record<MarieZahl, string> = { gesamt: 'gesamt', offen: 'offen', erledigt: 'erledigt', fehlerhaft: 'fehlerhaft' };
-
+/** Name des „Warum?“ an einer Zahl, z. B. „Warum 4 fehlerhaft?“; das Wort ist der Name der Zahl selbst. */
 export function warumZahlText(daten: MarieUebersicht, zahl: MarieZahl): string {
-  return `Warum ${daten.zahlen[zahl]} ${ZAHL_WORT[zahl]}?`;
+  return `Warum ${daten.zahlen[zahl]} ${zahl}?`;
 }
 
 /**
@@ -53,11 +51,6 @@ export function aufteilung(daten: MarieUebersicht, zahl: MarieZahl): string | nu
   if (je.size === 0) return null;
   // Geschütztes Leerzeichen: Zahl und Wort bleiben beim Umbruch zusammen.
   return [...je].map(([wort, n]) => `${n}\u00a0${wort}`).join(' · ');
-}
-
-/** Die Zahl zur Auswahl, wie sie der Server geliefert hat. */
-export function zahlWert(daten: MarieUebersicht, zahl: MarieZahl): number {
-  return daten.zahlen[zahl];
 }
 
 /** Zeile unter „Labels gesamt“: Sind mehr Labels erfasst als laut Anlagenliste (M5), sagt sie das. */
@@ -91,7 +84,7 @@ export function auswahlTitel(daten: MarieUebersicht, auswahl: MarieAuswahl): str
     const a = auswahlAnlage(daten, auswahl);
     return a ? `${a.name}: ${labelsText(a.gesamt)}` : null;
   }
-  return `${ZAHL_TITEL[auswahl.zahl]}: ${labelsText(zahlWert(daten, auswahl.zahl))}`;
+  return `${ZAHL_TITEL[auswahl.zahl]}: ${labelsText(daten.zahlen[auswahl.zahl])}`;
 }
 
 /** Text, wenn hinter einer Zahl keine Labels stehen. */

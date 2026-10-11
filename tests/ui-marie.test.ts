@@ -249,7 +249,7 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
         'Nachbesserung): SWR5-02. 1 Label „Nachgebessert“ (wartet auf erneute Prüfung durch Max): SWR5-03. 1 Label „Offen“ (wartet ' +
         "auf Max' Prüfung): SWR5-01.",
     );
-    assert.match(text(element(html, 'details', 'data-warum-anlage', 'FOE2')!), /^Warum ist Förderband 2 freigegeben\? Max hat die Anlage am 09\.10\.2026 um 17:00 freigegeben\./);
+    assert.match(text(element(html, 'details', 'data-warum-anlage', 'FOE2')!), /^Warum ist Förderband 2 freigegeben\? Max hat die Anlage am 09\.10\.2026 freigegeben\./);
     assert.match(
       text(element(marie(f.sta4Bestaetigt), 'details', 'data-warum-anlage', 'STA4')!),
       /Alle Labels sind bestätigt\. Max hat die Anlage noch nicht freigegeben\./,
@@ -262,7 +262,7 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
     assert.match(text(neun), /Russisch 50 %, Polnisch 87 %: unter 90 % gilt eine Sprache als nicht sicher erkannt\./);
     assert.match(neun, /<h4 id="warum-STA4-09"[^>]*>Woran die Sprache erkannt wurde<\/h4>/);
     assert.match(neun, /<mark[^>]*data-sprache="de"/);
-    assert.match(text(element(html, 'details', 'data-warum-label', 'FOE2-01')!), /Max hat FOE2-01 am 09\.10\.2026 um 16:10 bestätigt\./);
+    assert.match(text(element(html, 'details', 'data-warum-label', 'FOE2-01')!), /Max hat FOE2-01 am 09\.10\.2026 bestätigt\./);
     assert.doesNotMatch(element(html, 'details', 'data-warum-label', 'SWR5-05')!, /Woran die Sprache/, 'ohne Foto keine Sprachbelege');
   });
 
@@ -292,10 +292,13 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
 });
 
 describe('AK-44 sofort aktuell', () => {
-  test('Quelltext: die Seite hört auf das Signal, verbindet sich selbst neu, ist verdeckt ohne Verbindung (Verhalten: Browser-Test)', () => {
+  test('Quelltext: die Seite hört auf das Signal, lädt beim Öffnen einmal, verbindet sich selbst neu, ist verdeckt ohne Verbindung (Verhalten: Browser-Test)', () => {
     const quelle = readFileSync(join(UI, 'marie', 'MarieSeite.tsx'), 'utf8');
     assert.match(quelle, /new EventSource\(EREIGNISSE\)/);
     assert.match(quelle, /onmessage = \(\) => void laden\(\)/);
+    // Beim Öffnen lädt nur die erste Nachricht (R15); kommt keine Verbindung zustande, lädt die Seite einmal selbst.
+    assert.doesNotMatch(quelle, /useEffect\(\(\) => \{\s*void laden\(\);/, 'kein eigenes Laden vor der ersten Nachricht');
+    assert.match(quelle, /onerror = \(\) => \{[^}]*if \(letzte\.current === null\) void laden\(\);/, 'Rückfall ohne Verbindung');
     assert.match(quelle, /visibilitychange/);
     assert.match(quelle, /visibilityState === 'hidden'\) trenne\(\)/, 'verdeckt: Verbindung zu');
     assert.match(quelle, /readyState === EventSource\.CLOSED\) wartet = setTimeout\(verbinde/, 'aufgegebene Verbindung selbst neu öffnen');

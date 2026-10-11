@@ -68,9 +68,9 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
   }, []);
 
   useEffect(() => {
-    void laden();
-    // Signal nach jeder Änderung. Jede Nachricht lädt neu, auch die erste nach einem Wiederverbinden, die den
-    // aktuellen Stand bringt; so geht keine Änderung aus der Lücke verloren.
+    // Signal nach jeder Änderung. Jede Nachricht lädt neu, auch die erste, die der Server gleich beim Verbinden
+    // schickt: Sie lädt die Seite beim Öffnen (ein eigenes Laden davor wäre doppelt) und nach einem
+    // Wiederverbinden, sodass keine Änderung aus der Lücke verloren geht.
     let quelle: EventSource | null = null;
     let wartet: ReturnType<typeof setTimeout> | undefined;
     const trenne = () => {
@@ -86,6 +86,8 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
       neu.onopen = () => setVerbunden(true);
       neu.onerror = () => {
         setVerbunden(false);
+        // Ohne Verbindung kommt keine erste Nachricht; dann einmal selbst laden, damit Marie überhaupt etwas sieht.
+        if (letzte.current === null) void laden();
         // Meist verbindet sich der Browser selbst neu. Hat er aufgegeben (etwa nach einer Fehlerantwort), selbst neu öffnen.
         if (neu.readyState === EventSource.CLOSED) wartet = setTimeout(verbinde, NEU_VERBINDEN_MS);
       };

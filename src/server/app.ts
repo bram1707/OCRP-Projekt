@@ -49,12 +49,29 @@ function istErlaubterHost(kopf: string | undefined): boolean {
   }
 }
 
+/**
+ * Kommt die Anfrage von einer fremden Webseite? Browser schicken „Origin“ bei EventSource und „Sec-Fetch-Site“
+ * bei jeder Anfrage, auch bei no-cors. Die eigene Seite hat dieselbe Adresse wie der Server; Anfragen ohne diese
+ * Kopfzeilen (Adresszeile, Werkzeuge) gelten nicht als fremd.
+ */
+function istFremdeHerkunft(req: IncomingMessage): boolean {
+  const seite = req.headers['sec-fetch-site'];
+  if (seite !== undefined && seite !== 'same-origin' && seite !== 'none') return true;
+  const herkunft = req.headers.origin;
+  if (herkunft === undefined) return false;
+  try {
+    return new URL(herkunft).host !== req.headers.host;
+  } catch {
+    return true;
+  }
+}
+
 interface Anfrage {
   rolle: Rolle | null;
   koerper: () => Promise<Record<string, unknown>>;
 }
 
-interface Route {
+export interface Route {
   /** Jede Route, die nicht GET ist, schreibt und verlangt die Rolle „max“. */
   methode: 'GET' | 'POST';
   muster: RegExp;
@@ -108,7 +125,8 @@ function sendeJson(res: ServerResponse, status: number, daten: unknown): void {
   res.end(JSON.stringify(daten));
 }
 
-function routen(optionen: ServerOptionen): Route[] {
+/** Alle Routen der Schnittstelle; exportiert, damit ein Test jede schreibende Route als Marie aufrufen kann (AK-46). */
+export function routen(optionen: ServerOptionen): Route[] {
   const { db } = optionen;
   const modell = optionen.modell ?? mockModell;
 
@@ -250,6 +268,8 @@ export function erstelleHandler(optionen: ServerOptionen): Handler {
 
       // Offene Verbindung für das Signal nach jeder Änderung (AK-44). Sie liefert keine Daten.
       if (req.method === 'GET' && pfad === '/api/ereignisse') {
+        // Sonst könnte eine fremde Seite im Browser die begrenzten Plätze belegen (R14).
+        if (istFremdeHerkunft(req)) throw new Fachfehler(403, 'Das Signal gibt es nur für die eigene Seite.');
         if (!ereignisse.verbinde(res)) throw new Fachfehler(503, 'Zu viele offene Verbindungen. Bitte später erneut versuchen.');
         return;
       }

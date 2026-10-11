@@ -122,6 +122,21 @@ describe('Daten für die Simulation werden beim Laden geprüft', () => {
     assert.throws(mitLabels((l) => { label(l, 'SWR5-05').nacherfassung.ocrKonfidenz = 1.5; }));
     assert.throws(mitLabels((l) => { label(l, 'STA4-08').nachKorrektur.ocrText = 42; }));
   });
+  test('ein Label ohne Foto kann nicht schon entschieden sein (N2): sonst ließe sich die Anlage freigeben', () => {
+    for (const status of ['bestaetigt', 'nachgebessert', 'fehlerhaft']) {
+      assert.throws(
+        mitLabels((l) => { label(l, 'SWR5-05').ausgangszustand = { status, fehlergrund: 'unleserlich', am: '2026-10-09T10:00:00.000Z' }; }),
+        /SWR5-05 hat kein Foto/,
+        status,
+      );
+    }
+  });
+  test('mehr Labels als laut Anlagenliste werden nicht eingelesen (N3, M6)', () => {
+    assert.throws(
+      mitLabels((l) => { l.push({ ...label(l, 'FOE2-01'), id: 'FOE2-06', ausgangszustand: undefined }); }),
+      /Förderband 2 hat 6 Labels, laut Anlagenliste 5/,
+    );
+  });
   test('unveränderte Kopie lädt ohne Fehler', () => {
     assert.doesNotThrow(mitLabels(() => {}));
   });

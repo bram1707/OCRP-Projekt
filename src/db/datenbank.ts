@@ -116,7 +116,14 @@ function pruefeTestdaten(daten: Testdaten, bilderOrdner: string): void {
     if (n && (l.bild !== null || !istTextMitSicherheit(n) || !bildDa(n.bild))) {
       throw new Error(`Ungültige Daten für das nachgereichte Foto von ${l.id} (nur bei Labels ohne Foto)`);
     }
+    // Ohne Foto kann Max nichts entschieden haben; ein „bestätigtes“ Label ohne Foto machte die Anlage freigebbar (N2).
+    if (l.bild === null && l.ausgangszustand) throw new Error(`${l.id} hat kein Foto und kann daher noch nicht entschieden sein.`);
     labelIds.add(l.id);
+  }
+  // Mehr Labels als laut Anlagenliste kann es nicht geben (N3); damit stellt sich M6 im Prototyp nicht.
+  for (const a of daten.anlagen) {
+    const anzahl = daten.labels.filter((l) => l.anlageId === a.id).length;
+    if (anzahl > a.sollAnzahl) throw new Error(`${a.name} hat ${anzahl} Labels, laut Anlagenliste ${a.sollAnzahl}.`);
   }
 }
 

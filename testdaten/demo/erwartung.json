@@ -1,0 +1,406 @@
+{
+  "_hinweis": "Erwartungswerte NUR für Tests der Demo-Daten (AK-50). Der Server liest diese Datei nie, und sie erscheint nie in der Ansicht (AK-61).",
+  "_hinweis_nachSimulation": "nachSimulation: Sprachen und Status nach der simulierten Nachbesserung.",
+  "PRE3-01": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-02": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-03": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-04": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-05": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-06": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-07": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-08": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-09": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-10": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-11": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "PRE3-12": {
+    "sprachen": [
+      "de",
+      "pl"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-01": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-02": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-03": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-04": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-05": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-06": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-07": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-08": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-09": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-10": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-11": {
+    "sprachen": [
+      "de"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [
+      "abweichende_sprachen"
+    ],
+    "status": "offen",
+    "notiz": "Nur Deutsch, der englische Teil fehlt auf dem Label. Max soll „Sprache falsch“ melden.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "en"
+      ],
+      "lesbar": true,
+      "status": "nachgebessert"
+    }
+  },
+  "MON1-12": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-13": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-14": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "MON1-15": {
+    "sprachen": [
+      "de",
+      "en"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-01": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-02": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-03": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-04": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": true,
+    "auffaellig": [
+      "unsicher_sprache"
+    ],
+    "status": "unsicher",
+    "notiz": "Beide Hälften kurz und gleichwertig (Heiße Oberfläche / Surface chaude); Französisch nur 79 %, das Label selbst ist in Ordnung. Max darf bestätigen.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "fr"
+      ],
+      "lesbar": true,
+      "status": "nachgebessert"
+    }
+  },
+  "LAC2-05": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-06": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-07": {
+    "sprachen": [
+      "de",
+      "ru"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [
+      "abweichende_sprachen"
+    ],
+    "status": "offen",
+    "notiz": "Russisch statt Französisch, falsches Label angebracht. Max soll „Sprache falsch“ melden.",
+    "nachSimulation": {
+      "sprachen": [
+        "de",
+        "fr"
+      ],
+      "lesbar": true,
+      "status": "nachgebessert"
+    }
+  },
+  "LAC2-08": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-09": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  },
+  "LAC2-10": {
+    "sprachen": [
+      "de",
+      "fr"
+    ],
+    "lesbar": true,
+    "unsicher": false,
+    "auffaellig": [],
+    "status": "offen"
+  }
+}

@@ -1,0 +1,276 @@
+[
+  {
+    "id": "PRE3-01",
+    "anlageId": "PRE3",
+    "bild": "PRE3-01.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nUWAGA! Ryzyko zgniecenia. Trzymać ręce z dala.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "PRE3-02",
+    "anlageId": "PRE3",
+    "bild": "PRE3-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nUWAGA! Gorąca powierzchnia. Nie dotykać.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "PRE3-03",
+    "anlageId": "PRE3",
+    "bild": "PRE3-03.svg",
+    "ocrText": "GEFAHR! Hochspannung. Vor Wartung abschalten.\nNIEBEZPIECZEŃSTWO! Wysokie napięcie. Wyłączyć przed konserwacją.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "PRE3-04",
+    "anlageId": "PRE3",
+    "bild": "PRE3-04.svg",
+    "ocrText": "Schutzbrille tragen! Nur mit Schutzbrille benutzen.\nNosić okulary ochronne!",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "PRE3-05",
+    "anlageId": "PRE3",
+    "bild": "PRE3-05.svg",
+    "ocrText": "Gehörschutz tragen! Nur mit Gehörschutz betreten.\nNosić ochronniki słuchu!",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "PRE3-06",
+    "anlageId": "PRE3",
+    "bild": "PRE3-06.svg",
+    "ocrText": "Zutritt für Unbefugte verboten!\nOsobom nieupoważnionym wstęp wzbroniony!",
+    "ocrKonfidenz": 0.97
+  },
+  {
+    "id": "PRE3-07",
+    "anlageId": "PRE3",
+    "bild": "PRE3-07.svg",
+    "ocrText": "WARNUNG! Elektrische Spannung. Nicht öffnen.\nOSTRZEŻENIE! Ryzyko porażenia prądem. Nie otwierać.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "PRE3-08",
+    "anlageId": "PRE3",
+    "bild": "PRE3-08.svg",
+    "ocrText": "Vor Wartung die Maschine abschalten.\nPrzed konserwacją wyłączyć maszynę.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "PRE3-09",
+    "anlageId": "PRE3",
+    "bild": "PRE3-09.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Nicht in die Presse greifen.\nUWAGA! Ryzyko zgniecenia. Trzymać ręce z dala od prasy.",
+    "ocrKonfidenz": 0.91
+  },
+  {
+    "id": "PRE3-10",
+    "anlageId": "PRE3",
+    "bild": "PRE3-10.svg",
+    "ocrText": "Betreten für Unbefugte verboten!\nZakaz! Wstęp wzbroniony osobom nieupoważnionym.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "PRE3-11",
+    "anlageId": "PRE3",
+    "bild": "PRE3-11.svg",
+    "ocrText": "VORSICHT! Hände nicht in die Maschine.\nUWAGA! Trzymać ręce z dala od maszyny.",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "PRE3-12",
+    "anlageId": "PRE3",
+    "bild": "PRE3-12.svg",
+    "ocrText": "Gefahr! Nur mit Schutzbrille und Gehörschutz betreten.\nNiebezpieczeństwo! Nosić okulary ochronne i ochronniki słuchu.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "MON1-01",
+    "anlageId": "MON1",
+    "bild": "MON1-01.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nCAUTION! Crushing hazard. Keep hands away.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "MON1-02",
+    "anlageId": "MON1",
+    "bild": "MON1-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nCAUTION! Hot surface. Do not touch.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "MON1-03",
+    "anlageId": "MON1",
+    "bild": "MON1-03.svg",
+    "ocrText": "GEFAHR! Hochspannung. Vor Wartung abschalten.\nDANGER! High voltage. Switch off before maintenance.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "MON1-04",
+    "anlageId": "MON1",
+    "bild": "MON1-04.svg",
+    "ocrText": "Schutzbrille tragen! Nur mit Schutzbrille benutzen.\nWear safety glasses! Only use with safety glasses.",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "MON1-05",
+    "anlageId": "MON1",
+    "bild": "MON1-05.svg",
+    "ocrText": "Gehörschutz tragen! Nur mit Gehörschutz betreten.\nWear hearing protectors! Entry only with hearing protectors.",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "MON1-06",
+    "anlageId": "MON1",
+    "bild": "MON1-06.svg",
+    "ocrText": "Zutritt nur für befugte Personen!\nAuthorized personnel only. No entry.",
+    "ocrKonfidenz": 0.97
+  },
+  {
+    "id": "MON1-07",
+    "anlageId": "MON1",
+    "bild": "MON1-07.svg",
+    "ocrText": "WARNUNG! Stromschlag. Vor Wartung abschalten.\nWARNING! Electric shock. Switch off before maintenance.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "MON1-08",
+    "anlageId": "MON1",
+    "bild": "MON1-08.svg",
+    "ocrText": "VORSICHT! Hände nicht in die Maschine.\nCAUTION! Keep hands away from the machine.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "MON1-09",
+    "anlageId": "MON1",
+    "bild": "MON1-09.svg",
+    "ocrText": "Betreten verboten! Nur für Wartung.\nNo entry! Maintenance only.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "MON1-10",
+    "anlageId": "MON1",
+    "bild": "MON1-10.svg",
+    "ocrText": "ACHTUNG! Heiße Oberfläche. Nicht berühren.\nWARNING! Hot surface. Do not touch.",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "MON1-11",
+    "anlageId": "MON1",
+    "bild": "MON1-11.svg",
+    "ocrText": "ACHTUNG! Elektrische Spannung. Nicht öffnen.",
+    "ocrKonfidenz": 0.95,
+    "nachKorrektur": {
+      "bild": "MON1-11-neu.svg",
+      "ocrText": "ACHTUNG! Elektrische Spannung. Nicht öffnen.\nWARNING! Electric shock hazard. Do not open.",
+      "ocrKonfidenz": 0.96
+    }
+  },
+  {
+    "id": "MON1-12",
+    "anlageId": "MON1",
+    "bild": "MON1-12.svg",
+    "ocrText": "Quetschgefahr! Hände nicht in den Arbeitsbereich.\nCrushing hazard! Keep hands away.",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "MON1-13",
+    "anlageId": "MON1",
+    "bild": "MON1-13.svg",
+    "ocrText": "Schutzbrille und Gehörschutz tragen!\nWear safety glasses and hearing protectors!",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "MON1-14",
+    "anlageId": "MON1",
+    "bild": "MON1-14.svg",
+    "ocrText": "Maschine nur nach Einweisung benutzen.\nOnly authorized persons may operate the machine.",
+    "ocrKonfidenz": 0.91
+  },
+  {
+    "id": "MON1-15",
+    "anlageId": "MON1",
+    "bild": "MON1-15.svg",
+    "ocrText": "WARNUNG! Hochspannung. Nicht berühren.\nWARNING! High voltage. Do not touch.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "LAC2-01",
+    "anlageId": "LAC2",
+    "bild": "LAC2-01.svg",
+    "ocrText": "ACHTUNG! Quetschgefahr. Hände fernhalten.\nATTENTION ! Risque d'écrasement. Tenir les mains éloignées.",
+    "ocrKonfidenz": 0.95
+  },
+  {
+    "id": "LAC2-02",
+    "anlageId": "LAC2",
+    "bild": "LAC2-02.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nATTENTION ! Surface chaude. Ne pas toucher.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "LAC2-03",
+    "anlageId": "LAC2",
+    "bild": "LAC2-03.svg",
+    "ocrText": "GEFAHR! Hochspannung. Vor Wartung abschalten.\nDANGER ! Haute tension. Couper avant l'entretien.",
+    "ocrKonfidenz": 0.96
+  },
+  {
+    "id": "LAC2-04",
+    "anlageId": "LAC2",
+    "bild": "LAC2-04.svg",
+    "ocrText": "VORSICHT! Heiße Oberfläche.\nATTENTION ! Surface chaude.",
+    "ocrKonfidenz": 0.93,
+    "nachKorrektur": {
+      "bild": "LAC2-04-neu.svg",
+      "ocrText": "VORSICHT! Heiße Oberfläche. Nicht berühren.\nATTENTION ! Surface chaude. Ne pas toucher.",
+      "ocrKonfidenz": 0.95
+    }
+  },
+  {
+    "id": "LAC2-05",
+    "anlageId": "LAC2",
+    "bild": "LAC2-05.svg",
+    "ocrText": "Schutzbrille tragen! Nur mit Schutzbrille benutzen.\nPorter des lunettes de protection !",
+    "ocrKonfidenz": 0.92
+  },
+  {
+    "id": "LAC2-06",
+    "anlageId": "LAC2",
+    "bild": "LAC2-06.svg",
+    "ocrText": "Zutritt nur für befugte Personen!\nEntrée uniquement pour le personnel autorisé.",
+    "ocrKonfidenz": 0.97
+  },
+  {
+    "id": "LAC2-07",
+    "anlageId": "LAC2",
+    "bild": "LAC2-07.svg",
+    "ocrText": "WARNUNG! Elektrische Spannung. Nicht öffnen.\nВНИМАНИЕ! Высокое напряжение. Не открывать.",
+    "ocrKonfidenz": 0.95,
+    "nachKorrektur": {
+      "bild": "LAC2-07-neu.svg",
+      "ocrText": "WARNUNG! Elektrische Spannung. Nicht öffnen.\nATTENTION ! Risque électrique. Ne pas ouvrir.",
+      "ocrKonfidenz": 0.96
+    }
+  },
+  {
+    "id": "LAC2-08",
+    "anlageId": "LAC2",
+    "bild": "LAC2-08.svg",
+    "ocrText": "Vor Wartung die Maschine abschalten.\nCouper la machine avant l'entretien.",
+    "ocrKonfidenz": 0.94
+  },
+  {
+    "id": "LAC2-09",
+    "anlageId": "LAC2",
+    "bild": "LAC2-09.svg",
+    "ocrText": "Hände fernhalten! Quetschgefahr.\nTenir les mains éloignées ! Risque d'écrasement.",
+    "ocrKonfidenz": 0.93
+  },
+  {
+    "id": "LAC2-10",
+    "anlageId": "LAC2",
+    "bild": "LAC2-10.svg",
+    "ocrText": "GEFAHR! Lackierkabine nicht betreten.\nATTENTION ! Ne pas entrer dans la cabine.",
+    "ocrKonfidenz": 0.95
+  }
+]

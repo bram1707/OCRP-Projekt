@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340" font-family="Arial, sans-serif" role="img" aria-label="Platzhalterfoto Label PRE3-10">
+  <defs><filter id="unscharf"><feGaussianBlur stdDeviation="3.2"/></filter></defs>
+  <rect width="480" height="340" fill="#d9d9d9"/>
+  <g>
+    <rect x="16" y="16" width="448" height="308" rx="10" fill="#ffd400" stroke="#111" stroke-width="5"/>
+    <polygon points="70,36 110,104 30,104" fill="#111"/>
+    <polygon points="70,50 100,98 40,98" fill="#ffd400"/>
+    <text x="64" y="94" font-size="38" font-weight="bold">!</text>
+    <text x="130" y="80" font-size="16">Platzhalterfoto · PRE3-10</text>
+    <g fill="#111">
+    <text x="40" y="130" font-size="19">Betreten für Unbefugte verboten!</text>
+    <text x="40" y="154" font-size="19"></text>
+    <text x="40" y="178" font-size="19">Zakaz! Wstęp wzbroniony osobom</text>
+    <text x="40" y="202" font-size="19">nieupoważnionym.</text>
+    </g>
+  </g>
+</svg>

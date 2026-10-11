@@ -1,0 +1,31 @@
+{
+  "name": "ocr-label-pruefsystem",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MVP: Sicherheits- und Warnlabels einzeln prüfen (nur fiktive Daten, KI im Mock-Modus)",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "vite build --configLoader native && node --disable-warning=ExperimentalWarning src/server/start.ts",
+    "demo": "vite build --configLoader native && node --disable-warning=ExperimentalWarning src/server/demo.ts",
+    "dev": "node --disable-warning=ExperimentalWarning node_modules/vite/bin/vite.js --configLoader native",
+    "build": "vite build --configLoader native",
+    "server": "node --disable-warning=ExperimentalWarning src/server/start.ts",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-reporter=spec \"tests/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.ui.json",
+    "bilder": "node testdaten/erzeuge-bilder.ts"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vite": "8.3.4"
+  }
+}

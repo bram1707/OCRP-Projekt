@@ -1,0 +1,13 @@
+/* Tailwind durchsucht nur die Oberfläche selbst nach Klassen. */
+@import "tailwindcss" source(".");
+
+/* Grundschrift 18 px; alle Größen der Oberfläche bauen darauf auf. */
+html {
+  font-size: 112.5%;
+}
+
+/* Deutlich sichtbarer Fokusrahmen für die Bedienung mit der Tastatur. */
+:focus-visible {
+  outline: 4px solid #1e3a8a;
+  outline-offset: 3px;
+}

@@ -1,2 +1,14 @@
 __pycache__/
 *.pyc
+node_modules/
+.env
+daten/
+dist/
+*.sqlite
+*.sqlite-*
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+coverage/

@@ -9,7 +9,7 @@ import { dirname, join } from 'node:path';
 import { begrenzeKonfidenz, type Gelesen, type TextLeser } from './textLeser.ts';
 
 /** Dieselben Sprachen wie die Spracherkennung (U4). */
-export const OCR_SPRACHEN = ['deu', 'eng', 'pol', 'fra', 'rus'] as const;
+export const OCR_SPRACHEN = ['deu', 'eng', 'pol', 'fra', 'rus', 'tur', 'bul', 'chi_sim'] as const;
 export const ZEITLIMIT_MS = 30_000;
 
 const require = createRequire(import.meta.url);

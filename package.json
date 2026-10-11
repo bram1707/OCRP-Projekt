@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "vite build --configLoader native && node --disable-warning=ExperimentalWarning src/server/start.ts",
+    "demo": "vite build --configLoader native && node --disable-warning=ExperimentalWarning src/server/demo.ts",
     "dev": "node --disable-warning=ExperimentalWarning node_modules/vite/bin/vite.js --configLoader native",
     "build": "vite build --configLoader native",
     "server": "node --disable-warning=ExperimentalWarning src/server/start.ts",

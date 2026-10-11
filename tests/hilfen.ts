@@ -12,6 +12,9 @@ import { erstelleServer } from '../src/server/app.ts';
 export const WURZEL = resolve(import.meta.dirname, '..');
 export const TESTDATEN = join(WURZEL, 'testdaten');
 export const BILDER = join(TESTDATEN, 'bilder');
+/** Demo-Daten für Nutzertests (AK-50), eigener Datensatz neben den 20 Testlabels */
+export const DEMO = join(TESTDATEN, 'demo');
+export const DEMO_BILDER = join(DEMO, 'bilder');
 
 export interface Erwartung {
   sprachen: string[];
@@ -28,15 +31,27 @@ export function testdaten(): Testdaten {
   return ladeTestdaten(TESTDATEN);
 }
 
-export function erwartungen(): Record<string, Erwartung> {
-  const roh = JSON.parse(readFileSync(join(TESTDATEN, 'erwartung.json'), 'utf8')) as Record<string, unknown>;
+export function erwartungen(ordner = TESTDATEN): Record<string, Erwartung> {
+  const roh = JSON.parse(readFileSync(join(ordner, 'erwartung.json'), 'utf8')) as Record<string, unknown>;
   return Object.fromEntries(Object.entries(roh).filter(([k]) => !k.startsWith('_'))) as Record<string, Erwartung>;
 }
 
-export async function neueDatenbank(): Promise<DatabaseSync> {
+export function demoDaten(): Testdaten {
+  return ladeTestdaten(DEMO);
+}
+
+export function demoErwartungen(): Record<string, Erwartung> {
+  return erwartungen(DEMO);
+}
+
+export async function neueDatenbank(daten: Testdaten = testdaten()): Promise<DatabaseSync> {
   const db = oeffneDatenbank(':memory:');
-  await spieleTestdatenEin(db, testdaten());
+  await spieleTestdatenEin(db, daten);
   return db;
+}
+
+export async function neueDemoDatenbank(): Promise<DatabaseSync> {
+  return neueDatenbank(demoDaten());
 }
 
 export interface TestServer {
@@ -44,8 +59,8 @@ export interface TestServer {
   schliessen: () => Promise<void>;
 }
 
-export async function starteServer(db: DatabaseSync): Promise<TestServer> {
-  const server = erstelleServer({ db, bilderOrdner: BILDER });
+export async function starteServer(db: DatabaseSync, bilderOrdner = BILDER): Promise<TestServer> {
+  const server = erstelleServer({ db, bilderOrdner });
   await new Promise<void>((fertig) => server.listen(0, '127.0.0.1', fertig));
   const { port } = server.address() as AddressInfo;
   return {

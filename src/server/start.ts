@@ -12,5 +12,6 @@ const server = erstelleServer(serverOptionen(system));
 server.listen(Number(process.env.PORT ?? 3000), '127.0.0.1', () => {
   // Den tatsächlich belegten Port nennen (bei PORT=0 wählt das System einen freien).
   const { port } = server.address() as AddressInfo;
-  console.log(`Prüfsystem läuft auf http://127.0.0.1:${port} (Spracherkennung: ${system.konfiguration.modus}, nur fiktive Daten)`);
+  const daten = system.datensatz === 'demo' ? 'Demo-Daten' : 'Testdaten';
+  console.log(`Prüfsystem läuft auf http://127.0.0.1:${port} (Spracherkennung: ${system.konfiguration.modus}, ${daten}, nur fiktive Daten)`);
 });

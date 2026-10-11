@@ -1,12 +1,13 @@
-// Erzeugt die Platzhalter-Fotos in testdaten/bilder/ aus labels.json: npm run bilder
+// Erzeugt die Platzhalter-Fotos in <ordner>/bilder/ aus <ordner>/labels.json: npm run bilder
+// Ohne Angabe ist <ordner> testdaten/, für die Demo-Daten: npm run bilder -- testdaten/demo
 // Nur fiktive Inhalte. Das unleserliche Label wird absichtlich verschwommen gezeichnet.
 // Dazu kommen die Fotos, die erst die Simulation liefert (Nachbesserung, Foto nachreichen).
 
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import type { LabelDaten } from '../src/db/datenbank.ts';
 
-const ordner = import.meta.dirname;
+const ordner = process.argv[2] ? resolve(process.argv[2]) : import.meta.dirname;
 const labels = JSON.parse(readFileSync(join(ordner, 'labels.json'), 'utf8')) as LabelDaten[];
 
 /** Was tatsächlich auf dem Label steht, wenn die OCR es nicht lesen konnte. */

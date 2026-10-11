@@ -22,7 +22,23 @@ const f = {} as {
   fertig: MarieUebersicht;
   /** Schweißroboter 5 mit Soll 7: zwei Labels ohne Datensatz */
   ohneDatensatz: MarieUebersicht;
+  /** Stanzanlage 4 mit Soll 8: zwei Datensätze mehr als laut Anlagenliste */
+  ueberzahl: MarieUebersicht;
 };
+
+/** Übersicht mit geänderter Soll-Anzahl einer Anlage */
+async function mitSoll(anlageId: string, soll: number): Promise<MarieUebersicht> {
+  const daten = testdaten();
+  daten.anlagen = daten.anlagen.map((a) => (a.id === anlageId ? { ...a, sollAnzahl: soll } : a));
+  const db = oeffneDatenbank(':memory:');
+  await spieleTestdatenEin(db, daten);
+  const s: TestServer = await starteServer(db);
+  try {
+    return await json(s, '/api/marie');
+  } finally {
+    await s.schliessen();
+  }
+}
 
 before(async () => {
   vite = await starteVite();
@@ -45,16 +61,8 @@ before(async () => {
     await json(s, '/api/anlagen/SWR5/freigeben', 'POST');
     f.fertig = await json(s, '/api/marie');
   });
-  const daten = testdaten();
-  daten.anlagen = daten.anlagen.map((a) => (a.id === 'SWR5' ? { ...a, sollAnzahl: 7 } : a));
-  const db = oeffneDatenbank(':memory:');
-  await spieleTestdatenEin(db, daten);
-  const s: TestServer = await starteServer(db);
-  try {
-    f.ohneDatensatz = await json(s, '/api/marie');
-  } finally {
-    await s.schliessen();
-  }
+  f.ohneDatensatz = await mitSoll('SWR5', 7);
+  f.ueberzahl = await mitSoll('STA4', 8);
 });
 
 after(async () => {
@@ -106,7 +114,7 @@ describe('AK-40 vier Zahlen oben', () => {
 
   test('„Warum?“ an der Gesamtzahl rechnet die Summe vor', () => {
     const warum = text(element(marie(f.basis), 'details', 'data-warum-zahl', 'gesamt')!);
-    assert.match(warum, /Schweißroboter 5: 5 Labels; Stanzanlage 4: 10 Labels; Förderband 2: 5 Labels/);
+    assert.match(warum, /^Warum 20 gesamt\? Labels je Anlage: Schweißroboter 5: 5 Labels; Stanzanlage 4: 10 Labels; Förderband 2: 5 Labels\./);
     assert.match(warum, /Jedes Label zählt genau einmal: 9 offen \+ 7 erledigt \+ 4 fehlerhaft = 20\./);
   });
 });
@@ -132,10 +140,24 @@ describe('AK-45 Anlagenliste legt die Anzahl fest; ohne Foto „Label nicht erfa
       assert.match(text(z), /^Kein Foto Label nicht erfasst Schweißroboter 5 Fehlt Label nicht erfasst: laut Anlagenliste vorhanden, aber nicht fotografiert\./);
       assert.doesNotMatch(z, /<img|Vorgeschlagene Sprachen|Woran die Sprache/);
     }
+    assert.match(
+      text(element(html, 'details', 'data-warum-zahl', 'fehlerhaft')!),
+      /Gezählt: SWR5-05 \(Fehlt\), nicht erfasst bei Schweißroboter 5 \(Fehlt\), nicht erfasst bei Schweißroboter 5 \(Fehlt\), SWR5-02/,
+    );
     const karte = text(element(html, 'li', 'data-marie-anlage', 'SWR5')!);
     assert.match(karte, /^Schweißroboter 5 Gesperrt 1 von 7 bestätigt 4 fehlerhaft/);
     assert.match(text(element(html, 'details', 'data-warum-anlage', 'SWR5')!), /2 Labels laut Anlagenliste nicht erfasst\./);
     assert.match(text(element(html, 'details', 'data-warum-zahl', 'gesamt')!), /Schweißroboter 5: 7 Labels/);
+  });
+});
+
+describe('M5 mehr Datensätze als laut Anlagenliste', () => {
+  test('die Gesamtzahl sagt nicht „laut Anlagenliste“, „Warum?“ nennt beide Zahlen', () => {
+    const html = marie(f.ueberzahl);
+    assert.match(text(element(html, 'li', 'data-zahl', 'gesamt')!), /^Labels gesamt 20 mehr erfasst als laut Anlagenliste /);
+    const warum = text(element(html, 'details', 'data-warum-zahl', 'gesamt')!);
+    assert.match(warum, /Labels je Anlage: Schweißroboter 5: 5 Labels; Stanzanlage 4: 10 Labels \(laut Anlagenliste 8\); Förderband 2: 5 Labels\./);
+    assert.match(text(element(marie(f.basis), 'details', 'data-warum-zahl', 'gesamt')!), /Labels je Anlage: Schweißroboter 5: 5 Labels; Stanzanlage 4: 10 Labels;/);
   });
 });
 
@@ -224,8 +246,8 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
     assert.equal(
       swr5,
       'Warum ist Schweißroboter 5 gesperrt? 1 Label „Fehlt“ (kein Foto): SWR5-05. 1 Label „Fehlerhaft“ (von Max gemeldet, wartet auf ' +
-        'Nachbesserung): SWR5-02. 1 Label „Nachgebessert“ (wartet auf erneute Prüfung durch Max): SWR5-03. 1 Label „Offen“ (von Max ' +
-        'noch nicht geprüft): SWR5-01.',
+        'Nachbesserung): SWR5-02. 1 Label „Nachgebessert“ (wartet auf erneute Prüfung durch Max): SWR5-03. 1 Label „Offen“ (wartet ' +
+        "auf Max' Prüfung): SWR5-01.",
     );
     assert.match(text(element(html, 'details', 'data-warum-anlage', 'FOE2')!), /^Warum ist Förderband 2 freigegeben\? Max hat die Anlage am 09\.10\.2026 um 17:00 freigegeben\./);
     assert.match(
@@ -270,7 +292,7 @@ describe('AK-43 „Warum?“ erklärt jede Zahl, jede Sperre und jeden Status', 
 });
 
 describe('AK-44 sofort aktuell', () => {
-  test('die Seite hört auf das Signal des Servers und lädt nach jeder Nachricht neu; verbindet sich selbst neu; verdeckt ohne Verbindung', () => {
+  test('Quelltext: die Seite hört auf das Signal, verbindet sich selbst neu, ist verdeckt ohne Verbindung (Verhalten: Browser-Test)', () => {
     const quelle = readFileSync(join(UI, 'marie', 'MarieSeite.tsx'), 'utf8');
     assert.match(quelle, /new EventSource\(EREIGNISSE\)/);
     assert.match(quelle, /onmessage = \(\) => void laden\(\)/);
@@ -282,8 +304,11 @@ describe('AK-44 sofort aktuell', () => {
 
   test('Zeit der letzten Aktualisierung sichtbar; ohne Verbindung ein deutlicher Hinweis', () => {
     assert.match(text(element(marie(f.basis), 'p', 'data-aktualisiert', '')!), /^Aktualisiert um 04:12:05\. Die Übersicht aktualisiert sich von selbst\.$/);
-    const getrennt = text(element(marie(f.basis, null, { verbunden: false }), 'p', 'data-aktualisiert', '')!);
-    assert.match(getrennt, /Stand 04:12:05\. Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell\./);
+    const getrennt = element(marie(f.basis, null, { verbunden: false }), 'p', 'data-aktualisiert', '')!;
+    assert.match(text(getrennt), /Stand 04:12:05\. Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell\./);
+    // Bildschirmleser erfahren den Abbruch sofort; die Uhrzeit beim normalen Nachladen wird nicht angesagt.
+    assert.match(getrennt, /role="alert"/);
+    assert.doesNotMatch(element(marie(f.basis), 'p', 'data-aktualisiert', '')!, /role=/);
   });
 
   test('Ansage nur, wenn sich Zahlen oder Freigaben von selbst ändern', () => {
@@ -403,6 +428,11 @@ describe('Adressen für Maries Seiten', () => {
       assert.deepEqual(leseRoute(h), { seite: 'unbekannt' }, h);
     }
     assert.equal(zuMarie(), '#/marie');
+    // Auch eine fehlerhafte Adresse unter #/marie bleibt in Maries Rahmen, ohne Wege zu Max.
+    const { bereichDerAdresse } = M.route!;
+    for (const h of ['#/marie', '#/marie/', '#/marie/anlage/sta4', '#/Marie', '#/marie/zahl/alle']) assert.equal(bereichDerAdresse(h), 'marie', h);
+    for (const h of ['', '#/', '#/anlage/STA4', '#/xyz', '#/marienkaefer']) assert.equal(bereichDerAdresse(h), 'max', h);
+    assert.equal(bereichDerAdresse('#/simulation'), 'simulation');
     assert.equal(zurMarieZahl('offen'), '#/marie/zahl/offen');
     assert.equal(zurMarieAnlage('SWR5'), '#/marie/anlage/SWR5');
   });

@@ -39,6 +39,14 @@ export function leseRoute(hash: string): Route {
   return { seite: 'unbekannt' };
 }
 
+/** Wessen Seite eine Adresse ist. Auch eine fehlerhafte Adresse unter #/marie gehört zu Marie, damit ihr Rahmen keine Wege zu Max zeigt. */
+export function bereichDerAdresse(hash: string): 'max' | 'marie' | 'simulation' {
+  const route = leseRoute(hash);
+  if (route.seite === 'simulation') return 'simulation';
+  if (route.seite === 'marie' || /^#\/marie(\/|$)/i.test(hash)) return 'marie';
+  return 'max';
+}
+
 export const zurStartseite = () => '#/';
 export const zurAnlage = (anlageId: string) => `#/anlage/${anlageId}`;
 export const zumLabel = (anlageId: string, labelId: string) => `#/anlage/${anlageId}/label/${labelId}`;

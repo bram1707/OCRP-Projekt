@@ -113,7 +113,8 @@ describe('AK-40 vier Zahlen, jedes Label genau einmal', () => {
       for (const l of fehlend) {
         assert.equal(l.status, 'fehlt');
         assert.match(l.grund, /^Label nicht erfasst/);
-        assert.match(l.warum.join(' '), /gehören 7 Labels zu Schweißroboter 5, erfasst sind 5/);
+        // „angelegt“, nicht „erfasst“: SWR5-05 ist angelegt, hat aber kein Foto und zählt selbst als nicht erfasst.
+        assert.match(l.warum.join(' '), /gehören 7 Labels zu Schweißroboter 5, angelegt sind nur 5\./);
       }
       const swr5 = m.anlagen.find((a) => a.id === 'SWR5')!;
       assert.equal(swr5.gesamt, 7);
@@ -131,7 +132,7 @@ describe('AK-40 vier Zahlen, jedes Label genau einmal', () => {
       pruefeZaehlung(m, 'Soll 8');
       const sta4 = m.anlagen.find((a) => a.id === 'STA4')!;
       assert.equal(sta4.gesamt, 10);
-      assert.match(sta4.warum[0]!, /Erfasst sind 10 Labels, laut Anlagenliste sind es 8\./);
+      assert.match(sta4.warum[0]!, /Angelegt sind 10 Labels, laut Anlagenliste sind es 8\./);
     }, daten);
   });
 });
@@ -221,6 +222,22 @@ describe('AK-42 Labels hinter Zahl und Anlage, mit Foto, Status und Grund', () =
     });
   });
 
+  test('nach dem Zurücknehmen sagen Grund und „Warum?“, dass Max seine Bestätigung zurückgenommen hat', async () => {
+    await mitServer(async (s) => {
+      await anfrage(s, '/api/labels/STA4-01/bestaetigen', max);
+      await anfrage(s, '/api/labels/STA4-01/zuruecknehmen', max);
+      const l = label(await marie(s), 'STA4-01');
+      assert.equal(l.status, 'offen');
+      assert.match(l.grund, /^Max hat seine Bestätigung am \d\d\.\d\d\.\d{4} um \d\d:\d\d zurückgenommen, wartet auf erneute Prüfung\.$/);
+      assert.match(l.warum.join(' '), /^Max hat die Bestätigung von STA4-01 am .* zurückgenommen\. Jetzt wartet es auf Max' erneute Prüfung\.$/);
+      assert.doesNotMatch(l.grund + l.warum.join(' '), /noch nicht geprüft/);
+    });
+  });
+
+  test('ein unlesbarer Zeitpunkt legt die Übersicht nicht lahm: er erscheint wie gespeichert', () => {
+    assert.equal(zeitText('9. Oktober 2026'), '9. Oktober 2026');
+  });
+
   test('nach einer Meldung nennt der Grund den gemeldeten Fehler', async () => {
     await mitServer(async (s) => {
       await anfrage(s, '/api/labels/STA4-04/fehler', melde('sprache_falsch'));
@@ -245,11 +262,11 @@ describe('AK-43 „Warum?“ mit Belegen', () => {
         '1 Label „Fehlt“ (kein Foto): SWR5-05.',
         '1 Label „Fehlerhaft“ (von Max gemeldet, wartet auf Nachbesserung): SWR5-02.',
         '1 Label „Nachgebessert“ (wartet auf erneute Prüfung durch Max): SWR5-03.',
-        '1 Label „Offen“ (von Max noch nicht geprüft): SWR5-01.',
+        '1 Label „Offen“ (wartet auf Max\' Prüfung): SWR5-01.',
       ]);
       assert.deepEqual(warum('STA4'), [
         '2 Labels „Unsicher“ (Erkennung nicht sicher, Max muss genau hinsehen): STA4-08, STA4-09.',
-        '7 Labels „Offen“ (von Max noch nicht geprüft): STA4-01, STA4-02, STA4-03, STA4-04, STA4-05, STA4-06, STA4-07.',
+        '7 Labels „Offen“ (wartet auf Max\' Prüfung): STA4-01, STA4-02, STA4-03, STA4-04, STA4-05, STA4-06, STA4-07.',
       ]);
       assert.deepEqual(warum('FOE2'), ['Max hat die Anlage am 09.10.2026 um 17:00 freigegeben. Alle 5 Labels sind bestätigt.']);
       // Dieselben Labels wie in Max' offenen Punkten, jedes genau einmal.
@@ -316,6 +333,13 @@ describe('AK-61 keine Erwartungswerte in Maries Übersicht', () => {
       assert.ok(notizen.length > 0);
       for (const n of notizen) assert.ok(!text.includes(n), n);
       assert.doesNotMatch(text, /erwart|"lesbar"|nachSimulation|korrektur|nacherfassung"/i);
+      // Jedes Label trägt genau diese Felder, und die Label-Daten sind dieselben wie in Max' Ansicht. Die Texte
+      // der Simulation lassen sich nicht am Wortlaut erkennen (sie gleichen anderen Labels), daher dieser Vergleich.
+      const m = JSON.parse(text) as MarieUebersicht;
+      for (const l of m.labels) {
+        assert.deepEqual(Object.keys(l).sort(), ['anlageId', 'anlageName', 'grund', 'gruppe', 'label', 'schluessel', 'status', 'warum'], l.schluessel);
+        if (l.label) assert.deepEqual(l.label, (await anfrage(s, `/api/labels/${l.label.id}`)).daten, l.schluessel);
+      }
       // Der Text des nachgereichten Fotos (Simulation) erscheint erst, wenn es nachgereicht ist.
       assert.ok(!text.includes('Вход только для персонала'));
       await anfrage(s, '/api/labels/SWR5-05/nacherfassen', max);
@@ -473,6 +497,16 @@ describe('AK-44 sofort aktualisieren: Signal nach jeder Änderung', () => {
     const geschlossen = new Promise<void>((r) => server.close(() => r()));
     await Promise.race([geschlossen, kurz(2000).then(() => assert.fail('close() wartet auf die offene Verbindung'))]);
     dritte.schliessen();
+  });
+
+  test('nach dem Schließen nimmt der Verteiler keine Verbindung mehr an', () => {
+    const e = new Ereignisse();
+    e.schliesseAlle();
+    let kopf = false;
+    const attrappe = { writeHead: () => (kopf = true), write: () => true, on: () => undefined } as unknown as Parameters<Ereignisse['verbinde']>[0];
+    assert.equal(e.verbinde(attrappe), false);
+    assert.equal(kopf, false);
+    assert.equal(e.anzahl, 0);
   });
 });
 

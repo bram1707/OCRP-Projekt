@@ -6,7 +6,7 @@ import { AnlageSeite, type Navigation } from './pruefung/AnlageSeite.tsx';
 import { LabelSeite } from './pruefung/LabelSeite.tsx';
 import { MarieSeite } from './marie/MarieSeite.tsx';
 import { Fehler, FENSTERTITEL, Rahmen, type MeldungDaten } from './rahmen.tsx';
-import { leseRoute, zurStartseite } from './route.ts';
+import { bereichDerAdresse, leseRoute, zuMarie, zurStartseite } from './route.ts';
 import { Simulation } from './simulation/Simulation.tsx';
 import { Startseite } from './start/Startseite.tsx';
 import './stil.css';
@@ -39,7 +39,7 @@ function App() {
   };
 
   const route = leseRoute(hash);
-  const bereich = route.seite === 'simulation' ? 'simulation' : route.seite === 'marie' ? 'marie' : 'max';
+  const bereich = bereichDerAdresse(hash);
   // Eigener Fenstertitel je Rolle, damit zwei offene Fenster unterscheidbar sind.
   useEffect(() => {
     document.title = FENSTERTITEL[bereich];
@@ -54,8 +54,8 @@ function App() {
       {route.seite === 'unbekannt' && (
         <>
           <Fehler text="Diese Seite gibt es nicht." />
-          <a href={zurStartseite()} className="font-semibold text-blue-800 underline">
-            Zur Startseite
+          <a href={bereich === 'marie' ? zuMarie() : zurStartseite()} className="font-semibold text-blue-800 underline">
+            {bereich === 'marie' ? 'Zur Übersicht' : 'Zur Startseite'}
           </a>
         </>
       )}

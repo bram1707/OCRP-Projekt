@@ -64,9 +64,11 @@ const ZEIT = new Intl.DateTimeFormat('de-DE', {
   minute: '2-digit',
 });
 
-/** „09.10.2026 um 17:00“, immer in deutscher Zeit, egal wo der Server läuft. */
+/** „09.10.2026 um 17:00“, immer in deutscher Zeit, egal wo der Server läuft. Unlesbares bleibt, wie es ist. */
 export function zeitText(iso: string): string {
-  const teile = Object.fromEntries(ZEIT.formatToParts(new Date(iso)).map((t) => [t.type, t.value]));
+  const datum = new Date(iso);
+  if (Number.isNaN(datum.getTime())) return iso;
+  const teile = Object.fromEntries(ZEIT.formatToParts(datum).map((t) => [t.type, t.value]));
   return `${teile.day}.${teile.month}.${teile.year} um ${teile.hour}:${teile.minute}`;
 }
 
@@ -89,7 +91,10 @@ export function grundFuerMarie(l: LabelAnsicht, e: Entscheidungen = {}): string 
     case 'nachgebessert':
       return `Nachgebessert${gemeldet ? ` nach Max' Meldung (${gemeldet})` : ''}, wartet auf erneute Prüfung durch Max.`;
     case 'offen':
-      return 'Erfasst, von Max noch nicht geprüft.';
+      // Offen nach dem Zurücknehmen heißt: Max hatte schon geprüft, prüft aber erneut.
+      return e.zurueckgenommen
+        ? `Max hat seine Bestätigung am ${zeitText(e.zurueckgenommen.wann)} zurückgenommen, wartet auf erneute Prüfung.`
+        : 'Erfasst, von Max noch nicht geprüft.';
     case 'bestaetigt':
       return e.bestaetigt ? `Von ${wer(e.bestaetigt)} bestätigt am ${zeitText(e.bestaetigt.wann)}.` : 'Von Max bestätigt.';
   }
@@ -130,7 +135,9 @@ export function warumStatus(l: LabelAnsicht, anlage: Anlage, e: Entscheidungen =
         'Jetzt wartet es auf Max\' erneute Prüfung und zählt deshalb als offen.',
       ];
     case 'offen':
-      return ['Das Foto ist erfasst. Max hat das Label noch nicht geprüft.'];
+      return e.zurueckgenommen
+        ? [`${wer(e.zurueckgenommen)} hat die Bestätigung von ${l.id} am ${zeitText(e.zurueckgenommen.wann)} zurückgenommen.`, 'Jetzt wartet es auf Max\' erneute Prüfung.']
+        : ['Das Foto ist erfasst. Max hat das Label noch nicht geprüft.'];
     case 'bestaetigt':
       return [e.bestaetigt ? `${wer(e.bestaetigt)} hat ${l.id} am ${zeitText(e.bestaetigt.wann)} bestätigt.` : `Max hat ${l.id} bestätigt.`];
   }
@@ -142,7 +149,7 @@ const SPERRGRUND: Record<Exclude<Status, 'bestaetigt'>, string> = {
   fehlerhaft: 'von Max gemeldet, wartet auf Nachbesserung',
   unsicher: 'Erkennung nicht sicher, Max muss genau hinsehen',
   nachgebessert: 'wartet auf erneute Prüfung durch Max',
-  offen: 'von Max noch nicht geprüft',
+  offen: 'wartet auf Max\' Prüfung',
 };
 
 /**
@@ -152,7 +159,7 @@ const SPERRGRUND: Record<Exclude<Status, 'bestaetigt'>, string> = {
 function warumAnlage(anlage: Anlage, labels: readonly Label[], gesperrt: boolean): string[] {
   const zeilen: string[] = [];
   if (labels.length > anlage.sollAnzahl) {
-    zeilen.push(`Erfasst sind ${labels.length} Labels, laut Anlagenliste sind es ${anlage.sollAnzahl}. Gezählt werden alle ${labels.length}.`);
+    zeilen.push(`Angelegt sind ${labels.length} Labels, laut Anlagenliste sind es ${anlage.sollAnzahl}. Gezählt werden alle ${labels.length}.`);
   }
   if (!gesperrt) {
     const am = anlage.freigegebenAm ? ` am ${zeitText(anlage.freigegebenAm)}` : '';
@@ -200,7 +207,8 @@ export function marieUebersicht(anlagen: readonly AnlageMitDaten[], entscheidung
         gruppe: 'fehlerhaft',
         grund: 'Label nicht erfasst: laut Anlagenliste vorhanden, aber nicht fotografiert.',
         warum: [
-          `Laut Anlagenliste gehören ${anlage.sollAnzahl} Labels zu ${anlage.name}, erfasst sind ${labels.length}.`,
+          // „angelegt“: Auch ein Label ohne Foto (Status „Fehlt“) ist angelegt und steht schon als eigene Zeile da.
+          `Laut Anlagenliste gehören ${anlage.sollAnzahl} Labels zu ${anlage.name}, angelegt sind nur ${labels.length}.`,
           'Solange ein Label nicht erfasst ist, bleibt die Anlage gesperrt.',
         ],
         label: null,

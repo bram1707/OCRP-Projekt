@@ -10,7 +10,7 @@ import { Balken, Fehler, Marke, VERWEIS } from '../rahmen.tsx';
 import { zuMarie, zurMarieAnlage, zurMarieZahl, type MarieAuswahl, type MarieZahl } from '../route.ts';
 import { sperreAnzeige, STATUS_ANZEIGE } from '../status.ts';
 import {
-  antwort, aufteilung, auswahlLabels, auswahlTitel, fortschrittProzent, fortschrittText, gesamtRegel, GRUPPE_REGEL, gruppenZeile, LEER,
+  antwort, aufteilung, auswahlLabels, auswahlTitel, fortschrittProzent, fortschrittText, gesamtRegel, gesamtZusatz, GRUPPE_REGEL, gruppenZeile, LEER,
   warumZahlText, ZAHL_TITEL, ZAHL_ZUSATZ, ZAHLEN,
 } from './logik.ts';
 
@@ -42,7 +42,7 @@ function Zahl({ daten, zahl, gewaehlt }: { daten: MarieUebersicht; zahl: MarieZa
       <a href={zurMarieZahl(zahl)} className="block text-slate-900 no-underline" aria-current={gewaehlt ? 'true' : undefined}>
         <span className="block text-lg font-semibold">{ZAHL_TITEL[zahl]}</span>
         <span className="block text-5xl font-bold">{wert}</span>
-        <span className="block text-slate-700">{ZAHL_ZUSATZ[zahl]}</span>
+        <span className="block text-slate-700">{zahl === 'gesamt' ? gesamtZusatz(daten) : ZAHL_ZUSATZ[zahl]}</span>
         {teile && <span className="block font-semibold">{teile}</span>}
         <span className="mt-1 block font-semibold text-blue-800 underline underline-offset-4">
           {gewaehlt ? 'Ausgewählt: Labels stehen unten' : 'Labels zeigen'}
@@ -53,7 +53,7 @@ function Zahl({ daten, zahl, gewaehlt }: { daten: MarieUebersicht; zahl: MarieZa
         <p className="mt-2">{zahl === 'gesamt' ? gesamtRegel(daten) : GRUPPE_REGEL[zahl]}</p>
         {zahl !== 'gesamt' && (
           <p className="mt-2">
-            {gezaehlt.length === 0 ? 'Gezählt: keines.' : `Gezählt: ${gezaehlt.map((l) => `${l.label ? l.label.id : 'nicht erfasst'} (${STATUS_ANZEIGE[l.status].wort})`).join(', ')}.`}
+            {gezaehlt.length === 0 ? 'Gezählt: keines.' : `Gezählt: ${gezaehlt.map((l) => `${l.label ? l.label.id : `nicht erfasst bei ${l.anlageName}`} (${STATUS_ANZEIGE[l.status].wort})`).join(', ')}.`}
           </p>
         )}
       </details>
@@ -83,7 +83,8 @@ function AnlageKarte({ a, gewaehlt }: { a: MarieAnlage; gewaehlt: boolean }) {
       </div>
       <div className="mt-2 font-semibold">{gruppenZeile(a)}</div>
       {gewaehlt && <div className="mt-1 font-semibold text-blue-900">Ausgewählt: Labels stehen oben</div>}
-      <details className="relative z-10 mt-2" data-warum-anlage={a.id}>
+      {/* Nur so breit wie nötig, damit daneben ein Klick die Karte öffnet. */}
+      <details className="relative z-10 mt-2 w-fit" data-warum-anlage={a.id}>
         <summary className={SUMMARY}>{a.gesperrt ? `Warum ist ${a.name} gesperrt?` : `Warum ist ${a.name} freigegeben?`}</summary>
         <ul className="mt-2 list-disc pl-6">
           {a.warum.map((w, i) => (
@@ -150,7 +151,7 @@ function Auswahl({ daten, auswahl, auswahlRef }: { daten: MarieUebersicht; auswa
           {labels.length === 0 ? (
             <p className="mt-3 font-semibold">{auswahl.art === 'zahl' ? LEER[auswahl.zahl] : 'Diese Anlage hat keine Labels.'}</p>
           ) : (
-            <ul className="mt-3 grid gap-3">
+            <ul className="mt-3 grid grid-cols-1 gap-3">
               {labels.map((l) => (
                 <LabelZeile key={l.schluessel} l={l} />
               ))}
@@ -189,7 +190,7 @@ export function MarieAnsicht({
           {aktualisiert ? `Aktualisiert um ${aktualisiert}. ` : ''}Die Übersicht aktualisiert sich von selbst.
         </p>
       ) : (
-        <p className="mt-1 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-amber-950" data-aktualisiert="">
+        <p className="mt-1 rounded-lg border-2 border-amber-700 bg-amber-50 px-3 py-2 text-amber-950" data-aktualisiert="" role="alert">
           {aktualisiert ? `Stand ${aktualisiert}. ` : ''}Gerade keine Verbindung zum Server, die Zahlen sind vielleicht nicht aktuell. Die Seite
           versucht es von selbst weiter.
         </p>
@@ -199,7 +200,7 @@ export function MarieAnsicht({
         <h2 id="zahlen-titel" className="sr-only">
           Zahlen
         </h2>
-        <ul className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {ZAHLEN.map((z) => (
             <Zahl key={z} daten={daten} zahl={z} gewaehlt={gewaehlteZahl === z} />
           ))}

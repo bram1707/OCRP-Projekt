@@ -14,6 +14,8 @@ export class Ereignisse {
   private readonly grenze: number;
   private stand = 0;
   private takt: ReturnType<typeof setInterval> | null = null;
+  /** Nach dem Schließen keine neuen Verbindungen mehr, sonst wartet server.close() ewig. */
+  private geschlossen = false;
 
   constructor(grenze = MAX_VERBINDUNGEN) {
     this.grenze = grenze;
@@ -23,9 +25,9 @@ export class Ereignisse {
     return this.offen.size;
   }
 
-  /** Nimmt eine Verbindung auf. Gibt false zurück, wenn schon zu viele offen sind. */
+  /** Nimmt eine Verbindung auf. Gibt false zurück, wenn schon zu viele offen sind oder der Server schließt. */
   verbinde(res: ServerResponse): boolean {
-    if (this.offen.size >= this.grenze) return false;
+    if (this.geschlossen || this.offen.size >= this.grenze) return false;
     res.writeHead(200, {
       'Content-Type': 'text/event-stream; charset=utf-8',
       'Cache-Control': 'no-store',
@@ -51,6 +53,7 @@ export class Ereignisse {
 
   /** Beendet alle Verbindungen, etwa beim Schließen des Servers. */
   schliesseAlle(): void {
+    this.geschlossen = true;
     for (const res of [...this.offen]) res.end();
     this.offen.clear();
     this.stoppeTakt();

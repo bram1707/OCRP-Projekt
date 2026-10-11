@@ -101,6 +101,8 @@ export function MarieSeite({ auswahl, onAnsage }: { auswahl: MarieAuswahl | null
     return () => {
       trenne();
       document.removeEventListener('visibilitychange', sichtbar);
+      // Eine Antwort, die erst nach dem Verlassen der Seite ankommt, wird verworfen und nicht mehr angesagt.
+      anfrage.current++;
     };
   }, [laden]);
 

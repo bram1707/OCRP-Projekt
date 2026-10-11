@@ -60,11 +60,18 @@ export function zahlWert(daten: MarieUebersicht, zahl: MarieZahl): number {
   return daten.zahlen[zahl];
 }
 
-/** „Laut Anlagenliste: …“ und die Summe aus den drei Gruppen (AK-40, AK-43). */
+/** Zeile unter „Labels gesamt“: Sind mehr Labels erfasst als laut Anlagenliste (M5), sagt sie das. */
+export function gesamtZusatz(daten: MarieUebersicht): string {
+  return daten.anlagen.some((a) => a.gesamt > a.sollAnzahl) ? 'mehr erfasst als laut Anlagenliste' : ZAHL_ZUSATZ.gesamt;
+}
+
+/** Labels je Anlage und die Summe aus den drei Gruppen (AK-40, AK-43); weicht eine Anlage von der Anlagenliste ab, steht deren Zahl dabei. */
 export function gesamtRegel(daten: MarieUebersicht): string {
-  const je = daten.anlagen.map((a) => `${a.name}: ${labelsText(a.gesamt)}`).join('; ');
+  const je = daten.anlagen
+    .map((a) => `${a.name}: ${labelsText(a.gesamt)}${a.gesamt > a.sollAnzahl ? ` (laut Anlagenliste ${a.sollAnzahl})` : ''}`)
+    .join('; ');
   const { gesamt, offen, erledigt, fehlerhaft } = daten.zahlen;
-  return `Labels je Anlage laut Anlagenliste: ${je}. Jedes Label zählt genau einmal: ${offen} offen + ${erledigt} erledigt + ${fehlerhaft} fehlerhaft = ${gesamt}.`;
+  return `Labels je Anlage: ${je}. Jedes Label zählt genau einmal: ${offen} offen + ${erledigt} erledigt + ${fehlerhaft} fehlerhaft = ${gesamt}.`;
 }
 
 /** Die Labels hinter einer Zahl oder Anlage, in Maries Reihenfolge (die Liste des Servers ist schon sortiert). */

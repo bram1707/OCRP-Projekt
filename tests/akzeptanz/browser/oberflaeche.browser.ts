@@ -219,14 +219,15 @@ describe('Einzelansicht', () => {
     await bild('sta4-09-warum');
   });
 
-  test('AK-10: „Fehler melden“ bietet genau drei Gründe und kein Eingabefeld', async () => {
+  // Angepasst: vierter Grund „Sonstiges“; sein Eingabefeld erscheint erst nach dem Klick darauf.
+  test('AK-10: „Fehler melden“ bietet vier Gründe und zunächst kein Eingabefeld', async () => {
     await geheZu('#/anlage/STA4/label/STA4-08', 'sta4-08');
     await page.getByRole('button', { name: 'Ja, bestätigen' }).and(page.locator(':enabled')).waitFor();
     schritt = 'melden-oeffnen';
     await page.getByRole('button', { name: 'Nein, Fehler melden' }).click();
     const gruende = page.locator('[role=group][aria-labelledby="gruende-titel"] button');
     const texte: string[] = await gruende.allInnerTexts();
-    assert.deepEqual(texte.filter((t) => t !== 'Abbrechen').map((t) => t.split('\n')[0]), ['Unleserlich', 'Sprache falsch', 'Label beschädigt']);
+    assert.deepEqual(texte.filter((t) => t !== 'Abbrechen').map((t) => t.split('\n')[0]), ['Unleserlich', 'Sprache falsch', 'Label beschädigt', 'Sonstiges']);
     assert.equal(await page.locator('input, textarea, select, [contenteditable=true]').count(), 0);
     assert.equal(aufrufeIn('melden-oeffnen').length, 0);
     await bild('sta4-08-gruende');

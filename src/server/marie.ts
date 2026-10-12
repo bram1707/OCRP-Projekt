@@ -6,7 +6,7 @@ import { SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detectLanguage.ts';
 import type { Anlage, Label, LetzteEntscheidung } from '../db/abfragen.ts';
 import type { Ergebnis } from '../db/protokoll.ts';
 import {
-  FEHLERGRUND_TEXT, GRUPPE_MARIE, GRUPPEN_MARIE, istFehlergrund, pruefeFreigabe, RANG_MARIE, sortiereFuerMarie, STATUS_TEXT,
+  fehlergrundAnzeige, GRUPPE_MARIE, GRUPPEN_MARIE, pruefeFreigabe, RANG_MARIE, sortiereFuerMarie, STATUS_TEXT,
   type GruppeMarie, type Status,
 } from '../db/status.ts';
 import { anlageAnsicht, bewerteLabels, labelAnsicht, type LabelAnsicht } from './ansichten.ts';
@@ -71,13 +71,10 @@ export function datumText(iso: string): string {
 const WER: Record<string, string> = { max: 'Max', simulation: 'die simulierte Instandhaltung', kamera: 'die Kamera (eigenes Foto)' };
 const wer = (e: LetzteEntscheidung) => WER[e.wer] ?? e.wer;
 
-function fehlergrundText(grund: string | null | undefined): string | null {
-  return istFehlergrund(grund) ? FEHLERGRUND_TEXT[grund] : null;
-}
 
 /** Ein Satz je Label für die Liste (AK-42). */
 export function grundFuerMarie(l: LabelAnsicht, e: Entscheidungen = {}): string {
-  const gemeldet = fehlergrundText(l.letzterFehlergrund);
+  const gemeldet = l.letzterFehlergrundText;
   switch (l.status) {
     case 'fehlt':
       return 'Label nicht erfasst: kein Foto vorhanden.';
@@ -100,7 +97,7 @@ export function grundFuerMarie(l: LabelAnsicht, e: Entscheidungen = {}): string 
 /** Belege für den Status eines Labels (AK-43). Woran die Sprache erkannt wurde, zeigt die Oberfläche aus `label.belege`. */
 export function warumStatus(l: LabelAnsicht, anlage: Anlage, e: Entscheidungen = {}): string[] {
   const meldung = e.fehler;
-  const gemeldet = meldung ? `Max hat ${l.id} am ${datumText(meldung.wann)} gemeldet: ${fehlergrundText(meldung.grund) ?? 'ohne Grund'}.` : null;
+  const gemeldet = meldung ? `Max hat ${l.id} am ${datumText(meldung.wann)} gemeldet: ${fehlergrundAnzeige(meldung.grund, meldung.notiz) ?? 'ohne Grund'}.` : null;
   switch (l.status) {
     case 'fehlt':
       return [

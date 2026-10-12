@@ -182,12 +182,14 @@ describe('AK-02 Zusammenfassung und Freigabe', () => {
 });
 
 describe('AK-10, AK-11 einzeln entscheiden', () => {
-  test('Melden: genau drei Gründe mit Erklärung und „Abbrechen“, kein Eingabefeld', () => {
+  // Angepasst: „Sonstiges“ ist der vierte Grund; sein Eingabefeld erscheint erst nach dem Klick.
+  test('Melden: vier Gründe mit Erklärung und „Abbrechen“, zunächst kein Eingabefeld', () => {
     const html = einzel(f.sta4, 'STA4-08', { zustand: 'gruende' });
-    assert.deepEqual(knoepfe(html).slice(-4), [
+    assert.deepEqual(knoepfe(html).slice(-5), [
       'Unleserlich auf dem Foto nicht zu lesen',
       'Sprache falsch eine Sprache fehlt oder es steht eine falsche drauf',
       'Label beschädigt eingerissen, verblasst oder verschmutzt',
+      'Sonstiges etwas anderes, Sie beschreiben es kurz',
       'Abbrechen',
     ]);
     assert.doesNotMatch(html, /<input|<textarea|contenteditable/);

@@ -5,8 +5,9 @@
  * Stand des Schemas (PRAGMA user_version). Stufe 1 hatte keinen Stand (0).
  * Stufe 2: Foto bei der Nachbesserung, nachgereichtes Foto, Zurücknehmen.
  * Stufe 4: Rückmeldungen zum Prototyp (AK-51).
+ * Stand 4: Fehlergrund „Sonstiges“ mit Freitext.
  */
-export const SCHEMA_STAND = 3;
+export const SCHEMA_STAND = 4;
 
 export const SCHEMA = `
 CREATE TABLE IF NOT EXISTS anlagen (
@@ -30,7 +31,9 @@ CREATE TABLE IF NOT EXISTS labels (
   begruendung             TEXT NOT NULL,
   status                  TEXT NOT NULL
     CHECK (status IN ('offen', 'unsicher', 'nachgebessert', 'fehlerhaft', 'bestaetigt', 'fehlt')),
-  letzter_fehlergrund     TEXT CHECK (letzter_fehlergrund IN ('unleserlich', 'sprache_falsch', 'beschaedigt')),
+  letzter_fehlergrund     TEXT CHECK (letzter_fehlergrund IN ('unleserlich', 'sprache_falsch', 'beschaedigt', 'sonstiges')),
+  -- Max' Beschreibung, nur beim Grund „Sonstiges“
+  letzter_fehlertext      TEXT CHECK (length(letzter_fehlertext) BETWEEN 1 AND 300),
   -- was die simulierte Nachbesserung liefert (Foto ist optional)
   korrektur_bild_pfad     TEXT,
   korrektur_ocr_text      TEXT,
@@ -50,7 +53,9 @@ CREATE TABLE IF NOT EXISTS entscheidungen (
   wann      TEXT NOT NULL,
   ergebnis  TEXT NOT NULL
     CHECK (ergebnis IN ('bestaetigt', 'fehler', 'nachgebessert', 'nacherfasst', 'zurueckgenommen', 'freigegeben')),
-  grund     TEXT
+  grund     TEXT,
+  -- Max' Beschreibung beim Grund „Sonstiges“
+  notiz     TEXT
 );
 CREATE INDEX IF NOT EXISTS entscheidungen_label ON entscheidungen(label_id);
 

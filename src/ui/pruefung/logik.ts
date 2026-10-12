@@ -161,12 +161,22 @@ export interface FehlergrundAuswahl {
   erklaerung: string;
 }
 
-/** Genau drei Gründe (AK-10). */
+/** Drei feste Gründe (AK-10) und „Sonstiges“ mit kurzer Beschreibung. */
 export const FEHLERGRUENDE: readonly FehlergrundAuswahl[] = [
   { grund: 'unleserlich', titel: 'Unleserlich', erklaerung: 'auf dem Foto nicht zu lesen' },
   { grund: 'sprache_falsch', titel: 'Sprache falsch', erklaerung: 'eine Sprache fehlt oder es steht eine falsche drauf' },
   { grund: 'beschaedigt', titel: 'Label beschädigt', erklaerung: 'eingerissen, verblasst oder verschmutzt' },
+  { grund: 'sonstiges', titel: 'Sonstiges', erklaerung: 'etwas anderes, Sie beschreiben es kurz' },
 ];
+
+/** Höchstlänge der Beschreibung bei „Sonstiges“; der Server prüft dieselbe Grenze (FEHLERTEXT_MAX). */
+export const FEHLERTEXT_MAX = 300;
+
+/** Ob die Beschreibung gesendet werden kann: nicht leer und nicht zu lang. */
+export function fehlertextGueltig(text: string): boolean {
+  const t = text.replace(/\s+/g, ' ').trim();
+  return t.length > 0 && t.length <= FEHLERTEXT_MAX;
+}
 
 /** Warum Max ein Label gerade nicht prüfen kann. */
 export function sperrgrund(l: LabelAnsicht): string {

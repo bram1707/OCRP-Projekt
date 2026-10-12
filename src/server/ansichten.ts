@@ -8,7 +8,7 @@ import { istSpracheUnsicher, SCHWELLE_OCR, SCHWELLE_SPRACHE } from '../ai/detect
 import { sprachName } from '../ai/sprachen.ts';
 import type { Anlage, Label } from '../db/abfragen.ts';
 import {
-  FEHLERGRUND_TEXT, IN_MAX_LISTE, istGesperrt, PRUEFBAR, pruefeFreigabe, sortiereFuerMax, STATUS, STATUS_TEXT,
+  fehlergrundAnzeige, IN_MAX_LISTE, istGesperrt, PRUEFBAR, pruefeFreigabe, sortiereFuerMax, STATUS, STATUS_TEXT,
   type Hinderungsgrund, type Status,
 } from '../db/status.ts';
 
@@ -87,7 +87,7 @@ export function labelAnsicht(l: Label, a: Auffaelligkeit | undefined): LabelAnsi
     status: l.status,
     statusText: STATUS_TEXT[l.status],
     letzterFehlergrund: l.letzterFehlergrund,
-    letzterFehlergrundText: l.letzterFehlergrund ? FEHLERGRUND_TEXT[l.letzterFehlergrund] : null,
+    letzterFehlergrundText: fehlergrundAnzeige(l.letzterFehlergrund, l.letzterFehlertext),
     auffaellig,
     gruende: a?.gruende ?? [],
     belege,

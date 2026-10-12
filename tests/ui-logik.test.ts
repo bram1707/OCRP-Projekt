@@ -202,8 +202,8 @@ describe('AK-11 Entscheidungsablauf sperrt Doppelentscheidungen', () => {
 });
 
 describe('AK-10 Gründe beim Melden', () => {
-  test('genau drei Gründe mit Erklärung', () => {
-    assert.deepEqual(FEHLERGRUENDE.map((g) => g.grund), ['unleserlich', 'sprache_falsch', 'beschaedigt']);
+  test('drei feste Gründe und „Sonstiges“, alle mit Erklärung', () => {
+    assert.deepEqual(FEHLERGRUENDE.map((g) => g.grund), ['unleserlich', 'sprache_falsch', 'beschaedigt', 'sonstiges']);
     for (const g of FEHLERGRUENDE) assert.ok(g.titel.length > 0 && g.erklaerung.length > 0);
   });
 });

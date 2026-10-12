@@ -242,8 +242,8 @@ export function routen(optionen: ServerOptionen): Route[] {
     {
       methode: 'POST', muster: /^\/api\/labels\/([A-Z0-9-]+)\/fehler$/,
       aktion: async (anfrage, [id]) => {
-        const { grund } = await anfrage.koerper();
-        meldeFehler(db, id!, grund, 'max');
+        const { grund, text } = await anfrage.koerper();
+        meldeFehler(db, id!, grund, 'max', new Date(), text);
         return labelAntwort(id!);
       },
     },

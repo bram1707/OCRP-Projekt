@@ -17,14 +17,31 @@ export const STATUS_TEXT: Record<Status, string> = {
   fehlt: 'Fehlt',
 };
 
-export const FEHLERGRUENDE = ['unleserlich', 'sprache_falsch', 'beschaedigt'] as const;
+export const FEHLERGRUENDE = ['unleserlich', 'sprache_falsch', 'beschaedigt', 'sonstiges'] as const;
 export type Fehlergrund = (typeof FEHLERGRUENDE)[number];
 
 export const FEHLERGRUND_TEXT: Record<Fehlergrund, string> = {
   unleserlich: 'Unleserlich',
   sprache_falsch: 'Sprache falsch',
   beschaedigt: 'Label beschädigt',
+  sonstiges: 'Sonstiges',
 };
+
+/** Höchstlänge der Beschreibung bei „Sonstiges“. */
+export const FEHLERTEXT_MAX = 300;
+
+/** Bereinigt Max' Beschreibung: eine Zeile, ohne doppelte Leerzeichen. Null, wenn nichts übrig bleibt oder sie zu lang ist. */
+export function bereinigeFehlertext(wert: unknown): string | null {
+  if (typeof wert !== 'string') return null;
+  const text = wert.replace(/\s+/g, ' ').trim();
+  return text.length > 0 && text.length <= FEHLERTEXT_MAX ? text : null;
+}
+
+/** „Label beschädigt“ oder „Sonstiges: „Schild verdeckt““, für Max, Marie und die Kamera-Seite. */
+export function fehlergrundAnzeige(grund: unknown, text: string | null | undefined): string | null {
+  if (!istFehlergrund(grund)) return null;
+  return grund === 'sonstiges' && text ? `${FEHLERGRUND_TEXT.sonstiges}: „${text}“` : FEHLERGRUND_TEXT[grund];
+}
 
 /** Aus diesen Status kann Max ein Label bestätigen oder einen Fehler melden. */
 export const PRUEFBAR: readonly Status[] = ['offen', 'unsicher', 'nachgebessert'];

@@ -12,10 +12,12 @@ export interface Eintrag {
   wann: string;
   ergebnis: Ergebnis;
   grund: string | null;
+  /** Max' Beschreibung beim Grund „Sonstiges“ */
+  notiz?: string | null;
 }
 
 export function protokolliere(db: DatabaseSync, e: Eintrag): void {
-  db.prepare('INSERT INTO entscheidungen (anlage_id, label_id, wer, wann, ergebnis, grund) VALUES (?, ?, ?, ?, ?, ?)').run(
-    e.anlageId, e.labelId, e.wer, e.wann, e.ergebnis, e.grund,
+  db.prepare('INSERT INTO entscheidungen (anlage_id, label_id, wer, wann, ergebnis, grund, notiz) VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+    e.anlageId, e.labelId, e.wer, e.wann, e.ergebnis, e.grund, e.notiz ?? null,
   );
 }

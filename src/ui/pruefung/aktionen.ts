@@ -18,6 +18,7 @@ export async function sendeAlsMax<T>(pfad: string, koerper?: Record<string, unkn
 }
 
 export const bestaetige = (labelId: string) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'bestaetigen'));
-export const meldeFehler = (labelId: string, grund: Fehlergrund) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'fehler'), { grund });
+export const meldeFehler = (labelId: string, grund: Fehlergrund, text?: string) =>
+  sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'fehler'), text === undefined ? { grund } : { grund, text });
 export const nimmZurueck = (labelId: string) => sendeAlsMax<LabelAnsicht>(labelPfad(labelId, 'zuruecknehmen'));
 export const gebeFrei = (anlageId: string) => sendeAlsMax<AnlageAnsicht>(`/api/anlagen/${encodeURIComponent(anlageId)}/freigeben`);

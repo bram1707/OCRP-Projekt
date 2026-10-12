@@ -1,20 +1,20 @@
 // Einzelansicht eines Labels (AK-10, AK-15, AK-16, AK-20, AK-21). Reine Ansicht: Daten und
 // Zustand kommen als Eigenschaften, jede Handlung geht als Ereignis an die Seite (LabelSeite.tsx).
 
-import type { Ref } from 'react';
+import { useId, useState, type Ref } from 'react';
 import type { Fehlergrund } from '../../db/status.ts';
 import type { AnlageAnsicht, LabelAnsicht } from '../api.ts';
 import { Balken, Fehler, KNOPF_HAUPT, KNOPF_NEBEN, Marke, Meldung, VERWEIS, type MeldungDaten } from '../rahmen.tsx';
 import { zurAnlage } from '../route.ts';
 import { istPruefbar, STATUS_ANZEIGE } from '../status.ts';
-import { FEHLERGRUENDE, fortschritt, sichereBildUrl, sprachZeile, type Ablauf } from './logik.ts';
+import { FEHLERGRUENDE, FEHLERTEXT_MAX, fehlertextGueltig, fortschritt, sichereBildUrl, sprachZeile, type Ablauf } from './logik.ts';
 import { Bedeutungen } from './Bedeutungen.tsx';
 import { Legende, MarkierterText, Warum } from './Warum.tsx';
 
 export type EinzelEreignis =
   | { art: 'bestaetigen' }
   | { art: 'melden' }
-  | { art: 'grund'; grund: Fehlergrund }
+  | { art: 'grund'; grund: Fehlergrund; text?: string }
   | { art: 'abbrechen' }
   | { art: 'warum' }
   | { art: 'foto' }
@@ -208,31 +208,7 @@ function Entscheidung({
   gruendeRef?: Ref<HTMLHeadingElement>;
 }) {
   const bereit = zustand === 'bereit' && !fotoFehlt;
-  if (zustand === 'gruende') {
-    return (
-      <div className="mt-2" role="group" aria-labelledby="gruende-titel">
-        <h3 id="gruende-titel" ref={gruendeRef} tabIndex={-1} className="text-lg font-semibold">
-          Was ist am Label nicht in Ordnung?
-        </h3>
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          {FEHLERGRUENDE.map((g) => (
-            <button
-              key={g.grund}
-              type="button"
-              className="flex min-h-24 flex-col items-start rounded-lg border border-red-200 border-l-4 border-l-red-600 bg-white px-4 py-3 text-left text-slate-900 hover:bg-red-50"
-              onClick={() => ereignis({ art: 'grund', grund: g.grund })}
-            >
-              <span className="text-base font-semibold">{g.titel}</span>
-              <span>{g.erklaerung}</span>
-            </button>
-          ))}
-        </div>
-        <button type="button" className={`${KNOPF_NEBEN} mt-3`} onClick={() => ereignis({ art: 'abbrechen' })}>
-          Abbrechen
-        </button>
-      </div>
-    );
-  }
+  if (zustand === 'gruende') return <Gruende ereignis={ereignis} gruendeRef={gruendeRef} />;
   return (
     <div className="mt-2">
       <p className="text-lg font-semibold">Ist das Label auf dem Foto in Ordnung: lesbar, unbeschädigt und in den richtigen Sprachen?</p>
@@ -255,6 +231,72 @@ function Entscheidung({
       <p className="mt-3 text-slate-700">
         Die erkannten Sprachen sind nur ein Vorschlag. Ist das Label richtig und nur der Vorschlag falsch, bestätigen Sie trotzdem.
       </p>
+    </div>
+  );
+}
+
+/** Die Gründe beim Melden. Eigene Komponente, damit Feld und Text bei jedem Öffnen leer beginnen. */
+function Gruende({ ereignis, gruendeRef }: { ereignis: (e: EinzelEreignis) => void; gruendeRef?: Ref<HTMLHeadingElement> }) {
+  // „Sonstiges“ öffnet ein Feld für eine kurze Beschreibung; gesendet wird erst mit Text.
+  const [sonstigesOffen, setSonstigesOffen] = useState(false);
+  const [text, setText] = useState('');
+  const feldId = useId();
+  return (
+    <div className="mt-2" role="group" aria-labelledby="gruende-titel">
+      <h3 id="gruende-titel" ref={gruendeRef} tabIndex={-1} className="text-lg font-semibold">
+        Was ist am Label nicht in Ordnung?
+      </h3>
+      <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {FEHLERGRUENDE.map((g) => (
+          <button
+            key={g.grund}
+            type="button"
+            aria-expanded={g.grund === 'sonstiges' ? sonstigesOffen : undefined}
+            className={`flex min-h-24 flex-col items-start rounded-lg border border-red-200 border-l-4 border-l-red-600 px-4 py-3 text-left text-slate-900 hover:bg-red-50 ${
+              g.grund === 'sonstiges' && sonstigesOffen ? 'bg-red-50 ring-1 ring-red-600' : 'bg-white'
+            }`}
+            onClick={() => (g.grund === 'sonstiges' ? setSonstigesOffen((o) => !o) : ereignis({ art: 'grund', grund: g.grund }))}
+          >
+            <span className="text-base font-semibold">{g.titel}</span>
+            <span>{g.erklaerung}</span>
+          </button>
+        ))}
+      </div>
+      {sonstigesOffen && (
+        <form
+          className="mt-3 rounded-lg border border-red-200 bg-white p-4"
+          data-sonstiges=""
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (fehlertextGueltig(text)) ereignis({ art: 'grund', grund: 'sonstiges', text });
+          }}
+        >
+          <label htmlFor={feldId} className="block font-semibold">
+            Was stimmt nicht? (Pflichtfeld)
+          </label>
+          <textarea
+            id={feldId}
+            // Fokus ins Feld, sobald es sich öffnet: Max soll gleich schreiben können.
+            autoFocus
+            rows={3}
+            maxLength={FEHLERTEXT_MAX}
+            required
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            aria-describedby={`${feldId}-hinweis`}
+            className="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-base"
+          />
+          <p id={`${feldId}-hinweis`} className="mt-1 text-slate-700">
+            Kurz beschreiben, damit die Instandhaltung weiß, was zu tun ist. Noch {FEHLERTEXT_MAX - text.length} Zeichen.
+          </p>
+          <button type="submit" className={`${KNOPF_HAUPT} mt-3`} disabled={!fehlertextGueltig(text)}>
+            Fehler melden
+          </button>
+        </form>
+      )}
+      <button type="button" className={`${KNOPF_NEBEN} mt-3`} onClick={() => ereignis({ art: 'abbrechen' })}>
+        Abbrechen
+      </button>
     </div>
   );
 }

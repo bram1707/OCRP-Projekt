@@ -110,7 +110,8 @@ describe('AK-10, AK-11 was gesendet wird', () => {
     assert.equal(pruefung.bestaetige.length, 1);
     assert.equal(pruefung.nimmZurueck.length, 1);
     assert.equal(pruefung.gebeFrei.length, 1);
-    assert.equal(pruefung.meldeFehler.length, 2);
+    // Kennung, Grund und die Beschreibung bei „Sonstiges“; weiterhin genau eine Kennung.
+    assert.equal(pruefung.meldeFehler.length, 3);
     assert.equal(simulation.simuliereNachbesserung.length, 1);
     assert.equal(simulation.reicheFotoNach.length, 1);
   });

@@ -8,7 +8,7 @@ import { detectLanguage } from '../ai/detectLanguage.ts';
 import { mockModell, type SprachModell } from '../ai/mock.ts';
 import { holeAnlage, holeLabel, holeLabels, type Anlage, type Label } from './abfragen.ts';
 import { protokolliere } from './protokoll.ts';
-import { anfangsstatus, istFehlergrund, PRUEFBAR, pruefeFreigabe, STATUS_TEXT, type Status } from './status.ts';
+import { anfangsstatus, bereinigeFehlertext, FEHLERTEXT_MAX, istFehlergrund, PRUEFBAR, pruefeFreigabe, STATUS_TEXT, type Status } from './status.ts';
 
 /** Fachlicher Fehler mit passendem HTTP-Status und einer Meldung in einfacher Sprache. */
 export class Fachfehler extends Error {
@@ -62,16 +62,21 @@ export function bestaetigeLabel(db: DatabaseSync, labelId: string, wer: string, 
   });
 }
 
-export function meldeFehler(db: DatabaseSync, labelId: string, grund: unknown, wer: string, jetzt = new Date()): Label {
+/** `text` zählt nur beim Grund „Sonstiges“; dort ist er Pflicht. */
+export function meldeFehler(db: DatabaseSync, labelId: string, grund: unknown, wer: string, jetzt = new Date(), text?: unknown): Label {
   if (!istFehlergrund(grund)) {
-    throw new Fachfehler(400, 'Bitte einen Grund wählen: unleserlich, Sprache falsch oder Label beschädigt.');
+    throw new Fachfehler(400, 'Bitte einen Grund wählen: unleserlich, Sprache falsch, Label beschädigt oder Sonstiges.');
+  }
+  const notiz = grund === 'sonstiges' ? bereinigeFehlertext(text) : null;
+  if (grund === 'sonstiges' && notiz === null) {
+    throw new Fachfehler(400, `Bitte beschreiben Sie bei „Sonstiges“ kurz, was nicht stimmt (höchstens ${FEHLERTEXT_MAX} Zeichen).`);
   }
   return inTransaktion(db, () => {
     const label = ladePruefbaresLabel(db, labelId);
-    db.prepare("UPDATE labels SET status = 'fehlerhaft', letzter_fehlergrund = ? WHERE id = ?").run(grund, label.id);
+    db.prepare("UPDATE labels SET status = 'fehlerhaft', letzter_fehlergrund = ?, letzter_fehlertext = ? WHERE id = ?").run(grund, notiz, label.id);
     // Sicherheitsnetz: Ein gemeldetes Label hebt eine gespeicherte Freigabe immer auf.
     db.prepare('UPDATE anlagen SET freigegeben_am = NULL, freigegeben_von = NULL WHERE id = ?').run(label.anlageId);
-    protokolliere(db, { anlageId: label.anlageId, labelId: label.id, wer, wann: jetzt.toISOString(), ergebnis: 'fehler', grund });
+    protokolliere(db, { anlageId: label.anlageId, labelId: label.id, wer, wann: jetzt.toISOString(), ergebnis: 'fehler', grund, notiz });
     return holeLabel(db, label.id)!;
   });
 }

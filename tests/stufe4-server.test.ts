@@ -146,8 +146,9 @@ describe('B6 Rückmeldung speichern (AK-51)', () => {
     });
   });
 
-  test('Schema-Stand 3; eine Datenbank aus Stufe 3 wird neu angelegt und bekommt die Tabelle feedback', () => {
-    assert.equal(SCHEMA_STAND, 3);
+  // Angepasst: Stand 4 bringt „Sonstiges“ mit Freitext; ältere Dateien werden weiterhin neu angelegt.
+  test('Schema-Stand 4; eine Datenbank aus Stufe 3 wird neu angelegt und bekommt die Tabelle feedback', () => {
+    assert.equal(SCHEMA_STAND, 4);
     const ordner = mkdtempSync(join(tmpdir(), 'pruefsystem-stand-'));
     try {
       const pfad = join(ordner, 'alt.sqlite');
@@ -155,7 +156,7 @@ describe('B6 Rückmeldung speichern (AK-51)', () => {
       alt.exec('DROP TABLE feedback; PRAGMA user_version = 2;');
       alt.close();
       const db = oeffneDatenbank(pfad);
-      assert.equal((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version, 3);
+      assert.equal((db.prepare('PRAGMA user_version').get() as { user_version: number }).user_version, 4);
       assert.ok(db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'feedback'").get());
       db.close();
     } finally {

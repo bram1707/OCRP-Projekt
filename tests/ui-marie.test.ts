@@ -219,7 +219,7 @@ describe('AK-42 Klick auf Zahl oder Anlage zeigt die Labels dahinter', () => {
 
   test('unbekannte Anlage: Hinweis statt Liste', () => {
     const html = marie(f.basis, anlage('XYZ9'));
-    assert.match(text(html), /Anlage nicht gefunden Diese Anlage gibt es nicht\./);
+    assert.match(text(html), /Anlage nicht gefunden .*Diese Anlage gibt es nicht\./);
     assert.deepEqual(zeilen(html), []);
   });
 

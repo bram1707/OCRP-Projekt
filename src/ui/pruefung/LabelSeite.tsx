@@ -9,7 +9,7 @@ import { zumLabel, zurAnlage } from '../route.ts';
 import { bestaetige, meldeFehler, nimmZurueck } from './aktionen.ts';
 import type { Navigation } from './AnlageSeite.tsx';
 import { Einzelansicht, type EinzelEreignis } from './Einzelansicht.tsx';
-import { ablauf, FEHLERGRUENDE, naechstesLabel, type Ablauf, type AblaufEreignis } from './logik.ts';
+import { ablauf, FEHLERGRUENDE, fehlertextGueltig, naechstesLabel, type Ablauf, type AblaufEreignis } from './logik.ts';
 
 export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; labelId: string; nav: Navigation }) {
   const [daten, setDaten] = useState<{ anlage: AnlageMitLabels; label: LabelAnsicht } | null>(null);
@@ -173,8 +173,11 @@ export function LabelSeite({ anlageId, labelId, nav }: { anlageId: string; label
       case 'grund': {
         const grund: Fehlergrund = e.grund;
         const titel = FEHLERGRUENDE.find((g) => g.grund === grund)?.titel ?? grund;
+        // „Sonstiges“ geht nur mit Beschreibung; der Knopf ist sonst gesperrt, der Server prüft es noch einmal.
+        if (grund === 'sonstiges' && !fehlertextGueltig(e.text ?? '')) return;
+        const text = grund === 'sonstiges' ? e.text : undefined;
         if (!fotoFehltRef.current && schritt('grundGewaehlt')) {
-          void entscheide(() => meldeFehler(labelId, grund), `${labelId} gemeldet (${titel}). Es kommt nach der Nachbesserung zurück.`);
+          void entscheide(() => meldeFehler(labelId, grund, text), `${labelId} gemeldet (${titel}). Es kommt nach der Nachbesserung zurück.`);
         }
         return;
       }

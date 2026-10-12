@@ -6,7 +6,7 @@ import type { Ref } from 'react';
 import type { MarieAnlage, MarieLabel, MarieUebersicht } from '../api.ts';
 import { sichereBildUrl, sprachenKurz } from '../pruefung/logik.ts';
 import { Warum } from '../pruefung/Warum.tsx';
-import { Balken, Fehler, Marke, VERWEIS } from '../rahmen.tsx';
+import { Balken, Fehler, KNOPF_NEBEN, Marke, VERWEIS } from '../rahmen.tsx';
 import { zuMarie, zurMarieAnlage, zurMarieZahl, type MarieAuswahl, type MarieZahl } from '../route.ts';
 import { sperreAnzeige, STATUS_ANZEIGE } from '../status.ts';
 import {
@@ -138,9 +138,15 @@ function Auswahl({ daten, auswahl, auswahlRef }: { daten: MarieUebersicht; auswa
   const labels = auswahlLabels(daten, auswahl);
   return (
     <section className="mt-8" aria-labelledby="auswahl-titel" data-auswahl="">
-      <h2 id="auswahl-titel" ref={auswahlRef} tabIndex={-1} className="text-xl font-semibold tracking-tight">
-        {titel ?? 'Anlage nicht gefunden'}
-      </h2>
+      {/* Schließen gleich neben dem Titel, damit Marie nicht ans Ende der Liste scrollen muss; unten gibt es ihn noch einmal. */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 id="auswahl-titel" ref={auswahlRef} tabIndex={-1} className="text-xl font-semibold tracking-tight">
+          {titel ?? 'Anlage nicht gefunden'}
+        </h2>
+        <a href={zuMarie()} className={`${KNOPF_NEBEN} no-underline`} data-schliessen="oben">
+          <span aria-hidden="true">✕</span> Liste schließen
+        </a>
+      </div>
       {titel === null ? (
         <Fehler text="Diese Anlage gibt es nicht." />
       ) : (
@@ -157,7 +163,7 @@ function Auswahl({ daten, auswahl, auswahlRef }: { daten: MarieUebersicht; auswa
           )}
         </>
       )}
-      <a href={zuMarie()} className={`${VERWEIS} mt-3 inline-flex min-h-12 items-center`}>
+      <a href={zuMarie()} className={`${VERWEIS} mt-3 inline-flex min-h-12 items-center`} data-schliessen="unten">
         Liste schließen
       </a>
     </section>
